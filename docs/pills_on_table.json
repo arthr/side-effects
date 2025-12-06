@@ -1,0 +1,47 @@
+[
+    {
+      "id": "pill_001",
+      "type": "POISON",
+      "isRevealed": false,
+      "stats": {
+        "damage": 2,
+        "isFatal": false,
+        "heal": 0
+      },
+      "visuals": {
+        "color": "green",
+        "shape": "capsule",
+        "label": "Unknown" 
+      }
+    },
+    {
+      "id": "pill_002",
+      "type": "PLACEBO",
+      "isRevealed": true, 
+      "stats": {
+        "damage": 0,
+        "isFatal": false,
+        "heal": 0
+      },
+      "visuals": {
+        "color": "white",
+        "shape": "round",
+        "label": "Sugar Pill"
+      }
+    },
+    {
+      "id": "pill_003",
+      "type": "DEATH",
+      "isRevealed": false,
+      "stats": {
+        "damage": 999,
+        "isFatal": true,
+        "heal": 0
+      },
+      "visuals": {
+        "color": "yellow",
+        "shape": "triangle",
+        "label": "Danger"
+      }
+    }
+  ]
