@@ -45,8 +45,19 @@ export function GameBoard() {
   const {
     isSelectingTarget,
     validTargets,
+    selectedItemId,
+    startUsage,
     executeItem,
   } = useItemUsage()
+
+  // Handler para click em item do inventario
+  const handleItemClick = (itemId: string) => {
+    if (!isHumanTurn || isProcessing || isRoundEnding) return
+    startUsage(itemId)
+  }
+
+  // Determina ID do oponente
+  const opponentId = currentTurn === 'player1' ? 'player2' : 'player1'
 
   // Hook da IA - joga automaticamente quando e turno dela
   useAIPlayer({
@@ -55,6 +66,8 @@ export function GameBoard() {
     phase,
     gamePhase,
     startConsumption,
+    executeItem,
+    opponentId,
   })
 
   // Handler para click na pilula
@@ -110,6 +123,8 @@ export function GameBoard() {
           isCurrentTurn={currentTurn === 'player1'}
           animationType={getPlayerAnimation('player1')}
           effectValue={getEffectValue('player1')}
+          onItemClick={handleItemClick}
+          usingItemId={selectedItemId}
         />
 
         {/* Pill Pool - Centro */}
