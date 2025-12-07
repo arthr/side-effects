@@ -167,6 +167,11 @@ export function createPlayer(
     resistance,
     maxResistance: resistance,
     isAI,
+    inventory: {
+      items: [],
+      maxItems: 5,
+    },
+    effects: [],
   }
 }
 

@@ -1,9 +1,12 @@
 import { create } from 'zustand'
+import { v4 as uuidv4 } from 'uuid'
 import type {
   GameAction,
   GameConfig,
   GameState,
   GameStats,
+  InventoryItem,
+  ItemType,
   Pill,
   PillType,
   Player,
@@ -16,12 +19,13 @@ import {
   generatePillPool,
   revealPill,
 } from '@/utils/pillGenerator'
+import { ITEM_CATALOG } from '@/utils/itemCatalog'
 
 /**
  * Interface do Store com estado e actions
  */
 interface GameStore extends GameState {
-  // Actions
+  // Actions - Game Flow
   initGame: (config?: Partial<GameConfig>) => void
   consumePill: (pillId: string) => void
   revealPillById: (pillId: string) => void
@@ -29,6 +33,18 @@ interface GameStore extends GameState {
   resetRound: () => void
   endGame: (winnerId: PlayerId) => void
   resetGame: () => void
+
+  // Actions - Item Selection (pre-game)
+  startItemSelectionPhase: () => void
+  selectItem: (playerId: PlayerId, itemType: ItemType) => void
+  deselectItem: (playerId: PlayerId, itemId: string) => void
+  confirmItemSelection: (playerId: PlayerId) => void
+
+  // Actions - Item Usage (during game)
+  startItemUsage: (itemId: string) => void
+  cancelItemUsage: () => void
+  executeItem: (itemId: string, targetId?: string) => void
+  removeItemFromInventory: (playerId: PlayerId, itemId: string) => void
 
   // Selectors (computed)
   getCurrentPlayer: () => Player
@@ -60,6 +76,14 @@ const initialState: GameState = {
   round: 0,
   winner: null,
   actionHistory: [],
+  // Item system
+  targetSelection: {
+    active: false,
+    itemId: null,
+    itemType: null,
+    validTargets: null,
+  },
+  revealedPills: [],
 }
 
 /**
@@ -324,6 +348,204 @@ export const useGameStore = create<GameStore>((set, get) => ({
    */
   resetGame: () => {
     set(initialState)
+  },
+
+  // ============ ITEM SELECTION ACTIONS ============
+
+  /**
+   * Inicia a fase de selecao de itens
+   */
+  startItemSelectionPhase: () => {
+    set({ phase: 'itemSelection' })
+  },
+
+  /**
+   * Adiciona um item ao inventario do jogador
+   */
+  selectItem: (playerId: PlayerId, itemType: ItemType) => {
+    const state = get()
+    const player = state.players[playerId]
+
+    // Verifica limite de itens
+    if (player.inventory.items.length >= player.inventory.maxItems) {
+      return
+    }
+
+    const newItem: InventoryItem = {
+      id: uuidv4(),
+      type: itemType,
+    }
+
+    set({
+      players: {
+        ...state.players,
+        [playerId]: {
+          ...player,
+          inventory: {
+            ...player.inventory,
+            items: [...player.inventory.items, newItem],
+          },
+        },
+      },
+    })
+  },
+
+  /**
+   * Remove um item do inventario do jogador
+   */
+  deselectItem: (playerId: PlayerId, itemId: string) => {
+    const state = get()
+    const player = state.players[playerId]
+
+    set({
+      players: {
+        ...state.players,
+        [playerId]: {
+          ...player,
+          inventory: {
+            ...player.inventory,
+            items: player.inventory.items.filter((item) => item.id !== itemId),
+          },
+        },
+      },
+    })
+  },
+
+  /**
+   * Confirma a selecao de itens de um jogador
+   * Quando ambos confirmarem, inicia o jogo
+   */
+  confirmItemSelection: (playerId: PlayerId) => {
+    const state = get()
+
+    // Verifica se estamos na fase correta
+    if (state.phase !== 'itemSelection') return
+
+    // Gera o pool de pilulas e inicia o jogo
+    const pillPool = generatePillPool(
+      DEFAULT_GAME_CONFIG.pillsPerRound,
+      PILL_CONFIG
+    )
+    const typeCounts = countPillTypes(pillPool)
+
+    const startAction: GameAction = {
+      type: 'GAME_START',
+      playerId,
+      timestamp: Date.now(),
+    }
+
+    set({
+      phase: 'playing',
+      pillPool,
+      typeCounts,
+      round: 1,
+      actionHistory: [...state.actionHistory, startAction],
+    })
+  },
+
+  // ============ ITEM USAGE ACTIONS ============
+
+  /**
+   * Inicia o uso de um item (ativa modo de selecao de alvo se necessario)
+   */
+  startItemUsage: (itemId: string) => {
+    const state = get()
+    const currentPlayer = state.players[state.currentTurn]
+
+    // Busca o item no inventario
+    const item = currentPlayer.inventory.items.find((i) => i.id === itemId)
+    if (!item) return
+
+    // Busca definicao do item
+    const itemDef = ITEM_CATALOG[item.type]
+    if (!itemDef) return
+
+    // Define os alvos validos baseado no tipo de item
+    let validTargets: 'pills' | 'opponent' | null = null
+    if (itemDef.targetType === 'pill' || itemDef.targetType === 'pill_to_opponent') {
+      validTargets = 'pills'
+    } else if (itemDef.targetType === 'opponent') {
+      validTargets = 'opponent'
+    }
+
+    // Se item nao requer alvo (self ou table), executa imediatamente
+    if (itemDef.targetType === 'self' || itemDef.targetType === 'table') {
+      get().executeItem(itemId)
+      return
+    }
+
+    // Ativa modo de selecao de alvo
+    set({
+      targetSelection: {
+        active: true,
+        itemId,
+        itemType: item.type,
+        validTargets,
+      },
+    })
+  },
+
+  /**
+   * Cancela o uso de um item (reseta targetSelection)
+   */
+  cancelItemUsage: () => {
+    set({
+      targetSelection: {
+        active: false,
+        itemId: null,
+        itemType: null,
+        validTargets: null,
+      },
+    })
+  },
+
+  /**
+   * Executa o efeito de um item
+   */
+  executeItem: (itemId: string, targetId?: string) => {
+    const state = get()
+    const currentPlayer = state.players[state.currentTurn]
+
+    // Busca o item no inventario
+    const item = currentPlayer.inventory.items.find((i) => i.id === itemId)
+    if (!item) return
+
+    // Remove o item do inventario
+    get().removeItemFromInventory(state.currentTurn, itemId)
+
+    // Reseta targetSelection
+    set({
+      targetSelection: {
+        active: false,
+        itemId: null,
+        itemType: null,
+        validTargets: null,
+      },
+    })
+
+    // Nota: A logica de aplicar o efeito sera integrada
+    // com itemLogic.ts nas proximas tasks
+  },
+
+  /**
+   * Remove um item do inventario do jogador
+   */
+  removeItemFromInventory: (playerId: PlayerId, itemId: string) => {
+    const state = get()
+    const player = state.players[playerId]
+
+    set({
+      players: {
+        ...state.players,
+        [playerId]: {
+          ...player,
+          inventory: {
+            ...player.inventory,
+            items: player.inventory.items.filter((i) => i.id !== itemId),
+          },
+        },
+      },
+    })
   },
 
   // ============ SELECTORS ============

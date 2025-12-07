@@ -54,18 +54,18 @@
 
 ## Fase 3: Store (Estado)
 
-- [ ] TASK-IS-011: Atualizar `src/stores/gameStore.ts` - Estado inicial
+- [x] TASK-IS-011: Atualizar `src/stores/gameStore.ts` - Estado inicial
   - Adicionar inventario vazio aos players
   - Adicionar targetSelection ao estado
   - Adicionar revealedPills ao estado
 
-- [ ] TASK-IS-012: Implementar actions de selecao de itens
+- [x] TASK-IS-012: Implementar actions de selecao de itens
   - `selectItem(playerId, itemType)`
   - `deselectItem(playerId, itemId)`
   - `confirmItemSelection(playerId)`
   - `startItemSelectionPhase()`
 
-- [ ] TASK-IS-013: Implementar actions de uso de itens
+- [x] TASK-IS-013: Implementar actions de uso de itens
   - `startItemUsage(itemId)`
   - `cancelItemUsage()`
   - `executeItem(itemId, targetId?)`
