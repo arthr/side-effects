@@ -5,6 +5,8 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Base path para GitHub Pages (nome do repositorio)
+  base: '/dosed/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
