@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { GamePhase, Pill, Player, PlayerId } from '@/types'
+import { useGameStore } from '@/stores/gameStore'
 import {
   selectRandomPill,
   getAIThinkingDelay,
@@ -111,8 +112,10 @@ export function useAIPlayer({
               hasUsedItemRef.current = true
 
               // Agenda consumo de pilula apos usar item
+              // Usa getState() para evitar stale closure apos item modificar pillPool
               setTimeout(() => {
-                const selectedPillId = selectRandomPill(pillPool)
+                const currentPillPool = useGameStore.getState().pillPool
+                const selectedPillId = selectRandomPill(currentPillPool)
                 if (selectedPillId) {
                   startConsumption(selectedPillId)
                 }
@@ -125,7 +128,9 @@ export function useAIPlayer({
         }
 
         // Consumo normal de pilula (sem usar item)
-        const selectedPillId = selectRandomPill(pillPool)
+        // Usa getState() para garantir valor atualizado do pillPool
+        const currentPillPool = useGameStore.getState().pillPool
+        const selectedPillId = selectRandomPill(currentPillPool)
 
         if (selectedPillId) {
           startConsumption(selectedPillId)

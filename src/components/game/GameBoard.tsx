@@ -67,33 +67,39 @@ export function GameBoard() {
 
   /**
    * Wrapper para executar item com feedback visual
-   * Abre overlay de ItemEffect apos execucao (exceto para force_feed que tem seu proprio flow)
+   * Abre overlay de ItemEffect apos execucao (exceto para force_feed que usa PillReveal)
    */
   const executeItemWithFeedback = useCallback((targetId?: string) => {
     const itemType = selectedItemType
     if (!itemType) return
 
-    // Executa o item
+    // Executa o item (remove do inventario, reseta targetSelection)
     executeItem(targetId)
 
     // Toast de feedback (mostra no jogador atual)
     toast.item(itemType, currentTurn)
 
-    // Abre overlay de feedback (exceto para force_feed que usa PillReveal)
-    if (itemType !== 'force_feed') {
-      let targetInfo: string | undefined
-
-      // Gera info contextual do alvo
-      if (targetId) {
-        const targetPill = pillPool.find((p) => p.id === targetId)
-        if (targetPill) {
-          targetInfo = `Pilula #${pillPool.indexOf(targetPill) + 1}`
-        }
-      }
-
-      openItemEffect(itemType, targetInfo)
+    // Force Feed: delega consumo para o fluxo completo com PillReveal
+    if (itemType === 'force_feed' && targetId) {
+      // Inicia consumo com forcedTarget (oponente)
+      // Isso abre o PillReveal overlay mostrando a pilula sendo consumida pelo oponente
+      startConsumption(targetId, opponentId)
+      return
     }
-  }, [selectedItemType, executeItem, openItemEffect, pillPool, toast])
+
+    // Outros itens: abre overlay de feedback
+    let targetInfo: string | undefined
+
+    // Gera info contextual do alvo
+    if (targetId) {
+      const targetPill = pillPool.find((p) => p.id === targetId)
+      if (targetPill) {
+        targetInfo = `Pilula #${pillPool.indexOf(targetPill) + 1}`
+      }
+    }
+
+    openItemEffect(itemType, targetInfo)
+  }, [selectedItemType, executeItem, openItemEffect, pillPool, toast, currentTurn, opponentId, startConsumption])
 
   /**
    * Wrapper para IA executar item com feedback
@@ -106,26 +112,32 @@ export function GameBoard() {
 
     const itemType: ItemType = item.type
 
-    // Chama a action da store diretamente
+    // Chama a action da store diretamente (remove item, reseta targetSelection)
     useGameStore.getState().executeItem(itemId, targetId)
 
     // Toast de feedback (mostra no jogador atual - IA)
     toast.item(itemType, currentTurn)
 
-    // Abre overlay de feedback (exceto para force_feed)
-    if (itemType !== 'force_feed') {
-      let targetInfo: string | undefined
-
-      if (targetId) {
-        const targetPill = pillPool.find((p) => p.id === targetId)
-        if (targetPill) {
-          targetInfo = `Pilula #${pillPool.indexOf(targetPill) + 1}`
-        }
-      }
-
-      openItemEffect(itemType, targetInfo)
+    // Force Feed: delega consumo para o fluxo completo com PillReveal
+    if (itemType === 'force_feed' && targetId) {
+      // Inicia consumo com forcedTarget (oponente humano)
+      // Isso abre o PillReveal overlay mostrando a pilula sendo consumida pelo oponente
+      startConsumption(targetId, opponentId)
+      return
     }
-  }, [currentTurn, players, pillPool, openItemEffect, toast])
+
+    // Outros itens: abre overlay de feedback
+    let targetInfo: string | undefined
+
+    if (targetId) {
+      const targetPill = pillPool.find((p) => p.id === targetId)
+      if (targetPill) {
+        targetInfo = `Pilula #${pillPool.indexOf(targetPill) + 1}`
+      }
+    }
+
+    openItemEffect(itemType, targetInfo)
+  }, [currentTurn, players, pillPool, openItemEffect, toast, opponentId, startConsumption])
 
   // Handler para click em item do inventario
   const handleItemClick = useCallback((itemId: string) => {

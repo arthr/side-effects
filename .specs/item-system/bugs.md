@@ -37,9 +37,9 @@ useEffect(() => {
 
 ---
 
-## Bug #2: Stale closure no Force Feed (e outros itens) -> Verificar se bug é válido, replicar comportamento antes.
+## Bug #2: Stale closure no Force Feed (e outros itens)
 
-**Status:** Pendente
+**Status:** CORRIGIDO
 **Severidade:** Media
 **Arquivo:** `src/hooks/useAIPlayer.ts`
 
@@ -49,7 +49,7 @@ Quando a IA usa um item que modifica o pillPool (ex: Force Feed, Discard), o set
 ### Causa Raiz
 O `pillPool` capturado no closure do setTimeout era o valor antes do item ser executado. Se o item removia uma pilula, o `selectRandomPill` poderia tentar selecionar uma pilula inexistente.
 
-### Solucao Sugerida
+### Solucao Aplicada
 Alterado para pegar `pillPool` diretamente do store dentro do setTimeout:
 
 ```typescript
@@ -64,24 +64,23 @@ setTimeout(() => {
 
 ## Bug #3: Force Feed sem feedback visual
 
-**Status:** Pendente
+**Status:** CORRIGIDO
 **Severidade:** Baixa (UX)
-**Arquivo:** `src/stores/gameStore.ts`
+**Arquivos:** `src/stores/gameStore.ts`, `src/components/game/GameBoard.tsx`
 
 ### Descricao
-Quando Force Feed e usado, o `consumePill` e chamado diretamente no store, sem abrir o overlay PillReveal. O oponente consome a pilula "silenciosamente".
+Quando Force Feed e usado, o `consumePill` era chamado diretamente no store, sem abrir o overlay PillReveal. O oponente consumia a pilula "silenciosamente".
 
-### Comportamento Atual
+### Comportamento Antigo
 1. IA usa Force Feed
-2. `executeItem` chama `consumePill` diretamente
-3. Pilula e aplicada no oponente sem animacao de revelacao
-4. Apenas toast aparece
+2. `executeItem` chamava `consumePill` diretamente
+3. Pilula era aplicada no oponente sem animacao de revelacao
+4. Apenas toast aparecia
 
-### Comportamento Esperado
-Deveria mostrar PillReveal para o oponente, mesmo quando forcado.
-
-### Solucao Proposta
-Refatorar Force Feed para usar `startConsumption` do hook em vez de `consumePill` direto, ou adicionar chamada de overlay no store.
+### Solucao Aplicada
+1. O case `force_feed` no gameStore agora apenas remove o item do inventario (nao chama `consumePill`)
+2. O GameBoard detecta quando o item e `force_feed` e chama `startConsumption(pillId, opponentId)` com forcedTarget
+3. Isso garante que o fluxo completo do PillReveal seja usado, mostrando a animacao de revelacao para o oponente
 
 ---
 
@@ -95,7 +94,7 @@ Usuario reportou que "alguns itens estao causando comportamentos inesperados na 
 
 ### Itens a Verificar
 - [x] Handcuffs - CORRIGIDO (Bug #1)
-- [ ] Force Feed - Stale closure CORRIGIDO (Bug #2), feedback visual pendente (Bug #3)
+- [x] Force Feed - Stale closure CORRIGIDO (Bug #2), feedback visual CORRIGIDO (Bug #3)
 - [ ] Scanner/Inverter/Double - Verificar selecao de alvo
 - [ ] Shield - Verificar auto-aplicacao
 - [ ] Shuffle/Discard - Verificar comportamento apos uso
@@ -109,6 +108,6 @@ Realizar testes manuais focados em cada item usado pela IA.
 
 - [x] Fix #1: Refatorar reset de flags em useAIPlayer
 - [x] Fix #2: Corrigir stale closure no setTimeout
-- [ ] Fix #3: Adicionar feedback visual para Force Feed
+- [x] Fix #3: Adicionar feedback visual para Force Feed
 - [ ] Investigar outros itens que podem causar travamento
 - [ ] Testar cenarios de edge case (handcuffs + shield, etc)

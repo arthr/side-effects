@@ -783,14 +783,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       case 'force_feed': {
-        // Forca oponente a consumir pilula - chama consumePill com forcedTarget
-        if (targetId) {
-          // Aplica as mudancas de estado primeiro (remove item, reseta selection)
-          set(newState)
-          // Depois chama consumePill com o alvo forcado
-          get().consumePill(targetId, { forcedTarget: opponentId })
-          return // Retorna cedo pois consumePill ja faz o set
-        }
+        // Force Feed: apenas remove o item e armazena info do alvo
+        // O consumo real e delegado ao GameBoard que chama startConsumption com forcedTarget
+        // Isso garante que o PillReveal overlay seja exibido corretamente
+        // Nota: targetId contem o pillId, opponentId e calculado no GameBoard
         break
       }
 
