@@ -1,4 +1,13 @@
-import { useGameStore } from '@/stores/gameStore'
+import {
+  useGameActions,
+  usePlayers,
+  useCurrentTurn,
+  usePillPool,
+  useTypeCounts,
+  useRound,
+  useCurrentPlayer,
+  useIsHumanTurn,
+} from '@/hooks'
 import {
   GameAreaLayout,
   PlayerContainer,
@@ -11,24 +20,24 @@ import { TurnIndicator } from './TurnIndicator'
 /**
  * Tabuleiro completo do jogo
  * Compoe: Areas dos jogadores, Mesa de pilulas, Indicador de turno
- * Conectado ao gameStore via hooks
+ * Conectado ao gameStore via hooks customizados
  */
 export function GameBoard() {
-  const players = useGameStore((state) => state.players)
-  const currentTurn = useGameStore((state) => state.currentTurn)
-  const pillPool = useGameStore((state) => state.pillPool)
-  const typeCounts = useGameStore((state) => state.typeCounts)
-  const round = useGameStore((state) => state.round)
-  const consumePill = useGameStore((state) => state.consumePill)
+  // State selectors otimizados
+  const { player1, player2 } = usePlayers()
+  const currentTurn = useCurrentTurn()
+  const pillPool = usePillPool()
+  const typeCounts = useTypeCounts()
+  const round = useRound()
+  const currentPlayer = useCurrentPlayer()
+  const isHumanTurn = useIsHumanTurn()
 
-  const player1 = players.player1
-  const player2 = players.player2
-  const currentPlayer = players[currentTurn]
-  const isHumanTurn = !currentPlayer.isAI
+  // Actions
+  const { selectPill } = useGameActions()
 
   // Mensagem de instrucao baseada no estado
   const getInstructionMessage = () => {
-    if (currentPlayer.isAI) {
+    if (!isHumanTurn) {
       return 'Aguardando jogada da IA...'
     }
     return 'Clique em uma pilula para consumi-la'
@@ -70,7 +79,7 @@ export function GameBoard() {
           <PillPool
             pills={pillPool}
             typeCounts={typeCounts}
-            onSelectPill={consumePill}
+            onSelectPill={selectPill}
             disabled={!isHumanTurn}
             instructionMessage={getInstructionMessage()}
           />
@@ -79,4 +88,3 @@ export function GameBoard() {
     />
   )
 }
-

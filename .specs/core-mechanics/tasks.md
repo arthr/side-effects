@@ -216,13 +216,17 @@
 
 ---
 
-## Fase 5: Integração e Fluxo do Jogo
+## Fase 5: Integracao e Fluxo do Jogo
 
 ### TASK-020: Implementar hooks customizados
-- [ ] Criar `src/hooks/useGameActions.ts` para encapsular actions do store
-- [ ] Criar `src/hooks/useGameState.ts` para selectors otimizados
+- [x] Criar `src/hooks/useGameActions.ts` para encapsular actions do store
+- [x] Criar `src/hooks/useGameState.ts` para selectors otimizados
+- [x] Criar `src/hooks/index.ts` barrel export
+- [x] Atualizar GameBoard.tsx para usar hooks
+- [x] Atualizar App.tsx para usar hooks
+- [x] Extrair GameOverScreen como componente separado
 
-**Critério de Aceite:** Hooks funcionam e evitam re-renders desnecessários
+**Criterio de Aceite:** Hooks funcionam e evitam re-renders desnecessarios [CONCLUIDO]
 
 ---
 

@@ -1,17 +1,24 @@
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { GameLayout } from '@/components/layout/GameLayout'
-import { useGameStore } from '@/stores/gameStore'
+import {
+  useGameActions,
+  useGamePhase,
+  usePlayers,
+  useWinner,
+  useGameStats,
+} from '@/hooks'
 import { InfoPanel } from '@/components/game/InfoPanel'
 import { GameBoard } from '@/components/game/GameBoard'
 
 function GameContent() {
-  const phase = useGameStore((state) => state.phase)
-  const initGame = useGameStore((state) => state.initGame)
-  const players = useGameStore((state) => state.players)
-  const winner = useGameStore((state) => state.winner)
-  const resetGame = useGameStore((state) => state.resetGame)
-  const getGameStats = useGameStore((state) => state.getGameStats)
+  // State
+  const phase = useGamePhase()
+  const { player1, player2 } = usePlayers()
+  const winner = useWinner()
+
+  // Actions
+  const { startGame, restartGame } = useGameActions()
 
   // Tela inicial - Setup
   if (phase === 'setup') {
@@ -26,7 +33,7 @@ function GameContent() {
           </p>
         </div>
 
-        <Button size="lg" onClick={() => initGame()} className="px-8">
+        <Button size="lg" onClick={() => startGame()} className="px-8">
           Iniciar Partida
         </Button>
 
@@ -43,29 +50,46 @@ function GameContent() {
 
   // Tela de fim de jogo
   if (phase === 'ended') {
-    const stats = getGameStats()
-
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-12">
-        <h2 className="text-3xl font-bold text-foreground">
-          Fim de Jogo!
-        </h2>
-        <p className="text-xl text-primary">
-          {winner ? `${players[winner].name} venceu!` : 'Empate!'}
-        </p>
-
-        <div className="text-sm text-muted-foreground space-y-1 text-center">
-          <p>Rodadas: {stats.totalRounds}</p>
-          <p>Pilulas consumidas: {stats.pillsConsumed}</p>
-          <p>Colapsos: {stats.totalCollapses}</p>
-        </div>
-
-        <Button onClick={resetGame}>Jogar Novamente</Button>
-      </div>
+      <GameOverScreen
+        winner={winner}
+        players={{ player1, player2 }}
+        onRestart={restartGame}
+      />
     )
   }
 
   return null
+}
+
+/**
+ * Tela de fim de jogo extraida para componente separado
+ */
+interface GameOverScreenProps {
+  winner: 'player1' | 'player2' | null
+  players: { player1: { name: string }; player2: { name: string } }
+  onRestart: () => void
+}
+
+function GameOverScreen({ winner, players, onRestart }: GameOverScreenProps) {
+  const stats = useGameStats()
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 py-12">
+      <h2 className="text-3xl font-bold text-foreground">Fim de Jogo!</h2>
+      <p className="text-xl text-primary">
+        {winner ? `${players[winner].name} venceu!` : 'Empate!'}
+      </p>
+
+      <div className="text-sm text-muted-foreground space-y-1 text-center">
+        <p>Rodadas: {stats.totalRounds}</p>
+        <p>Pilulas consumidas: {stats.pillsConsumed}</p>
+        <p>Colapsos: {stats.totalCollapses}</p>
+      </div>
+
+      <Button onClick={onRestart}>Jogar Novamente</Button>
+    </div>
+  )
 }
 
 function App() {
