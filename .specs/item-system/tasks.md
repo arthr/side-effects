@@ -119,7 +119,7 @@
   - Botao confirmar
   - Layout responsivo
 
-- [ ] TASK-IS-022: Integrar ItemSelectionScreen no App.tsx
+- [x] TASK-IS-022: Integrar ItemSelectionScreen no App.tsx
   - Renderizar quando phase === 'itemSelection'
   - Transicao para 'playing' apos confirmacao
 

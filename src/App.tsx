@@ -4,6 +4,7 @@ import { GameLayout } from '@/components/layout/GameLayout'
 import { useGameActions, useGamePhase, useGameStats, useWinner, usePlayers } from '@/hooks'
 import { InfoPanel } from '@/components/game/InfoPanel'
 import { GameBoard } from '@/components/game/GameBoard'
+import { ItemSelectionScreen } from '@/components/game/ItemSelectionScreen'
 import { OverlayManager } from '@/components/overlays'
 import { ToastManager } from '@/components/toasts'
 import { useOverlayStore } from '@/stores/overlayStore'
@@ -50,6 +51,11 @@ function GameContent() {
         <InfoPanel />
       </div>
     )
+  }
+
+  // Tela de selecao de itens (pre-jogo)
+  if (phase === 'itemSelection') {
+    return <ItemSelectionScreen />
   }
 
   // Tela de jogo ativo

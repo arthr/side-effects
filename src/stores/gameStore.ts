@@ -146,7 +146,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     set({
-      phase: 'playing',
+      phase: 'itemSelection',
       turnPhase: 'consume',
       currentTurn: 'player1',
       players: { player1, player2 },
