@@ -126,33 +126,35 @@
 ---
 
 ### TASK-012: Criar componente LivesDisplay
-- [ ] Criar `src/components/game/LivesDisplay.tsx`
-- [ ] Exibir ícones de coração/desfibrilador para cada vida
-- [ ] Diferenciar vidas ativas de perdidas visualmente
-- [ ] Props: `lives: number, maxLives: number`
+- [x] Criar `src/components/game/LivesDisplay.tsx`
+- [x] Exibir icones de coracao para cada vida
+- [x] Diferenciar vidas ativas de perdidas visualmente
+- [x] Props: `lives, maxLives, size, showLabel`
 
-**Critério de Aceite:** Vidas exibidas corretamente com visual adequado
+**Criterio de Aceite:** Vidas exibidas corretamente com visual adequado [CONCLUIDO]
 
 ---
 
-### TASK-013: Criar componente HealthBar (Resistência)
-- [ ] Criar `src/components/game/HealthBar.tsx`
-- [ ] Usar shadcn Progress como base
-- [ ] Mudar cor baseado em porcentagem (verde > amarelo > vermelho)
-- [ ] Exibir valores numéricos (atual/máximo)
-- [ ] Props: `current: number, max: number`
+### TASK-013: Criar componente HealthBar (Resistencia)
+- [x] Criar `src/components/game/HealthBar.tsx`
+- [x] Barra customizada com cores dinamicas (usa getHealthBarColor)
+- [x] Mudar cor baseado em porcentagem (verde > amarelo > vermelho)
+- [x] Exibir valores numericos (atual/maximo)
+- [x] Props: `current, max, showLabel, showValues, height`
 
-**Critério de Aceite:** Barra de resistência com cores dinâmicas
+**Criterio de Aceite:** Barra de resistencia com cores dinamicas [CONCLUIDO]
 
 ---
 
 ### TASK-014: Criar componente PlayerArea
-- [ ] Criar `src/components/game/PlayerArea.tsx`
-- [ ] Compor LivesDisplay + HealthBar + nome do jogador
-- [ ] Indicar visualmente se é o turno do jogador
-- [ ] Props: `player: Player, isCurrentTurn: boolean`
+- [x] Criar `src/components/game/PlayerArea.tsx`
+- [x] Compor LivesDisplay + HealthBar + nome do jogador
+- [x] Indicar visualmente se e o turno do jogador ("Seu turno")
+- [x] Props: `player: Player, isCurrentTurn: boolean`
 
-**Critério de Aceite:** Área do jogador exibe todos os stats
+**Criterio de Aceite:** Area do jogador exibe todos os stats [CONCLUIDO]
+
+*Nota: TASK 012-014 implementadas juntas seguindo DRY, refatorando duplicacoes do App.tsx e InfoPanel.tsx*
 
 ---
 

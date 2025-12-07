@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { LivesDisplay } from './LivesDisplay'
+import { HealthBar } from './HealthBar'
 
 /**
  * Painel informativo com demonstracao dos elementos do jogo
@@ -30,26 +31,17 @@ export function InfoPanel() {
           <CardTitle className="text-base">Seus Stats</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Lives */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground w-20">Vidas:</span>
-            <div className="flex gap-1">
-              <span className="text-health-full text-xl">&#9829;</span>
-              <span className="text-health-full text-xl">&#9829;</span>
-              <span className="text-muted-foreground text-xl">&#9825;</span>
-            </div>
-            <span className="text-xs text-muted-foreground ml-auto">
+          {/* Lives - usando componente reutilizavel */}
+          <div className="flex items-center justify-between">
+            <LivesDisplay lives={2} maxLives={3} />
+            <span className="text-xs text-muted-foreground">
               Perder todas = Game Over
             </span>
           </div>
 
-          {/* Resistance Bar */}
+          {/* Resistance Bar - usando componente reutilizavel */}
           <div className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Resistencia</span>
-              <span className="text-foreground">4/6</span>
-            </div>
-            <Progress value={66} className="h-3" />
+            <HealthBar current={4} max={6} height="lg" />
             <p className="text-xs text-muted-foreground">
               Ao zerar, voce perde 1 vida e reseta a barra
             </p>
@@ -127,4 +119,3 @@ export function InfoPanel() {
     </div>
   )
 }
-

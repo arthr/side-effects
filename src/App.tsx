@@ -8,6 +8,7 @@ import {
 } from '@/components/layout/GameLayout'
 import { useGameStore } from '@/stores/gameStore'
 import { InfoPanel } from '@/components/game/InfoPanel'
+import { PlayerArea } from '@/components/game/PlayerArea'
 
 function GameContent() {
   const phase = useGameStore((state) => state.phase)
@@ -58,88 +59,12 @@ function GameContent() {
         }
         playerArea={
           <PlayerContainer isCurrentTurn={currentTurn === 'player1'} position="left">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">{player1.name}</h3>
-                {player1.isAI && (
-                  <span className="text-xs text-muted-foreground">(IA)</span>
-                )}
-              </div>
-              
-              {/* Lives */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Vidas:</span>
-                <div className="flex gap-1">
-                  {Array.from({ length: player1.maxLives }).map((_, i) => (
-                    <span
-                      key={i}
-                      className={`text-lg ${
-                        i < player1.lives ? 'text-health-full' : 'text-muted-foreground/30'
-                      }`}
-                    >
-                      {i < player1.lives ? '\u2665' : '\u2661'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resistance */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Resistencia</span>
-                  <span>{player1.resistance}/{player1.maxResistance}</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-health-full transition-all duration-300"
-                    style={{ width: `${(player1.resistance / player1.maxResistance) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
+            <PlayerArea player={player1} isCurrentTurn={currentTurn === 'player1'} />
           </PlayerContainer>
         }
         opponentArea={
           <PlayerContainer isCurrentTurn={currentTurn === 'player2'} position="right">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">{player2.name}</h3>
-                {player2.isAI && (
-                  <span className="text-xs text-muted-foreground">(IA)</span>
-                )}
-              </div>
-              
-              {/* Lives */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Vidas:</span>
-                <div className="flex gap-1">
-                  {Array.from({ length: player2.maxLives }).map((_, i) => (
-                    <span
-                      key={i}
-                      className={`text-lg ${
-                        i < player2.lives ? 'text-health-full' : 'text-muted-foreground/30'
-                      }`}
-                    >
-                      {i < player2.lives ? '\u2665' : '\u2661'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resistance */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Resistencia</span>
-                  <span>{player2.resistance}/{player2.maxResistance}</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-health-full transition-all duration-300"
-                    style={{ width: `${(player2.resistance / player2.maxResistance) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
+            <PlayerArea player={player2} isCurrentTurn={currentTurn === 'player2'} />
           </PlayerContainer>
         }
         tableArea={
