@@ -7,6 +7,8 @@ interface PillPoolProps {
   pills: Pill[]
   /** Contagem de tipos para exibicao publica */
   typeCounts: Record<PillType, number>
+  /** Numero da rodada */
+  round?: number
   /** Callback ao selecionar uma pilula */
   onSelectPill: (pillId: string) => void
   /** Se a selecao esta desabilitada (ex: turno da IA) */
@@ -24,6 +26,7 @@ interface PillPoolProps {
 export function PillPool({
   pills,
   typeCounts,
+  round,
   onSelectPill,
   disabled = false,
   selectedPillId = null,
@@ -40,6 +43,7 @@ export function PillPool({
 
       {/* Grid de pilulas */}
       <PillGrid
+        key={round?.toString() || 'empty'}
         pills={pills}
         onSelectPill={onSelectPill}
         disabled={disabled}

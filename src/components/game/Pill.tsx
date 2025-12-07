@@ -112,8 +112,11 @@ export function PillGrid({
   disabled = false,
   selectedPillId = null,
 }: PillGridProps) {
+  const gridKey = pills.length > 0 ? pills[0].id : 'empty'
+  
   return (
-    <motion.div 
+    <motion.div
+      key={gridKey}
       className="flex flex-wrap justify-center gap-3 py-4"
       initial="hidden"
       animate="visible"
