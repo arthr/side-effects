@@ -86,7 +86,7 @@
 
 ## Fase 4: Hooks
 
-- [ ] TASK-IS-016: Criar `src/hooks/useItemSelection.ts`
+- [x] TASK-IS-016: Criar `src/hooks/useItemSelection.ts`
   - Selectors para inventario atual
   - Actions de selecao encapsuladas
   - Validacao de limite (5 itens)
