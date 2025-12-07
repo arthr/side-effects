@@ -164,7 +164,7 @@ export function AnimatedPlayerArea({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center gap-2">
+        <CardContent className="flex justify-between items-center gap-2">
           {/* Lives com animacao de bounce */}
           <LivesDisplay
             showLabel={false}

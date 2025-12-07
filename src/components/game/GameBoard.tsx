@@ -78,7 +78,7 @@ export function GameBoard() {
   if (!player1 || !player2) return null
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
+    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
       {/* Turn Indicator no topo */}
       <TurnIndicator
         currentPlayer={currentPlayer}
@@ -87,7 +87,7 @@ export function GameBoard() {
       />
 
       {/* Layout principal: Player1 | Pills | Player2 */}
-      <div className="flex flex-col-reverse md:flex-row gap-6 items-center md:items-start">
+      <div className="flex flex-col-reverse md:grid md:grid-cols-[1fr_3fr_1fr] gap-6 md:items-start">
         {/* Player 1 - Esquerda (card auto-suficiente) */}
         <AnimatedPlayerArea
           player={player1}
