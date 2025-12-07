@@ -113,7 +113,7 @@
   - Tooltip com descricao
   - Animacao de selecao
 
-- [ ] TASK-IS-021: Criar `src/components/game/ItemSelectionScreen.tsx`
+- [x] TASK-IS-021: Criar `src/components/game/ItemSelectionScreen.tsx`
   - Grid de itens por categoria
   - Contador de selecao (X/5)
   - Botao confirmar
