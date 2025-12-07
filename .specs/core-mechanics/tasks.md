@@ -59,12 +59,12 @@
 
 ---
 
-### TASK-006: Criar constantes e configurações
-- [ ] Criar `src/utils/constants.ts` com valores default (vidas, resistência, probabilidades)
-- [ ] Definir configuração de tipos de pílulas (dano, cura, cores)
-- [ ] Criar mapa de cores e labels para cada PillType
+### TASK-006: Criar constantes e configuracoes
+- [x] Criar `src/utils/constants.ts` com valores default (vidas, resistencia, probabilidades)
+- [x] Definir configuracao de tipos de pilulas (dano, cura, cores)
+- [x] Criar mapa de cores e labels para cada PillType
 
-**Critério de Aceite:** Constantes exportadas e tipadas corretamente
+**Criterio de Aceite:** Constantes exportadas e tipadas corretamente [CONCLUIDO]
 
 ---
 
