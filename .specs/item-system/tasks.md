@@ -167,7 +167,7 @@
   - Auto-dismiss apos animacao
   - Integracao com overlayStore
 
-- [ ] TASK-IS-030: Atualizar overlayStore para ItemEffect
+- [x] TASK-IS-030: Atualizar overlayStore para ItemEffect
   - Adicionar tipo 'itemEffect' ao OverlayType
   - Adicionar `openItemEffect(itemType, target)`
 

@@ -1,10 +1,10 @@
 import { create } from 'zustand'
-import type { Pill, PlayerId, Player, GameStats } from '@/types'
+import type { Pill, PlayerId, Player, GameStats, ItemType } from '@/types'
 
 /**
  * Tipos de overlay disponiveis
  */
-export type OverlayType = 'pillReveal' | 'gameOver' | 'newRound' | null
+export type OverlayType = 'pillReveal' | 'gameOver' | 'newRound' | 'itemEffect' | null
 
 /**
  * Dados do overlay PillReveal
@@ -34,6 +34,14 @@ export interface NewRoundData {
 }
 
 /**
+ * Dados do overlay ItemEffect
+ */
+export interface ItemEffectData {
+  itemType: ItemType
+  targetInfo?: string
+}
+
+/**
  * Store de overlays bloqueantes
  */
 interface OverlayStore {
@@ -48,6 +56,9 @@ interface OverlayStore {
 
   /** Dados do NewRound */
   newRoundData: NewRoundData | null
+
+  /** Dados do ItemEffect */
+  itemEffectData: ItemEffectData | null
 
   /**
    * Abre o overlay de revelacao de pilula
@@ -69,6 +80,11 @@ interface OverlayStore {
   openNewRound: (round: number) => void
 
   /**
+   * Abre o overlay de efeito de item
+   */
+  openItemEffect: (itemType: ItemType, targetInfo?: string) => void
+
+  /**
    * Fecha o overlay atual
    */
   close: () => void
@@ -79,6 +95,7 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
   pillRevealData: null,
   gameOverData: null,
   newRoundData: null,
+  itemEffectData: null,
 
   openPillReveal: (pill, isAITurn) => {
     set({
@@ -101,12 +118,20 @@ export const useOverlayStore = create<OverlayStore>((set) => ({
     })
   },
 
+  openItemEffect: (itemType, targetInfo) => {
+    set({
+      current: 'itemEffect',
+      itemEffectData: { itemType, targetInfo },
+    })
+  },
+
   close: () => {
     set({
       current: null,
       pillRevealData: null,
       gameOverData: null,
       newRoundData: null,
+      itemEffectData: null,
     })
   },
 }))
