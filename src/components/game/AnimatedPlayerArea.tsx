@@ -257,7 +257,6 @@ export function AnimatedPlayerArea({
 
       {/* Barra de inventario (visivel para todos, interativo apenas para humano no seu turno) */}
       <InventoryBar
-        playerId={player.id}
         items={player.inventory.items}
         usingItemId={usingItemId}
         disabled={!isInventoryInteractive}

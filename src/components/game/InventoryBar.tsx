@@ -1,10 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import type { PlayerId, InventoryItem } from '@/types'
+import type { InventoryItem } from '@/types'
 import { InventorySlot } from './InventorySlot'
 
 interface InventoryBarProps {
-  /** ID do jogador dono do inventario */
-  playerId: PlayerId
   /** Itens no inventario */
   items: InventoryItem[]
   /** Numero maximo de slots */

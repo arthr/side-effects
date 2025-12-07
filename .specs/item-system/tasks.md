@@ -225,8 +225,8 @@
   - Atualizar product.md (ja estava atualizado)
   - Atualizar FLUXO.md (atualizado com sistema de itens completo)
 
-- [ ] TASK-IS-040: Review e ajustes finais
-  - Verificar lints
-  - Otimizar re-renders
-  - Balancear gameplay se necessario
+- [x] TASK-IS-040: Review e ajustes finais
+  - Verificar lints (todos limpos)
+  - Remover codigo nao utilizado (playerId em InventoryBar)
+  - Balanceamento revisado (AI_ITEM_USE_CHANCE=35%, heuristicas ok)
 
