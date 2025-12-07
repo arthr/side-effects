@@ -2,10 +2,10 @@
 
 ## Fase 1: Fundacao (Types e Catalogo)
 
-- [ ] TASK-IS-001: Criar arquivo `src/types/item.ts` com tipos base
+- [x] TASK-IS-001: Criar arquivo `src/types/item.ts` com tipos base
   - ItemCategory, ItemType, ItemTargetType
   - ItemDefinition, InventoryItem, PlayerInventory
-  - TargetSelectionState
+  - TargetSelectionState, ItemEffectResult
 
 - [ ] TASK-IS-002: Criar arquivo `src/utils/itemCatalog.ts`
   - ITEM_CATALOG com todos os 9 itens
