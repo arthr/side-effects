@@ -137,7 +137,7 @@
   - Clicavel para uso
   - Tooltip
 
-- [ ] TASK-IS-025: Criar `src/components/game/InventoryBar.tsx`
+- [x] TASK-IS-025: Criar `src/components/game/InventoryBar.tsx`
   - Barra com 5 slots
   - Horizontal abaixo do card do jogador
   - Animacao de remocao de item
