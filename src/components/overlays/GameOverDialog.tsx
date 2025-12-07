@@ -12,8 +12,6 @@ import { Button } from '@/components/ui/button'
 import type { Player, PlayerId, GameStats } from '@/types'
 
 interface GameOverDialogProps {
-  /** Se o dialog está aberto */
-  open: boolean
   /** ID do jogador vencedor */
   winner: PlayerId | null
   /** Dados dos jogadores */
@@ -21,7 +19,7 @@ interface GameOverDialogProps {
     player1: Player
     player2: Player
   }
-  /** Estatísticas do jogo */
+  /** Estatisticas do jogo */
   stats: GameStats
   /** Callback para reiniciar o jogo */
   onRestart: () => void
@@ -29,10 +27,9 @@ interface GameOverDialogProps {
 
 /**
  * Dialog de fim de jogo
- * Exibe o vencedor, estatísticas e opção de reiniciar
+ * Exibe o vencedor, estatisticas e opcao de reiniciar
  */
 export function GameOverDialog({
-  open,
   winner,
   players,
   stats,
@@ -46,13 +43,13 @@ export function GameOverDialog({
   const isHumanWinner = winnerPlayer && !winnerPlayer.isAI
 
   return (
-    <Dialog open={open}>
+    <Dialog open>
       <DialogContent
         showCloseButton={false}
         className="sm:max-w-md bg-background/95 backdrop-blur-sm border-primary/20"
       >
         <DialogHeader className="text-center sm:text-center">
-          {/* Ícone animado */}
+          {/* Icone animado */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -70,14 +67,14 @@ export function GameOverDialog({
             )}
           </motion.div>
 
-          {/* Título */}
+          {/* Titulo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             <DialogTitle className="text-2xl font-bold">
-              {isHumanWinner ? 'Vitória!' : 'Derrota!'}
+              {isHumanWinner ? 'Vitoria!' : 'Derrota!'}
             </DialogTitle>
             <DialogDescription className="text-base mt-2">
               {winnerPlayer ? (
@@ -94,7 +91,7 @@ export function GameOverDialog({
           </motion.div>
         </DialogHeader>
 
-        {/* Estatísticas */}
+        {/* Estatisticas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,7 +99,7 @@ export function GameOverDialog({
           className="py-4"
         >
           <h4 className="text-sm font-medium text-muted-foreground mb-3 text-center">
-            Estatísticas da Partida
+            Estatisticas da Partida
           </h4>
 
           <div className="grid grid-cols-2 gap-3">
@@ -114,7 +111,7 @@ export function GameOverDialog({
             />
             <StatCard
               icon={<Pill className="w-4 h-4" />}
-              label="Pílulas"
+              label="Pilulas"
               value={stats.pillsConsumed}
               color="text-purple-400"
             />
@@ -142,7 +139,7 @@ export function GameOverDialog({
                     {winnerPlayer.name}
                   </span>
                   <span className="text-emerald-400">
-                    {winnerPlayer.lives} ❤️
+                    {winnerPlayer.lives} vidas
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -150,14 +147,14 @@ export function GameOverDialog({
                   <span className="text-muted-foreground">
                     {loserPlayer.name}
                   </span>
-                  <span className="text-red-400">0 ❤️</span>
+                  <span className="text-red-400">0 vidas</span>
                 </div>
               </div>
             </div>
           )}
         </motion.div>
 
-        {/* Botão de reiniciar */}
+        {/* Botao de reiniciar */}
         <DialogFooter className="sm:justify-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -181,7 +178,7 @@ export function GameOverDialog({
 }
 
 /**
- * Card de estatística individual
+ * Card de estatistica individual
  */
 interface StatCardProps {
   icon: React.ReactNode

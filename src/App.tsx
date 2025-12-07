@@ -1,26 +1,33 @@
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Button } from '@/components/ui/button'
 import { GameLayout } from '@/components/layout/GameLayout'
-import {
-  useGameActions,
-  useGamePhase,
-  usePlayers,
-  useWinner,
-  useGameStats,
-} from '@/hooks'
+import { useGameActions, useGamePhase, useGameStats, useWinner, usePlayers } from '@/hooks'
 import { InfoPanel } from '@/components/game/InfoPanel'
 import { GameBoard } from '@/components/game/GameBoard'
-import { GameOverDialog } from '@/components/game/GameOverDialog'
+import { OverlayManager } from '@/components/overlays'
+import { ToastManager } from '@/components/toasts'
+import { useOverlayStore } from '@/stores/overlayStore'
+import { useEffect } from 'react'
 
 function GameContent() {
   // State
   const phase = useGamePhase()
-  const { player1, player2 } = usePlayers()
   const winner = useWinner()
   const stats = useGameStats()
+  const { player1, player2 } = usePlayers()
 
   // Actions
-  const { startGame, restartGame } = useGameActions()
+  const { startGame } = useGameActions()
+
+  // Overlay store - para abrir GameOver
+  const openGameOver = useOverlayStore((s) => s.openGameOver)
+
+  // Abre overlay de GameOver quando jogo termina
+  useEffect(() => {
+    if (phase === 'ended' && winner !== null) {
+      openGameOver(winner, { player1, player2 }, stats)
+    }
+  }, [phase, winner, player1, player2, stats, openGameOver])
 
   // Tela inicial - Setup
   if (phase === 'setup') {
@@ -45,21 +52,8 @@ function GameContent() {
     )
   }
 
-  // Tela de jogo ativo (inclui dialog de fim de jogo)
-  return (
-    <>
-      <GameBoard />
-
-      {/* Dialog de fim de jogo */}
-      <GameOverDialog
-        open={phase === 'ended'}
-        winner={winner}
-        players={{ player1, player2 }}
-        stats={stats}
-        onRestart={restartGame}
-      />
-    </>
-  )
+  // Tela de jogo ativo
+  return <GameBoard />
 }
 
 function App() {
@@ -68,6 +62,10 @@ function App() {
       <GameLayout>
         <GameContent />
       </GameLayout>
+
+      {/* Sistemas globais de UI */}
+      <OverlayManager />
+      <ToastManager />
     </TooltipProvider>
   )
 }

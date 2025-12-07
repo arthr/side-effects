@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { Pill, PillType, PlayerEffectResult } from '@/types'
 import { useGameStore } from '@/stores/gameStore'
+import { useOverlayStore } from '@/stores/overlayStore'
+import { useToastStore, type ToastType } from '@/stores/toastStore'
 import { applyPillEffect } from '@/utils/gameLogic'
-import type { FeedbackType } from '@/components/game/GameFeedback'
 
 type ConsumptionPhase = 'idle' | 'revealing' | 'feedback'
 
@@ -10,16 +11,20 @@ interface ConsumptionState {
   phase: ConsumptionPhase
   revealedPill: Pill | null
   effect: PlayerEffectResult | null
-  feedbackType: FeedbackType | null
+  feedbackType: ToastType | null
   targetPlayer: 'player1' | 'player2' | null
-  newRoundStarted: boolean
 }
 
 /**
  * Hook para gerenciar o fluxo completo de consumo de pilula
- * 1. Revelar pilula (animacao)
- * 2. Mostrar feedback do efeito
- * 3. Aplicar efeito e alternar turno
+ * Integrado com overlay e toast stores
+ *
+ * Fluxo:
+ * 1. startConsumption -> abre PillReveal overlay
+ * 2. confirmReveal -> aplica efeito, mostra toast
+ * 3. completeFeedback -> volta ao idle
+ *
+ * Deteccao automatica de nova rodada abre NewRound overlay
  */
 export function usePillConsumption() {
   const [state, setState] = useState<ConsumptionState>({
@@ -28,9 +33,9 @@ export function usePillConsumption() {
     effect: null,
     feedbackType: null,
     targetPlayer: null,
-    newRoundStarted: false,
   })
 
+  // Game store
   const consumePill = useGameStore((s) => s.consumePill)
   const currentTurn = useGameStore((s) => s.currentTurn)
   const players = useGameStore((s) => s.players)
@@ -38,24 +43,33 @@ export function usePillConsumption() {
   const round = useGameStore((s) => s.round)
   const pillPoolLength = useGameStore((s) => s.pillPool.length)
 
+  // Overlay store
+  const openPillReveal = useOverlayStore((s) => s.openPillReveal)
+  const openNewRound = useOverlayStore((s) => s.openNewRound)
+  const currentOverlay = useOverlayStore((s) => s.current)
+
+  // Toast store
+  const showToast = useToastStore((s) => s.show)
+
   // Ref para rastrear a rodada anterior
   const prevRoundRef = useRef(round)
 
-  // Detecta mudanca de rodada
+  // Detecta mudanca de rodada e abre overlay
   useEffect(() => {
     if (round > prevRoundRef.current && prevRoundRef.current > 0) {
-      setState((prev) => ({ ...prev, newRoundStarted: true }))
+      // Abre overlay de nova rodada
+      openNewRound(round)
     }
     prevRoundRef.current = round
-  }, [round])
+  }, [round, openNewRound])
 
   /**
-   * Determina tipo de feedback baseado no efeito
+   * Determina tipo de toast baseado no efeito
    */
   const determineFeedbackType = (
     _pillType: PillType,
     effect: PlayerEffectResult
-  ): FeedbackType => {
+  ): ToastType => {
     if (effect.collapsed) return 'collapse'
     if (effect.eliminated) return 'fatal'
     if (effect.damageDealt > 0) return 'damage'
@@ -64,7 +78,29 @@ export function usePillConsumption() {
   }
 
   /**
+   * Gera mensagem de feedback baseada no efeito
+   */
+  const getFeedbackMessage = useCallback((effect: PlayerEffectResult | null): string => {
+    if (!effect) return 'Nada aconteceu'
+
+    if (effect.eliminated) {
+      return 'FATAL! Eliminado!'
+    }
+    if (effect.collapsed) {
+      return 'COLAPSO! Perdeu 1 vida'
+    }
+    if (effect.damageDealt > 0) {
+      return 'Dano na resistencia'
+    }
+    if (effect.healReceived > 0) {
+      return 'Resistencia restaurada'
+    }
+    return 'Pilula segura!'
+  }, [])
+
+  /**
    * Inicia o fluxo de consumo
+   * Abre o overlay de revelacao
    */
   const startConsumption = useCallback(
     (pillId: string) => {
@@ -79,34 +115,45 @@ export function usePillConsumption() {
       const effect = applyPillEffect(revealedPill, currentPlayer)
       const feedbackType = determineFeedbackType(pill.type, effect)
 
-      // Fase 1: Revelar pilula
+      // Atualiza estado local
       setState({
         phase: 'revealing',
         revealedPill,
         effect,
         feedbackType,
         targetPlayer: currentTurn,
-        newRoundStarted: false,
       })
+
+      // Abre overlay de revelacao
+      openPillReveal(revealedPill, currentPlayer.isAI)
     },
-    [getPillById, currentTurn, players]
+    [getPillById, currentTurn, players, openPillReveal]
   )
 
   /**
-   * Apos revelacao, aplica efeito e mostra feedback
+   * Chamado quando overlay de revelacao fecha
+   * Aplica efeito e mostra toast de feedback
    */
   const confirmReveal = useCallback(() => {
-    if (!state.revealedPill) return
+    if (!state.revealedPill || !state.feedbackType) return
 
     // Aplica o efeito no store
     consumePill(state.revealedPill.id)
 
-    // Fase 2: Feedback
+    // Mostra toast de feedback
+    showToast({
+      type: state.feedbackType,
+      message: getFeedbackMessage(state.effect),
+      pillType: state.revealedPill.type,
+      value: state.effect?.damageDealt || state.effect?.healReceived || undefined,
+    })
+
+    // Fase 2: Feedback (breve, para animacoes)
     setState((prev) => ({
       ...prev,
       phase: 'feedback',
     }))
-  }, [state.revealedPill, consumePill])
+  }, [state.revealedPill, state.feedbackType, state.effect, consumePill, showToast, getFeedbackMessage])
 
   /**
    * Finaliza o fluxo e volta ao idle
@@ -118,37 +165,26 @@ export function usePillConsumption() {
       effect: null,
       feedbackType: null,
       targetPlayer: null,
-      newRoundStarted: false,
     })
   }, [])
 
-  /**
-   * Limpa o flag de nova rodada (apos exibir feedback)
-   */
-  const clearNewRoundFlag = useCallback(() => {
-    setState((prev) => ({ ...prev, newRoundStarted: false }))
-  }, [])
+  // Auto-complete feedback apos um breve delay
+  useEffect(() => {
+    if (state.phase === 'feedback') {
+      const timer = setTimeout(() => {
+        completeFeedback()
+      }, 100) // Breve delay para permitir animacoes no GameBoard
+      return () => clearTimeout(timer)
+    }
+  }, [state.phase, completeFeedback])
 
-  /**
-   * Gera mensagem de feedback baseada no efeito
-   */
-  const getFeedbackMessage = useCallback((): string => {
-    if (!state.effect) return 'Nada aconteceu'
-
-    if (state.effect.eliminated) {
-      return 'FATAL! Eliminado!'
+  // Sincroniza com overlay store - quando overlay fecha, confirma revelacao
+  useEffect(() => {
+    // Se estava revelando e overlay fechou, confirma
+    if (state.phase === 'revealing' && currentOverlay === null && state.revealedPill) {
+      confirmReveal()
     }
-    if (state.effect.collapsed) {
-      return 'COLAPSO! Perdeu 1 vida'
-    }
-    if (state.effect.damageDealt > 0) {
-      return `Dano na resistencia`
-    }
-    if (state.effect.healReceived > 0) {
-      return `Resistencia restaurada`
-    }
-    return 'Pilula segura!'
-  }, [state.effect])
+  }, [currentOverlay, state.phase, state.revealedPill, confirmReveal])
 
   return {
     // Estado
@@ -158,7 +194,6 @@ export function usePillConsumption() {
     feedbackType: state.feedbackType,
     targetPlayer: state.targetPlayer,
     isProcessing: state.phase !== 'idle',
-    newRoundStarted: state.newRoundStarted,
     round,
     pillPoolLength,
 
@@ -166,9 +201,8 @@ export function usePillConsumption() {
     startConsumption,
     confirmReveal,
     completeFeedback,
-    clearNewRoundFlag,
 
     // Helpers
-    getFeedbackMessage,
+    getFeedbackMessage: () => getFeedbackMessage(state.effect),
   }
 }

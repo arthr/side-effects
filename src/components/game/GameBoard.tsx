@@ -1,17 +1,16 @@
-import { useRef } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
-import { PillReveal } from './PillReveal'
-import { GameFeedback, useGameFeedback, type FeedbackEvent } from './GameFeedback'
-import { NewRoundBanner } from './NewRoundBanner'
 
 /**
  * GameBoard - Tabuleiro principal do jogo
- * Compoe PlayerAreas, PillPool e TurnIndicator com animacoes
+ * Compoe PlayerAreas, PillPool e TurnIndicator
+ *
+ * Overlays (PillReveal, GameOver, NewRound) sao gerenciados pelo OverlayManager
+ * Toasts sao gerenciados pelo ToastManager
  */
 export function GameBoard() {
   // State do store
@@ -27,25 +26,12 @@ export function GameBoard() {
   // Hook de consumo de pilula
   const {
     phase,
-    revealedPill,
     effect,
     feedbackType,
     targetPlayer,
     isProcessing,
-    newRoundStarted,
-    round: hookRound,
     startConsumption,
-    confirmReveal,
-    completeFeedback,
-    clearNewRoundFlag,
-    getFeedbackMessage,
   } = usePillConsumption()
-
-  // Hook de feedback visual
-  const { currentFeedback, showFeedback, clearFeedback } = useGameFeedback()
-
-  // Ref para armazenar dados do feedback (capturados antes da animacao de saida)
-  const pendingFeedbackRef = useRef<Omit<FeedbackEvent, 'id'> | null>(null)
 
   // Jogador atual
   const currentPlayer = players[currentTurn]
@@ -64,38 +50,6 @@ export function GameBoard() {
     if (isProcessing) return
     if (!isHumanTurn) return // IA escolhe automaticamente
     startConsumption(pillId)
-  }
-
-  // Handler quando usuario confirma (click/countdown) - antes da animacao de saida
-  const handleRevealConfirm = () => {
-    // Captura os dados do feedback ANTES de mudar o estado
-    if (feedbackType && revealedPill?.type) {
-      pendingFeedbackRef.current = {
-        type: feedbackType,
-        message: getFeedbackMessage(),
-        pillType: revealedPill.type,
-        value: effect?.damageDealt || effect?.healReceived || undefined,
-      }
-    }
-
-    // Aplica o efeito no store e muda fase para 'feedback'
-    // Isso faz o PillReveal comecar a animacao de saida
-    confirmReveal()
-  }
-
-  // Handler quando animacao de saida do PillReveal termina (lifecycle callback)
-  const handleRevealExitComplete = () => {
-    // Usa os dados capturados na ref (garantia que nao sao stale)
-    if (pendingFeedbackRef.current) {
-      showFeedback(pendingFeedbackRef.current)
-      pendingFeedbackRef.current = null
-    }
-  }
-
-  // Handler para feedback completo
-  const handleFeedbackComplete = () => {
-    clearFeedback()
-    completeFeedback()
   }
 
   // Determina animacao do jogador baseado no efeito
@@ -143,6 +97,7 @@ export function GameBoard() {
         <PillPool
           pills={pillPool}
           typeCounts={typeCounts}
+          round={round}
           onSelectPill={handlePillSelect}
           disabled={isProcessing || !isHumanTurn}
           instructionMessage={
@@ -160,23 +115,6 @@ export function GameBoard() {
           effectValue={getEffectValue('player2')}
         />
       </div>
-
-      {/* Overlay de revelacao - so mostra na fase 'revealing' */}
-      <PillReveal
-        pill={phase === 'revealing' ? revealedPill : null}
-        onComplete={handleRevealConfirm}
-        onExitComplete={handleRevealExitComplete}
-      />
-
-      {/* Feedback visual */}
-      <GameFeedback event={currentFeedback} onComplete={handleFeedbackComplete} />
-
-      {/* Banner de nova rodada */}
-      <NewRoundBanner
-        show={newRoundStarted}
-        round={hookRound}
-        onComplete={clearNewRoundFlag}
-      />
     </div>
   )
 }
