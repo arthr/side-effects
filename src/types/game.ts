@@ -1,10 +1,11 @@
+import type { TargetSelectionState } from './item'
 import type { Pill, PillType } from './pill'
 import type { Player, PlayerId } from './player'
 
 /**
  * Fases do jogo
  */
-export type GamePhase = 'setup' | 'playing' | 'roundEnding' | 'ended'
+export type GamePhase = 'setup' | 'itemSelection' | 'playing' | 'roundEnding' | 'ended'
 
 /**
  * Fases dentro de um turno
@@ -33,6 +34,10 @@ export interface GameState {
   winner: PlayerId | null
   /** Historico de acoes para replay/log */
   actionHistory: GameAction[]
+  /** Estado de selecao de alvo para uso de item */
+  targetSelection: TargetSelectionState
+  /** IDs de pilulas reveladas pelo Scanner (visiveis apenas para quem usou) */
+  revealedPills: string[]
 }
 
 /**

@@ -17,12 +17,12 @@
   - Adicionar `effects: PlayerEffect[]` ao Player
   - Criar interface PlayerEffect e PlayerEffectType
 
-- [ ] TASK-IS-004: Atualizar `src/types/game.ts`
+- [x] TASK-IS-004: Atualizar `src/types/game.ts`
   - Adicionar fase `itemSelection` ao GamePhase
   - Adicionar `targetSelection: TargetSelectionState`
   - Adicionar `revealedPills: string[]`
 
-- [ ] TASK-IS-005: Atualizar barrel exports em `src/types/index.ts`
+- [x] TASK-IS-005: Atualizar barrel exports em `src/types/index.ts`
 
 ---
 

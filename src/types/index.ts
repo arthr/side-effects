@@ -5,7 +5,9 @@ export type { Pill, PillConfig, PillShape, PillStats, PillType, PillVisuals } fr
 export type {
   Player,
   PlayerConfig,
+  PlayerEffect,
   PlayerEffectResult,
+  PlayerEffectType,
   PlayerId,
 } from './player'
 
@@ -19,4 +21,16 @@ export type {
   GameStats,
   TurnPhase,
 } from './game'
+
+// Item types
+export type {
+  InventoryItem,
+  ItemCategory,
+  ItemDefinition,
+  ItemEffectResult,
+  ItemTargetType,
+  ItemType,
+  PlayerInventory,
+  TargetSelectionState,
+} from './item'
 
