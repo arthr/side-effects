@@ -131,7 +131,7 @@
 
 ## Fase 6: Componentes de Inventario
 
-- [ ] TASK-IS-024: Criar `src/components/game/InventorySlot.tsx`
+- [x] TASK-IS-024: Criar `src/components/game/InventorySlot.tsx`
   - Slot individual de item
   - Estados: vazio, preenchido, usando
   - Clicavel para uso
