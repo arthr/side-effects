@@ -20,3 +20,6 @@ export {
 
 // Pill Consumption Flow
 export { usePillConsumption } from './usePillConsumption'
+
+// AI Player
+export { useAIPlayer } from './useAIPlayer'

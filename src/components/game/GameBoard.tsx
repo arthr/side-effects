@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
+import { useAIPlayer } from '@/hooks/useAIPlayer'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
@@ -49,6 +50,14 @@ export function GameBoard() {
   // Jogador atual
   const currentPlayer = players[currentTurn]
   const isHumanTurn = !currentPlayer.isAI
+
+  // Hook da IA - joga automaticamente quando e turno dela
+  useAIPlayer({
+    currentPlayer,
+    pillPool,
+    phase,
+    startConsumption,
+  })
 
   // Handler para click na pilula
   const handlePillSelect = (pillId: string) => {

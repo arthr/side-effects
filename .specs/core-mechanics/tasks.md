@@ -278,25 +278,37 @@
 
 ---
 
-### TASK-025: Implementar sons (opcional)
-- [ ] Som ao consumir pílula
-- [ ] Som de dano/colapso
-- [ ] Som de cura
-- [ ] Som de vitória/derrota
+### TASK-025: Implementar logica da IA (Player 2)
+- [x] Criar `src/utils/aiLogic.ts` com estrategia de selecao
+- [x] Implementar delay simulado para "pensar" (1-2 segundos)
+- [x] Integrar com GameBoard para auto-selecionar pilula no turno da IA
+- [x] IA seleciona pilula aleatoria (estrategia basica)
+- [x] Garantir que IA nao joga durante animacoes/feedback
 
-**Critério de Aceite:** Sons opcionais com controle de volume
+**Criterio de Aceite:** IA joga automaticamente no seu turno [CONCLUIDO]
 
 ---
 
-### TASK-026: Testes manuais e ajustes
-- [ ] Testar todos os tipos de pílula
-- [ ] Testar cenário de colapso
-- [ ] Testar cenário de game over
-- [ ] Testar reset de rodada
-- [ ] Verificar responsividade
-- [ ] Ajustar balanceamento se necessário
+### TASK-026: Implementar sons (opcional)
+- [ ] Som ao consumir pilula
+- [ ] Som de dano/colapso
+- [ ] Som de cura
+- [ ] Som de vitoria/derrota
 
-**Critério de Aceite:** Jogo funciona sem bugs em todos os cenários
+**Criterio de Aceite:** Sons opcionais com controle de volume
+
+---
+
+### TASK-027: Testes manuais e ajustes
+- [ ] Testar todos os tipos de pilula
+- [ ] Testar cenario de colapso
+- [ ] Testar cenario de game over
+- [ ] Testar reset de rodada
+- [ ] Testar IA jogando corretamente
+- [ ] Verificar responsividade
+- [ ] Ajustar balanceamento se necessario
+
+**Criterio de Aceite:** Jogo funciona sem bugs em todos os cenarios
 
 ---
 
@@ -324,7 +336,7 @@ TASK-015 → TASK-016 → TASK-017 → TASK-018
                 ↓
            TASK-020 → TASK-021 → TASK-022 → TASK-023
                                       ↓
-                              TASK-024 → TASK-025 → TASK-026
+                              TASK-024 → TASK-025 (IA) → TASK-026 (Sons) → TASK-027
 ```
 
 ---
