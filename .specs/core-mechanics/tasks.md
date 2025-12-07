@@ -117,11 +117,11 @@
 ## Fase 4: Componentes de UI
 
 ### TASK-011: Criar componente GameLayout
-- [ ] Criar `src/components/layout/GameLayout.tsx`
-- [ ] Implementar layout responsivo com header, área de jogadores e mesa
-- [ ] Aplicar tema dark com variáveis CSS
+- [x] Criar `src/components/layout/GameLayout.tsx`
+- [x] Implementar layout responsivo com header, area de jogadores e mesa
+- [x] Aplicar tema dark com variaveis CSS
 
-**Critério de Aceite:** Layout renderiza estrutura base do jogo
+**Criterio de Aceite:** Layout renderiza estrutura base do jogo [CONCLUIDO]
 
 ---
 
