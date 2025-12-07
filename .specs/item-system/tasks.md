@@ -33,20 +33,20 @@
   - Logica individual para cada tipo de item
   - Retorno padronizado ItemEffectResult
 
-- [ ] TASK-IS-007: Implementar efeitos Intel
+- [x] TASK-IS-007: Implementar efeitos Intel
   - Scanner: revela tipo da pilula
   - Inverter: inverte efeito da pilula
   - Double: dobra efeito da pilula
 
-- [ ] TASK-IS-008: Implementar efeitos Sustain
+- [x] TASK-IS-008: Implementar efeitos Sustain
   - Pocket Pill: cura +2 resistencia
   - Shield: imunidade por 1 turno
 
-- [ ] TASK-IS-009: Implementar efeitos Control
+- [x] TASK-IS-009: Implementar efeitos Control
   - Handcuffs: pula turno do oponente
   - Force Feed: oponente consome pilula
 
-- [ ] TASK-IS-010: Implementar efeitos Chaos
+- [x] TASK-IS-010: Implementar efeitos Chaos
   - Shuffle: embaralha pilulas
   - Discard: remove pilula sem efeito
 
