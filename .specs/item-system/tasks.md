@@ -107,7 +107,7 @@
 
 ## Fase 5: Componentes de Selecao
 
-- [ ] TASK-IS-020: Criar `src/components/game/ItemCard.tsx`
+- [x] TASK-IS-020: Criar `src/components/game/ItemCard.tsx`
   - Card visual do item (8bit style)
   - Estados: disponivel, selecionado, desabilitado
   - Tooltip com descricao
