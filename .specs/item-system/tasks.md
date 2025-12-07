@@ -193,7 +193,7 @@
 
 ## Fase 9: Polish e Feedback
 
-- [ ] TASK-IS-034: Criar toasts especificos para itens
+- [x] TASK-IS-034: Criar toasts especificos para itens
   - Toast por tipo de item usado
   - Incluir icone do item
   - Mensagem contextual

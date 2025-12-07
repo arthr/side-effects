@@ -3,6 +3,7 @@ import type { Player } from '@/types'
 import { LivesDisplay } from './LivesDisplay'
 import { FloatingNumber } from './FloatingNumber'
 import { InventoryBar } from './InventoryBar'
+import { PlayerToasts } from '../toasts/PlayerToasts'
 import { Card, CardContent, CardHeader } from '../ui/8bit/card'
 import { cn } from '@/lib/utils'
 import { Badge } from '../ui/8bit/badge'
@@ -143,6 +144,11 @@ export function AnimatedPlayerArea({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* Toasts contextuais do jogador - acima do card */}
+      <div className="min-h-[28px] flex items-end justify-center">
+        <PlayerToasts playerId={player.id} />
+      </div>
+
       <motion.div
         className="relative"
         variants={variants}

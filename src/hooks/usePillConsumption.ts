@@ -90,16 +90,16 @@ export function usePillConsumption() {
     if (!effect) return 'Nada aconteceu'
 
     if (effect.eliminated) {
-      return 'FATAL! Eliminado!'
+      return 'FATAL!!!'
     }
     if (effect.collapsed) {
-      return 'COLAPSO! Perdeu 1 vida!'
+      return 'OVERDOSE!'
     }
     if (effect.damageDealt > 0) {
-      return 'Dano na resistência'
+      return 'resistência'
     }
     if (effect.healReceived > 0) {
-      return 'Resistência restaurada'
+      return 'resistência'
     }
     return 'Pílula segura!'
   }, [])
@@ -170,12 +170,13 @@ export function usePillConsumption() {
       consumePill(state.revealedPill.id)
     }
 
-    // Mostra toast de feedback
+    // Mostra toast de feedback (contextualizado ao jogador afetado)
     showToast({
       type: state.feedbackType,
       message: getFeedbackMessage(state.effect),
       pillType: state.revealedPill.type,
       value: state.effect?.damageDealt || state.effect?.healReceived || undefined,
+      playerId: state.targetPlayer,
     })
 
     // Fase 2: Feedback (breve, para animacoes)

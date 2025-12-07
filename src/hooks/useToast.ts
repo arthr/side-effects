@@ -1,5 +1,7 @@
 import { useCallback } from 'react'
 import { useToastStore, type ToastData, type ToastType } from '@/stores/toastStore'
+import type { ItemType, PlayerId } from '@/types'
+import { ITEM_CATALOG } from '@/utils/itemCatalog'
 
 /**
  * Hook para gerenciar toasts
@@ -8,11 +10,12 @@ import { useToastStore, type ToastData, type ToastType } from '@/stores/toastSto
  * const { toast, dismiss, clear } = useToast()
  *
  * // Exibir toast
- * toast({ type: 'damage', message: 'Voce sofreu dano!', value: 15 })
+ * toast({ type: 'damage', message: 'Voce sofreu dano!', value: 15, playerId: 'player1' })
  *
  * // Helpers tipados
- * toast.damage('Voce sofreu dano!', 15)
- * toast.heal('Voce se curou!', 10)
+ * toast.damage('Voce sofreu dano!', 15, 'player1')
+ * toast.heal('Voce se curou!', 10, 'player1')
+ * toast.item('scanner', 'player1', 'Pilula revelada!')
  */
 export function useToast() {
   const show = useToastStore((s) => s.show)
@@ -32,50 +35,74 @@ export function useToast() {
 
   /**
    * Helper para toast de dano
+   * @param playerId - ID do jogador que recebeu o dano
    */
   const damage = useCallback(
-    (message: string, value?: number) => {
-      show({ type: 'damage', message, value })
+    (message: string, value?: number, playerId?: PlayerId) => {
+      show({ type: 'damage', message, value, playerId })
     },
     [show]
   )
 
   /**
    * Helper para toast de cura
+   * @param playerId - ID do jogador que recebeu a cura
    */
   const heal = useCallback(
-    (message: string, value?: number) => {
-      show({ type: 'heal', message, value })
+    (message: string, value?: number, playerId?: PlayerId) => {
+      show({ type: 'heal', message, value, playerId })
     },
     [show]
   )
 
   /**
    * Helper para toast de colapso
+   * @param playerId - ID do jogador que colapsou
    */
   const collapse = useCallback(
-    (message: string) => {
-      show({ type: 'collapse', message })
+    (message: string, playerId?: PlayerId) => {
+      show({ type: 'collapse', message, playerId })
     },
     [show]
   )
 
   /**
    * Helper para toast seguro
+   * @param playerId - ID do jogador que esta seguro
    */
   const safe = useCallback(
-    (message: string) => {
-      show({ type: 'safe', message })
+    (message: string, playerId?: PlayerId) => {
+      show({ type: 'safe', message, playerId })
     },
     [show]
   )
 
   /**
    * Helper para toast fatal
+   * @param playerId - ID do jogador que sofreu dano fatal
    */
   const fatal = useCallback(
-    (message: string, value?: number) => {
-      show({ type: 'fatal', message, value })
+    (message: string, value?: number, playerId?: PlayerId) => {
+      show({ type: 'fatal', message, value, playerId })
+    },
+    [show]
+  )
+
+  /**
+   * Helper para toast de item usado
+   * @param itemType - Tipo do item usado
+   * @param playerId - ID do jogador que usou o item
+   * @param message - Mensagem opcional (default: descricao do item)
+   */
+  const item = useCallback(
+    (itemType: ItemType, playerId?: PlayerId, message?: string) => {
+      const itemDef = ITEM_CATALOG[itemType]
+      show({
+        type: 'item',
+        message: message ?? itemDef.description,
+        itemType,
+        playerId,
+      })
     },
     [show]
   )
@@ -87,6 +114,7 @@ export function useToast() {
     collapse,
     safe,
     fatal,
+    item,
   })
 
   return {

@@ -3,7 +3,7 @@ import { useGameStore } from '@/stores/gameStore'
 import { useOverlayStore } from '@/stores/overlayStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
-import { useItemUsage } from '@/hooks'
+import { useItemUsage, useToast } from '@/hooks'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
@@ -59,6 +59,9 @@ export function GameBoard() {
   // Overlay store para feedback de item
   const openItemEffect = useOverlayStore((s) => s.openItemEffect)
 
+  // Toast para feedback de item
+  const { toast } = useToast()
+
   // Determina ID do oponente
   const opponentId = currentTurn === 'player1' ? 'player2' : 'player1'
 
@@ -72,6 +75,9 @@ export function GameBoard() {
 
     // Executa o item
     executeItem(targetId)
+
+    // Toast de feedback (mostra no jogador atual)
+    toast.item(itemType, currentTurn)
 
     // Abre overlay de feedback (exceto para force_feed que usa PillReveal)
     if (itemType !== 'force_feed') {
@@ -87,7 +93,7 @@ export function GameBoard() {
 
       openItemEffect(itemType, targetInfo)
     }
-  }, [selectedItemType, executeItem, openItemEffect, pillPool])
+  }, [selectedItemType, executeItem, openItemEffect, pillPool, toast])
 
   /**
    * Wrapper para IA executar item com feedback
@@ -103,6 +109,9 @@ export function GameBoard() {
     // Chama a action da store diretamente
     useGameStore.getState().executeItem(itemId, targetId)
 
+    // Toast de feedback (mostra no jogador atual - IA)
+    toast.item(itemType, currentTurn)
+
     // Abre overlay de feedback (exceto para force_feed)
     if (itemType !== 'force_feed') {
       let targetInfo: string | undefined
@@ -116,7 +125,7 @@ export function GameBoard() {
 
       openItemEffect(itemType, targetInfo)
     }
-  }, [currentTurn, players, pillPool, openItemEffect])
+  }, [currentTurn, players, pillPool, openItemEffect, toast])
 
   // Handler para click em item do inventario
   const handleItemClick = useCallback((itemId: string) => {
@@ -128,14 +137,15 @@ export function GameBoard() {
 
     const itemDef = ITEM_CATALOG[item.type]
 
-    // Inicia o uso (para self/table, executa imediatamente)
+    // Inicia o uso (para self/table/opponent, executa imediatamente)
     startUsage(itemId)
 
-    // Para itens self/table, abre overlay de feedback apos execucao
+    // Para itens self/table/opponent, mostra toast e overlay de feedback apos execucao
     if (itemDef.targetType === 'self' || itemDef.targetType === 'table' || itemDef.targetType === 'opponent') {
+      toast.item(item.type, currentTurn)
       openItemEffect(item.type)
     }
-  }, [isHumanTurn, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect])
+  }, [isHumanTurn, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect, toast])
 
   // Hook da IA - joga automaticamente quando e turno dela
   useAIPlayer({

@@ -1,10 +1,10 @@
 import { create } from 'zustand'
-import type { PillType } from '@/types'
+import type { ItemType, PillType, PlayerId } from '@/types'
 
 /**
  * Tipos de toast disponiveis
  */
-export type ToastType = 'damage' | 'heal' | 'collapse' | 'safe' | 'fatal'
+export type ToastType = 'damage' | 'heal' | 'collapse' | 'safe' | 'fatal' | 'item'
 
 /**
  * Estrutura de um toast
@@ -14,8 +14,11 @@ export interface Toast {
   type: ToastType
   message: string
   pillType?: PillType
+  itemType?: ItemType
   value?: number
   duration: number
+  /** ID do jogador associado ao toast (para posicionamento contextual) */
+  playerId?: PlayerId
 }
 
 /**
