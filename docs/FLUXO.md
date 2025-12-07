@@ -4,19 +4,20 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                              APLICACAO                                   │
+│                              APLICACAO                                  │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  main.tsx → App.tsx → GameLayout → GameContent                          │
-│                                      ↓                                   │
-│                          ┌──────────┴──────────┐                        │
-│                          ↓                     ↓                        │
-│                     [phase=setup]         [phase=playing]               │
-│                          ↓                     ↓                        │
-│                     InfoPanel             GameBoard                     │
-│                     + Button                   ↓                        │
-│                                     ┌─────────┼─────────┐               │
-│                                     ↓         ↓         ↓               │
-│                              TurnIndicator  PillPool  AnimatedPlayerArea│
+│                                      ↓                                  │
+│                    ┌─────────────────┼─────────────────┐                │
+│                    ↓                 ↓                 ↓                │
+│             [phase=setup]   [phase=itemSelection]  [phase=playing]      │
+│                    ↓                 ↓                 ↓                │
+│               InfoPanel      ItemSelectionScreen   GameBoard            │
+│               + Button                                 ↓                │
+│                                             ┌──────────┼──────────┐     │
+│                                             ↓          ↓          ↓     │
+│                                      TurnIndicator  PillPool  AnimatedPlayerArea
+│                                                                + InventoryBar
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -35,24 +36,34 @@ src/
 ├── types/                      # Definicoes TypeScript
 │   ├── index.ts               # Barrel export
 │   ├── pill.ts                # Pill, PillType, PillConfig
-│   ├── player.ts              # Player, PlayerId, PlayerEffectResult
-│   └── game.ts                # GameState, GamePhase, GameConfig
+│   ├── player.ts              # Player, PlayerId, PlayerEffect, PlayerInventory
+│   ├── game.ts                # GameState, GamePhase, GameConfig, TargetSelectionState
+│   └── item.ts                # ItemType, ItemCategory, ItemDefinition, InventoryItem
 │
 ├── utils/                      # Funcoes puras (logica de negocio)
 │   ├── constants.ts           # Configuracoes e valores default
 │   ├── pillGenerator.ts       # Geracao de pool de pilulas
 │   ├── gameLogic.ts           # Efeitos, colapso, criacao de player
-│   └── aiLogic.ts             # Logica da IA (selecao aleatoria)
+│   ├── aiLogic.ts             # Logica da IA (selecao, itens, heuristicas)
+│   ├── itemCatalog.ts         # Catalogo de itens (9 itens, cores, icones)
+│   └── itemLogic.ts           # Logica de efeitos de cada item
 │
 ├── stores/                     # Estado global (Zustand)
-│   └── gameStore.ts           # Estado + Actions + Selectors
+│   ├── gameStore.ts           # Estado + Actions + Selectors
+│   ├── overlayStore.ts        # Gerencia overlays (PillReveal, ItemEffect, etc)
+│   └── toastStore.ts          # Fila de notificacoes
 │
 ├── hooks/                      # Hooks customizados
 │   ├── index.ts               # Barrel export
 │   ├── useGameActions.ts      # Wrapper para actions do store
 │   ├── useGameState.ts        # Selectors otimizados
 │   ├── usePillConsumption.ts  # Fluxo de consumo (reveal → feedback)
-│   └── useAIPlayer.ts         # Jogada automatica da IA
+│   ├── useAIPlayer.ts         # Jogada automatica da IA + uso de itens
+│   ├── useItemSelection.ts    # Selecao de itens pre-jogo
+│   ├── useItemUsage.ts        # Uso de itens durante partida
+│   ├── useAIItemSelection.ts  # Selecao automatica de itens pela IA
+│   ├── useOverlay.ts          # Acesso ao overlayStore
+│   └── useToast.ts            # Acesso ao toastStore
 │
 ├── components/
 │   ├── ui/                    # Componentes shadcn/ui
@@ -67,21 +78,36 @@ src/
 │   ├── layout/
 │   │   └── GameLayout.tsx     # Layout principal (header, main, footer)
 │   │
-│   └── game/                  # Componentes do jogo
-│       ├── GameBoard.tsx      # Orquestrador principal
-│       ├── TurnIndicator.tsx  # Indicador de turno/rodada
-│       ├── PillPool.tsx       # Mesa de pilulas
-│       ├── Pill.tsx           # Pilula individual
-│       ├── TypeCounter.tsx    # Contador de tipos
-│       ├── AnimatedPlayerArea.tsx  # Area do jogador com animacoes
-│       ├── LivesDisplay.tsx   # Exibicao de vidas
-│       ├── HealthBar.tsx      # Barra de resistencia
-│       ├── FloatingNumber.tsx # Numeros flutuantes (+/-dano)
-│       ├── PillReveal.tsx     # Overlay de revelacao
-│       ├── GameFeedback.tsx   # Toast de feedback
-│       ├── NewRoundBanner.tsx # Banner de nova rodada
-│       ├── GameOverDialog.tsx # Dialog de fim de jogo
-│       └── InfoPanel.tsx      # Tutorial/informacoes
+│   ├── game/                  # Componentes do jogo
+│   │   ├── GameBoard.tsx      # Orquestrador principal
+│   │   ├── TurnIndicator.tsx  # Indicador de turno/rodada
+│   │   ├── PillPool.tsx       # Mesa de pilulas
+│   │   ├── Pill.tsx           # Pilula individual (revealed, inverted, doubled, target)
+│   │   ├── TypeCounter.tsx    # Contador de tipos
+│   │   ├── AnimatedPlayerArea.tsx  # Area do jogador + inventario + efeitos
+│   │   ├── LivesDisplay.tsx   # Exibicao de vidas
+│   │   ├── ResistanceDisplay.tsx   # Exibicao de resistencia
+│   │   ├── FloatingNumber.tsx # Numeros flutuantes (+/-dano)
+│   │   ├── InfoPanel.tsx      # Tutorial/informacoes
+│   │   │
+│   │   │  # Sistema de Itens
+│   │   ├── ItemSelectionScreen.tsx  # Tela de selecao pre-jogo
+│   │   ├── ItemCard.tsx             # Card visual do item
+│   │   ├── InventoryBar.tsx         # Barra de inventario (5 slots)
+│   │   ├── InventorySlot.tsx        # Slot individual de item
+│   │   └── ItemTargetSelector.tsx   # Overlay de selecao de alvo
+│   │
+│   ├── overlays/              # Overlays bloqueantes
+│   │   ├── OverlayManager.tsx     # Gerencia qual overlay esta ativo
+│   │   ├── PillReveal.tsx         # Revela pilula consumida
+│   │   ├── GameOverDialog.tsx     # Tela de fim de jogo
+│   │   ├── NewRoundOverlay.tsx    # Banner de nova rodada
+│   │   └── ItemEffectOverlay.tsx  # Feedback visual de item usado
+│   │
+│   └── toasts/                # Notificacoes
+│       ├── ToastManager.tsx       # Renderiza toasts ativos
+│       ├── Toast.tsx              # Toast individual (8bit style)
+│       └── PlayerToasts.tsx       # Toasts contextuais por jogador
 ```
 
 ---
@@ -91,47 +117,189 @@ src/
 ### Estados do Jogo (GamePhase)
 
 ```
-┌──────────┐    initGame()    ┌──────────┐    eliminacao    ┌──────────┐
-│  setup   │ ───────────────→ │ playing  │ ───────────────→ │  ended   │
-└──────────┘                  └──────────┘                  └──────────┘
-     ↑                                                           │
-     └───────────────────── resetGame() ─────────────────────────┘
+┌──────────┐   initGame()   ┌───────────────┐  confirmacao  ┌──────────┐  eliminacao  ┌──────────┐
+│  setup   │ ─────────────→ │ itemSelection │ ────────────→ │ playing  │ ───────────→ │  ended   │
+└──────────┘                └───────────────┘               └──────────┘              └──────────┘
+     ↑                                                            │                        │
+     │                                                            │ pool vazio             │
+     │                                                            ↓                        │
+     │                                                     ┌─────────────┐                 │
+     │                                                     │ roundEnding │                 │
+     │                                                     └─────────────┘                 │
+     │                                                            │                        │
+     │                                                            │ resetRound()           │
+     │                                                            ↓                        │
+     │                                                     [playing - nova rodada]         │
+     │                                                                                     │
+     └──────────────────────────── resetGame() ────────────────────────────────────────────┘
 ```
 
-### Fluxo de Turno
+### Fluxo de Selecao de Itens
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        TURNO DO JOGADOR                              │
+│                   FASE: ITEM SELECTION                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. Jogador seleciona pilula (click ou IA automatica)               │
-│                          ↓                                           │
-│  2. startConsumption(pillId)                                        │
+│                                                                     │
+│  1. Usuario ve catalogo de 9 itens (4 categorias)                   │
+│     - Intel: Scanner, Inverter, Double                              │
+│     - Sustain: Pocket Pill, Shield                                  │
+│     - Control: Handcuffs, Force Feed                                │
+│     - Chaos: Shuffle, Discard                                       │
+│                          ↓                                          │
+│  2. Seleciona ate 5 itens (click para toggle)                       │
+│     - Contador mostra X/5                                           │
+│                          ↓                                          │
+│  3. Clica "Confirmar Selecao"                                       │
+│     - confirmItemSelection('player1')                               │
+│                          ↓                                          │
+│  4. IA seleciona automaticamente (useAIItemSelection)               │
+│     - 5 itens aleatorios                                            │
+│     - Auto-confirma apos delay                                      │
+│                          ↓                                          │
+│  5. Ambos confirmados → phase = 'playing'                           │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Fluxo de Turno (com Itens)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        TURNO DO JOGADOR                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  0. Verifica se jogador esta algemado (Handcuffs)                   │
+│     - Se sim: pula turno, remove efeito, passa para proximo         │
+│                          ↓                                          │
+│  1. [OPCIONAL] Jogador usa item do inventario                       │
+│     - Clica no item → startItemUsage(itemId)                        │
+│     - Se requer alvo → ItemTargetSelector                           │
+│     - Executa efeito → remove do inventario                         │
+│     - NAO consome turno (pode ainda escolher pilula)                │
+│                          ↓                                          │
+│  2. Jogador seleciona pilula (click ou IA automatica)               │
+│                          ↓                                          │
+│  3. startConsumption(pillId, forcedTarget?)                         │
+│     - Verifica Shield do jogador (bloqueia dano se ativo)           │
 │     - Busca pilula no pool                                          │
+│     - Considera flags: inverted, doubled                            │
 │     - Simula efeito (preview)                                       │
-│     - Define phase = 'revealing'                                    │
-│                          ↓                                           │
-│  3. PillReveal exibe overlay com countdown                          │
+│                          ↓                                          │
+│  4. PillReveal exibe overlay com countdown                          │
 │     - Usuario clica ou countdown termina                            │
-│                          ↓                                           │
-│  4. confirmReveal()                                                 │
+│                          ↓                                          │
+│  5. confirmReveal()                                                 │
 │     - Chama consumePill(pillId) no store                            │
-│     - Define phase = 'feedback'                                     │
-│     - PillReveal inicia animacao de saida                           │
-│                          ↓                                           │
-│  5. onExitComplete (AnimatePresence)                                │
-│     - GameFeedback exibe toast                                      │
-│     - AnimatedPlayerArea exibe glow/shake                           │
+│     - Decrementa efeitos do jogador (Shield, etc)                   │
+│                          ↓                                          │
+│  6. Toast + AnimatedPlayerArea feedback                             │
 │     - FloatingNumber exibe +/-valor                                 │
-│                          ↓                                           │
-│  6. handleFeedbackComplete()                                        │
-│     - Limpa feedback                                                │
-│     - Define phase = 'idle'                                         │
-│                          ↓                                           │
+│                          ↓                                          │
 │  7. Turno passa para proximo jogador                                │
-│     - Se IA: useAIPlayer agenda jogada automatica (1-2s delay)      │
-│                                                                      │
+│     - Verifica Handcuffs do proximo                                 │
+│     - Se IA: useAIPlayer agenda jogada automatica                   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Fluxo de Uso de Item
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FLUXO DE USO DE ITEM                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  [Jogador clica item no inventario]                                 │
+│               │                                                     │
+│               ▼                                                     │
+│  [useItemUsage.startUsage(itemId)]                                  │
+│               │                                                     │
+│               ▼                                                     │
+│  ┌─────────────────────────────────┐                                │
+│  │ Item requer alvo?               │                                │
+│  └─────────┬───────────┬───────────┘                                │
+│         NAO           SIM                                           │
+│            │           │                                            │
+│            ▼           ▼                                            │
+│   [Executa efeito]  [ItemTargetSelector]                            │
+│            │           │                                            │
+│            │           ▼                                            │
+│            │    [Jogador clica alvo]                                │
+│            │           │                                            │
+│            │           ▼                                            │
+│            │    [executeItem(itemId, targetId)]                     │
+│            │           │                                            │
+│            ▼           ▼                                            │
+│  [gameStore.executeItem()]                                          │
+│               │                                                     │
+│               ▼                                                     │
+│  [Aplica efeito especifico]                                         │
+│  - Scanner: revela pilula (adiciona em revealedPills)               │
+│  - Inverter: marca pilula como inverted                             │
+│  - Double: marca pilula como doubled                                │
+│  - Pocket Pill: +2 resistencia                                      │
+│  - Shield: adiciona efeito 'shield' (1 rodada)                      │
+│  - Handcuffs: adiciona efeito 'handcuffed' no oponente              │
+│  - Force Feed: delega para startConsumption(pillId, opponentId)     │
+│  - Shuffle: embaralha pillPool                                      │
+│  - Discard: remove pilula (verifica se pool esvaziou)               │
+│               │                                                     │
+│               ▼                                                     │
+│  [Remove item do inventario]                                        │
+│               │                                                     │
+│               ▼                                                     │
+│  [ItemEffectOverlay + Toast]                                        │
+│               │                                                     │
+│               ▼                                                     │
+│  [Continua turno - jogador ainda pode escolher pilula]              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Fluxo da IA (com Itens)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         useAIPlayer Hook                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  useEffect detecta:                                                 │
+│    - gamePhase === 'playing'                                        │
+│    - currentPlayer.isAI === true                                    │
+│    - phase === 'idle'                                               │
+│    - pillPool.length > 0                                            │
+│    - !hasScheduledRef.current                                       │
+│                          ↓                                          │
+│  Se todas condicoes TRUE:                                           │
+│    1. hasScheduledRef.current = true                                │
+│    2. delay = getAIThinkingDelay() // 1000-2000ms                   │
+│    3. setTimeout(() => {                                            │
+│                          ↓                                          │
+│         // DECISAO DE USO DE ITEM                                   │
+│         if (!hasUsedItemRef && shouldAIUseItem(currentPlayer)) {    │
+│           - 35% chance base de usar item                            │
+│           - Prioriza: Shield (baixa vida), Scanner (muitas pills)   │
+│           - selectedItem = selectAIItem(currentPlayer, pillPool)    │
+│           - targetId = selectAIItemTarget(itemType, pillPool, opp)  │
+│           - executeItem(selectedItem.id, targetId)                  │
+│           - hasUsedItemRef = true                                   │
+│           - Agenda consumo de pilula apos delay                     │
+│         }                                                           │
+│                          ↓                                          │
+│         // CONSUMO DE PILULA                                        │
+│         // Usa getState() para evitar stale closure                 │
+│         currentPillPool = useGameStore.getState().pillPool          │
+│         pillId = selectRandomPill(currentPillPool)                  │
+│         startConsumption(pillId)                                    │
+│       }, delay)                                                     │
+│                                                                     │
+│  // Reset flags quando turno muda ou pilula e consumida             │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -142,9 +310,9 @@ src/
 ### Diagrama de Sequencia
 
 ```
-┌────────┐  ┌───────────┐  ┌─────────────────┐  ┌───────────┐  ┌────────────┐
+┌────────┐  ┌───────────┐  ┌──────────────────┐  ┌───────────┐  ┌────────────┐
 │  User  │  │ GameBoard │  │usePillConsumption│  │ gameStore │  │ PillReveal │
-└────┬───┘  └─────┬─────┘  └────────┬────────┘  └─────┬─────┘  └──────┬─────┘
+└────┬───┘  └─────┬─────┘  └────────┬─────────┘  └────┬──────┘  └─────┬──────┘
      │            │                 │                 │               │
      │ click pill │                 │                 │               │
      │───────────→│                 │                 │               │
@@ -153,63 +321,37 @@ src/
      │            │────────────────→│                 │               │
      │            │                 │                 │               │
      │            │                 │ startConsumption│               │
+     │            │                 │ (pillId, forcedTarget?)         │
      │            │                 │────────────────→│ getPillById   │
      │            │                 │                 │←──────────────│
+     │            │                 │                 │               │
+     │            │                 │ verifica Shield │               │
+     │            │                 │ considera inverted/doubled      │
      │            │                 │                 │               │
      │            │                 │ applyPillEffect │               │
      │            │                 │ (simula)        │               │
      │            │                 │                 │               │
      │            │                 │ phase='revealing'               │
-     │            │                 │─────────────────────────────────→│
+     │            │                 │────────────────────────────────→│
      │            │                 │                 │               │ render
      │            │                 │                 │               │
-     │            │                 │                 │               │
      │ countdown/click              │                 │               │
-     │────────────────────────────────────────────────────────────────→│
-     │            │                 │                 │               │
-     │            │ handleRevealConfirm              │               │
-     │            │────────────────→│                 │               │
+     │───────────────────────────────────────────────────────────────→│
      │            │                 │                 │               │
      │            │                 │ confirmReveal   │               │
      │            │                 │────────────────→│ consumePill   │
-     │            │                 │                 │               │
+     │            │                 │                 │ + decrement   │
+     │            │                 │                 │   effects     │
      │            │                 │ phase='feedback'│               │
-     │            │                 │─────────────────────────────────→│
+     │            │                 │────────────────────────────────→│
      │            │                 │                 │               │ exit anim
      │            │                 │                 │               │
      │            │ onExitComplete  │                 │               │
-     │            │←────────────────────────────────────────────────────│
+     │            │←──────────────────────────────────────────────────│
      │            │                 │                 │               │
-     │            │ showFeedback    │                 │               │
-     │            │ (GameFeedback)  │                 │               │
+     │            │ showToast       │                 │               │
+     │            │ (feedback)      │                 │               │
      │            │                 │                 │               │
-```
-
----
-
-## Fluxo da IA
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         useAIPlayer Hook                             │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  useEffect detecta:                                                  │
-│    - currentPlayer.isAI === true                                    │
-│    - phase === 'idle'                                               │
-│    - pillPool.length > 0                                            │
-│    - !hasScheduledRef.current                                       │
-│                          ↓                                           │
-│  Se todas condicoes TRUE:                                           │
-│    1. hasScheduledRef.current = true                                │
-│    2. delay = getAIThinkingDelay() // 1000-2000ms                   │
-│    3. setTimeout(() => {                                            │
-│         pillId = selectRandomPill(pillPool)                         │
-│         startConsumption(pillId)                                    │
-│         hasScheduledRef.current = false                             │
-│       }, delay)                                                     │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -234,26 +376,48 @@ src/
 └───────────┴─────────────────────────────────────────────────────────┘
 ```
 
+### Modificadores de Pilula (Itens)
+
+```
+┌─────────────┬───────────────────────────────────────────────────────┐
+│ Modificador │                      Efeito                           │
+├─────────────┼───────────────────────────────────────────────────────┤
+│  inverted   │ Dano vira cura, cura vira dano                        │
+├─────────────┼───────────────────────────────────────────────────────┤
+│  doubled    │ Valor do efeito e multiplicado por 2                  │
+├─────────────┼───────────────────────────────────────────────────────┤
+│  revealed   │ Tipo visivel para quem usou Scanner                   │
+└─────────────┴───────────────────────────────────────────────────────┘
+```
+
 ### Logica de Colapso
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     applyPillEffect(pill, player)                    │
+│              applyPillEffect(pill, player, options?)                │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  1. Calcula dano/cura baseado no tipo                               │
-│  2. Aplica na resistencia                                           │
-│                          ↓                                           │
-│  3. Se resistencia <= 0:                                            │
+│                                                                     │
+│  1. Verifica Shield do jogador                                      │
+│     - Se ativo e dano: bloqueia, retorna { blocked: true }          │
+│                          ↓                                          │
+│  2. Calcula valor base do efeito                                    │
+│                          ↓                                          │
+│  3. Aplica modificadores da pilula:                                 │
+│     - Se inverted: inverte sinal do efeito                          │
+│     - Se doubled: multiplica por 2                                  │
+│                          ↓                                          │
+│  4. Aplica na resistencia                                           │
+│                          ↓                                          │
+│  5. Se resistencia <= 0:                                            │
 │     - COLAPSO!                                                      │
 │     - vidas -= 1                                                    │
 │     - resistencia = maxResistance                                   │
-│                          ↓                                           │
-│  4. Se vidas <= 0:                                                  │
+│                          ↓                                          │
+│  6. Se vidas <= 0:                                                  │
 │     - ELIMINADO!                                                    │
 │     - Jogo termina                                                  │
-│                                                                      │
-│  Retorna: { player, damageDealt, healReceived, collapsed, eliminated }│
+│                                                                     │
+│Retorna: { player, damageDealt, healReceived, collapsed, eliminated }|
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -265,33 +429,41 @@ src/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       HIERARQUIA DE ANIMACOES                        │
+│                       HIERARQUIA DE ANIMACOES                       │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
+│                                                                     │
 │  GameBoard                                                          │
 │  ├── TurnIndicator                                                  │
 │  │   ├── [Rodada] AnimatePresence mode="wait"                       │
 │  │   ├── [Turno]  AnimatePresence mode="wait" (scale+fade)          │
 │  │   └── [IA msg] motion.p (opacity pulse)                          │
-│  │                                                                   │
+│  │                                                                  │
 │  ├── AnimatedPlayerArea (x2)                                        │
-│  │   ├── motion.div (shake/glow via variants)                       │
+│  │   ├── motion.div (shake/glow/shield via variants)                │
 │  │   ├── FloatingNumber (opacity+y via AnimatePresence)             │
+│  │   ├── Badge (Shield/Handcuffs indicator)                         │
 │  │   ├── LivesDisplay                                               │
 │  │   │   └── Hearts (AnimatePresence + exit animation)              │
-│  │   └── HealthBar                                                  │
-│  │       └── motion.div (useSpring para largura)                    │
-│  │                                                                   │
+│  │   ├── ResistanceDisplay                                          │
+│  │   │   └── motion.div (useSpring para largura)                    │
+│  │   └── InventoryBar                                               │
+│  │       └── InventorySlot (x5) - AnimatePresence para saida        │
+│  │                                                                  │
 │  ├── PillPool                                                       │
-│  │   └── Pill (motion.button - hover, tap, scale)                   │
-│  │                                                                   │
-│  ├── PillReveal (AnimatePresence mode="wait")                       │
-│  │   └── Overlay com countdown + animacao de entrada/saida          │
-│  │                                                                   │
-│  ├── GameFeedback (toast com AnimatePresence)                       │
-│  │                                                                   │
-│  └── NewRoundBanner (AnimatePresence)                               │
-│                                                                      │
+│  │   └── Pill (motion.button - hover, tap, scale, target highlight) │
+│  │                                                                  │
+│  ├── ItemTargetSelector (overlay de selecao)                        │
+│  │                                                                  │
+│  └── OverlayManager                                                 │
+│      ├── PillReveal (AnimatePresence mode="wait")                   │
+│      ├── ItemEffectOverlay (scale + glow animation)                 │
+│      ├── NewRoundOverlay (AnimatePresence)                          │
+│      └── GameOverDialog (AnimatePresence)                           │
+│                                                                     │
+│  ToastManager                                                       │
+│  └── PlayerToasts (contextuais por jogador)                         │
+│      └── Toast (AnimatePresence + slide animation)                  │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -301,29 +473,43 @@ src/
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         CICLO COMPLETO                               │
+│                         CICLO COMPLETO                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
+│                                                                     │
 │  [SETUP]                                                            │
 │     │                                                               │
 │     │ Usuario clica "Iniciar Partida"                               │
 │     │ initGame() → cria players, gera pillPool                      │
 │     ↓                                                               │
+│  [ITEM SELECTION]                                                   │
+│     │                                                               │
+│     │ ItemSelectionScreen exibe catalogo                            │
+│     │ Usuario seleciona 5 itens                                     │
+│     │ IA seleciona 5 itens automaticamente                          │
+│     │ Ambos confirmam → phase = 'playing'                           │
+│     ↓                                                               │
 │  [PLAYING - Rodada 1]                                               │
 │     │                                                               │
-│     │ ┌─────────────────────────────────────┐                       │
-│     │ │         LOOP DE TURNOS              │                       │
-│     │ │                                     │                       │
-│     │ │  Player 1 (humano) → seleciona pill │                       │
-│     │ │  → reveal → feedback → turno passa  │                       │
-│     │ │                                     │                       │
-│     │ │  Player 2 (IA) → auto-seleciona     │                       │
-│     │ │  → reveal → feedback → turno passa  │                       │
-│     │ │                                     │                       │
-│     │ │  Repete ate pool esvaziar           │                       │
-│     │ └─────────────────────────────────────┘                       │
+│     │ ┌───────────────────────────────────────────┐                 │
+│     │ │           LOOP DE TURNOS                  │                 │
+│     │ │                                           │                 │
+│     │ │  Verifica Handcuffs (pula se algemado)    │                 │
+│     │ │                                           │                 │
+│     │ │  Player 1 (humano):                       │                 │
+│     │ │  - [Opcional] usa item do inventario      │                 │
+│     │ │  - Seleciona pilula                       │                 │
+│     │ │  - Reveal → feedback → turno passa        │                 │
+│     │ │                                           │                 │
+│     │ │  Player 2 (IA):                           │                 │
+│     │ │  - [35% chance] usa item                  │                 │
+│     │ │  - Auto-seleciona pilula                  │                 │
+│     │ │  - Reveal → feedback → turno passa        │                 │
+│     │ │                                           │                 │
+│     │ │  Repete ate pool esvaziar                 │                 │
+│     │ └───────────────────────────────────────────┘                 │
 │     │                                                               │
-│     │ Pool vazio? → resetRound() → Nova rodada                      │
+│     │ Pool vazio? → phase = 'roundEnding'                           │
+│     │ → resetRound() → Nova rodada                                  │
 │     │                                                               │
 │     │ Jogador eliminado?                                            │
 │     ↓                                                               │
@@ -334,7 +520,7 @@ src/
 │     │ resetGame() → volta para SETUP                                │
 │     ↓                                                               │
 │  [SETUP] ...                                                        │
-│                                                                      │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -348,25 +534,44 @@ src/
 App.tsx
 ├── hooks/index.ts (useGameActions, useGamePhase, usePlayers, ...)
 ├── components/game/GameBoard.tsx
-├── components/game/GameOverDialog.tsx
-└── components/game/InfoPanel.tsx
+├── components/game/ItemSelectionScreen.tsx
+├── components/game/InfoPanel.tsx
+└── components/overlays/OverlayManager.tsx
+
+ItemSelectionScreen.tsx
+├── hooks/useItemSelection.ts
+├── hooks/useAIItemSelection.ts
+├── stores/gameStore.ts
+├── utils/itemCatalog.ts
+└── components/game/ItemCard.tsx
 
 GameBoard.tsx
 ├── stores/gameStore.ts (useGameStore)
+├── stores/overlayStore.ts (useOverlayStore)
 ├── hooks/usePillConsumption.ts
 ├── hooks/useAIPlayer.ts
+├── hooks/useItemUsage.ts
+├── hooks/useToast.ts
+├── utils/itemCatalog.ts
 ├── components/game/AnimatedPlayerArea.tsx
 ├── components/game/PillPool.tsx
 ├── components/game/TurnIndicator.tsx
-├── components/game/PillReveal.tsx
-├── components/game/GameFeedback.tsx
-└── components/game/NewRoundBanner.tsx
+└── components/game/ItemTargetSelector.tsx
+
+AnimatedPlayerArea.tsx
+├── components/game/LivesDisplay.tsx
+├── components/game/ResistanceDisplay.tsx
+├── components/game/InventoryBar.tsx
+├── components/game/FloatingNumber.tsx
+└── components/toasts/PlayerToasts.tsx
 
 gameStore.ts
 ├── types/index.ts
 ├── utils/constants.ts
 ├── utils/gameLogic.ts
-└── utils/pillGenerator.ts
+├── utils/pillGenerator.ts
+├── utils/itemCatalog.ts
+└── utils/itemLogic.ts
 ```
 
 ---
@@ -375,13 +580,21 @@ gameStore.ts
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `gameStore.ts` | Estado global, actions, selectors |
+| `gameStore.ts` | Estado global, actions de jogo e itens, selectors |
+| `overlayStore.ts` | Gerencia overlays bloqueantes (PillReveal, ItemEffect, etc) |
+| `toastStore.ts` | Fila de notificacoes contextuais |
 | `usePillConsumption.ts` | Fluxo reveal → feedback → idle |
-| `useAIPlayer.ts` | Jogada automatica com delay |
+| `useAIPlayer.ts` | Jogada automatica + decisao de uso de item |
+| `useItemSelection.ts` | Selecao de itens pre-jogo |
+| `useItemUsage.ts` | Uso de itens durante partida |
+| `useAIItemSelection.ts` | Selecao automatica de itens pela IA |
 | `GameBoard.tsx` | Orquestracao de componentes e handlers |
-| `AnimatedPlayerArea.tsx` | Card do jogador + animacoes |
+| `ItemSelectionScreen.tsx` | Tela de selecao pre-jogo |
+| `AnimatedPlayerArea.tsx` | Card do jogador + inventario + efeitos visuais |
+| `InventoryBar.tsx` | Barra de 5 slots de itens |
+| `ItemTargetSelector.tsx` | Overlay de selecao de alvo |
+| `ItemEffectOverlay.tsx` | Feedback visual de item usado |
 | `PillReveal.tsx` | Overlay de revelacao com countdown |
-| `GameFeedback.tsx` | Toast de feedback visual |
 | `TurnIndicator.tsx` | Indicador de turno/rodada |
 
 ---
@@ -391,8 +604,8 @@ gameStore.ts
 Para adicionar novas funcionalidades:
 
 1. **Novos tipos de pilula**: `utils/constants.ts` + `utils/gameLogic.ts`
-2. **Itens/Power-ups**: Novo tipo em `types/`, logica em `utils/`, action no store
+2. **Novos itens**: `types/item.ts` + `utils/itemCatalog.ts` + `utils/itemLogic.ts` + case no `gameStore.executeItem`
 3. **Multiplayer**: Substituir store local por WebSocket/Firebase
 4. **Persistencia**: Adicionar middleware no Zustand (persist)
 5. **Sons**: Hook `useSoundEffects` + arquivos de audio
-
+6. **Balanceamento de itens**: Ajustar `AI_ITEM_USE_CHANCE` e heuristicas em `aiLogic.ts`
