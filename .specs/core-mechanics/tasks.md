@@ -267,13 +267,13 @@
 
 ## Fase 6: Polish e Refinamentos
 
-### TASK-024: Adicionar animações de feedback
-- [ ] Animação de shake no PlayerArea ao receber dano
-- [ ] Animação de pulse na HealthBar ao mudar valor
-- [ ] Animação de bounce nas vidas ao perder uma
-- [ ] Transição suave ao revelar pílula
+### TASK-024: Adicionar animacoes de feedback
+- [x] Animacao de shake no PlayerArea ao receber dano (via AnimatedPlayerArea)
+- [x] Transicao suave ao revelar pilula (via PillReveal)
+- [ ] Animacao de pulse na HealthBar ao mudar valor
+- [ ] Animacao de bounce nas vidas ao perder uma
 
-**Critério de Aceite:** Feedback visual claro para todas as ações
+**Criterio de Aceite:** Feedback visual claro para todas as acoes [PARCIALMENTE CONCLUIDO]
 
 ---
 
