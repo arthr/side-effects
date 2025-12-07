@@ -1,9 +1,11 @@
 import { useGameStore } from '@/stores/gameStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
+import { useItemUsage } from '@/hooks'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
+import { ItemTargetSelector } from './ItemTargetSelector'
 
 /**
  * GameBoard - Tabuleiro principal do jogo
@@ -39,6 +41,13 @@ export function GameBoard() {
   const isHumanTurn = !currentPlayer.isAI
   const isRoundEnding = gamePhase === 'roundEnding'
 
+  // Hook de uso de itens
+  const {
+    isSelectingTarget,
+    validTargets,
+    executeItem,
+  } = useItemUsage()
+
   // Hook da IA - joga automaticamente quando e turno dela
   useAIPlayer({
     currentPlayer,
@@ -50,6 +59,13 @@ export function GameBoard() {
 
   // Handler para click na pilula
   const handlePillSelect = (pillId: string) => {
+    // Se esta selecionando alvo para um item, executa o item
+    if (isSelectingTarget && validTargets === 'pills') {
+      executeItem(pillId)
+      return
+    }
+
+    // Comportamento normal: consumir pilula
     if (isProcessing) return
     if (!isHumanTurn) return // IA escolhe automaticamente
     startConsumption(pillId)
@@ -102,13 +118,16 @@ export function GameBoard() {
           typeCounts={typeCounts}
           round={round}
           onSelectPill={handlePillSelect}
-          disabled={isProcessing || !isHumanTurn || isRoundEnding}
+          disabled={isProcessing || (!isHumanTurn && !isSelectingTarget) || isRoundEnding}
+          isTargetSelectionMode={isSelectingTarget && validTargets === 'pills'}
           instructionMessage={
-            isRoundEnding
-              ? 'Preparando próxima rodada...'
-              : isHumanTurn
-                ? 'Clique em uma pílula para consumi-la'
-                : 'Aguardando IA...'
+            isSelectingTarget && validTargets === 'pills'
+              ? 'Selecione uma pilula alvo'
+              : isRoundEnding
+                ? 'Preparando proxima rodada...'
+                : isHumanTurn
+                  ? 'Clique em uma pilula para consumi-la'
+                  : 'Aguardando IA...'
           }
         />
 
@@ -120,6 +139,9 @@ export function GameBoard() {
           effectValue={getEffectValue('player2')}
         />
       </div>
+
+      {/* Overlay de selecao de alvo para itens */}
+      <ItemTargetSelector />
     </div>
   )
 }

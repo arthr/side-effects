@@ -175,7 +175,7 @@
 
 ## Fase 8: Integracao e GameBoard
 
-- [ ] TASK-IS-031: Atualizar GameBoard.tsx
+- [x] TASK-IS-031: Atualizar GameBoard.tsx
   - Integrar ItemTargetSelector
   - Handlers de uso de item
   - Estado de "usando item"
