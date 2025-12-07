@@ -157,7 +157,7 @@
   - Botao cancelar
   - Instrucoes contextuais
 
-- [ ] TASK-IS-028: Atualizar Pill.tsx para estados de item
+- [x] TASK-IS-028: Atualizar Pill.tsx para estados de item
   - Estado "revealed" (Scanner)
   - Estado "target" (selecao de alvo)
   - Estado "inverted" / "doubled" (visual)

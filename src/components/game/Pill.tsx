@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { RefreshCw } from 'lucide-react'
 import type { Pill as PillType } from '@/types'
 import { PILL_COLORS, PILL_LABELS, HIDDEN_PILL_COLOR } from '@/utils/constants'
 
@@ -13,6 +14,10 @@ interface PillProps {
   selected?: boolean
   /** Tamanho da pilula */
   size?: 'sm' | 'md' | 'lg'
+  /** Se a pilula foi revelada por Scanner (temporario) */
+  isScanned?: boolean
+  /** Se a pilula e um alvo valido (modo selecao de alvo) */
+  isValidTarget?: boolean
 }
 
 const sizeClasses = {
@@ -23,7 +28,7 @@ const sizeClasses = {
 
 /**
  * Componente visual de uma pilula
- * Estados: oculta, revelada, hover, selecionada, consumida
+ * Estados: oculta, revelada, hover, selecionada, scanned, target, inverted, doubled
  */
 export function Pill({
   pill,
@@ -31,16 +36,31 @@ export function Pill({
   disabled = false,
   selected = false,
   size = 'md',
+  isScanned = false,
+  isValidTarget = false,
 }: PillProps) {
-  const isRevealed = pill.isRevealed
-  const colorClass = isRevealed ? PILL_COLORS[pill.type] : HIDDEN_PILL_COLOR
-  const label = isRevealed ? PILL_LABELS[pill.type] : '???'
-  const displayChar = isRevealed ? pill.type.charAt(0) : '?'
+  // Pilula visivel se: revelada normalmente OU escaneada
+  const showType = pill.isRevealed || isScanned
+  const colorClass = showType ? PILL_COLORS[pill.type] : HIDDEN_PILL_COLOR
+  const label = showType ? PILL_LABELS[pill.type] : '???'
+  const displayChar = showType ? pill.type.charAt(0) : '?'
+
+  // Modifiers visuais
+  const hasInverted = pill.inverted === true
+  const hasDoubled = pill.doubled === true
+
+  // Classes de estado
+  const targetClasses = isValidTarget
+    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background cursor-pointer'
+    : ''
+  const scannedClasses = isScanned && !pill.isRevealed
+    ? 'ring-2 ring-blue-400 ring-offset-1 ring-offset-background'
+    : ''
 
   return (
     <motion.button
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled && !isValidTarget}
       className={`
         ${sizeClasses[size]}
         rounded-full border-2 
@@ -49,7 +69,7 @@ export function Pill({
         transition-colors duration-200
         focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
         ${colorClass}
-        ${disabled 
+        ${disabled && !isValidTarget
           ? 'opacity-50 cursor-not-allowed' 
           : 'cursor-pointer'
         }
@@ -57,30 +77,34 @@ export function Pill({
           ? 'border-primary ring-2 ring-primary/50' 
           : 'border-transparent hover:border-primary/50'
         }
-        ${!isRevealed ? 'bg-pill-hidden' : ''}
+        ${!showType ? 'bg-pill-hidden' : ''}
+        ${targetClasses}
+        ${scannedClasses}
+        relative
       `}
       // Animacoes Framer Motion
       initial={{ scale: 0, opacity: 0 }}
       animate={{ 
         scale: 1, 
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled && !isValidTarget ? 0.5 : 1,
       }}
       exit={{ 
         scale: 0, 
         opacity: 0,
         transition: { duration: 0.2 }
       }}
-      whileHover={!disabled ? { 
+      whileHover={(!disabled || isValidTarget) ? { 
         scale: 1.15,
         transition: { duration: 0.15 }
       } : undefined}
-      whileTap={!disabled ? { 
+      whileTap={(!disabled || isValidTarget) ? { 
         scale: 0.95 
       } : undefined}
-      // Animacao de pulse quando selecionada
-      {...(selected && {
+      // Animacao de pulse quando selecionada ou alvo valido
+      {...((selected || isValidTarget) && {
         animate: {
           scale: [1, 1.05, 1],
+          opacity: 1,
           transition: {
             duration: 1,
             repeat: Infinity,
@@ -88,10 +112,34 @@ export function Pill({
           },
         },
       })}
-      aria-label={`Pílula ${label}${isRevealed ? '' : ' (oculta)'}`}
+      aria-label={`Pílula ${label}${showType ? '' : ' (oculta)'}${hasInverted ? ' (invertida)' : ''}${hasDoubled ? ' (dobrada)' : ''}`}
       title={label}
     >
       <span className="select-none">{displayChar}</span>
+
+      {/* Badge de Invertido */}
+      {hasInverted && (
+        <motion.div
+          className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          title="Efeito invertido"
+        >
+          <RefreshCw className="w-2.5 h-2.5 text-white" />
+        </motion.div>
+      )}
+
+      {/* Badge de Dobrado */}
+      {hasDoubled && (
+        <motion.div
+          className={`absolute ${hasInverted ? '-top-1 -left-1' : '-top-1 -right-1'} w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center`}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          title="Efeito dobrado"
+        >
+          <span className="text-[8px] font-bold text-white">x2</span>
+        </motion.div>
+      )}
     </motion.button>
   )
 }
@@ -104,6 +152,10 @@ interface PillGridProps {
   onSelectPill: (pillId: string) => void
   disabled?: boolean
   selectedPillId?: string | null
+  /** IDs de pilulas reveladas por Scanner */
+  scannedPillIds?: string[]
+  /** Se esta em modo de selecao de alvo (todas pilulas sao alvos validos) */
+  isTargetSelectionMode?: boolean
 }
 
 export function PillGrid({
@@ -111,6 +163,8 @@ export function PillGrid({
   onSelectPill,
   disabled = false,
   selectedPillId = null,
+  scannedPillIds = [],
+  isTargetSelectionMode = false,
 }: PillGridProps) {
   const gridKey = pills.length > 0 ? pills[0].id : 'empty'
   
@@ -143,6 +197,8 @@ export function PillGrid({
             onClick={() => onSelectPill(pill.id)}
             disabled={disabled}
             selected={selectedPillId === pill.id}
+            isScanned={scannedPillIds.includes(pill.id)}
+            isValidTarget={isTargetSelectionMode}
           />
         </motion.div>
       ))}
