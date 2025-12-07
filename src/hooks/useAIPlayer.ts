@@ -51,6 +51,27 @@ export function useAIPlayer({
   const hasScheduledRef = useRef(false)
   // Ref para rastrear se ja usou item neste turno
   const hasUsedItemRef = useRef(false)
+  // Ref para rastrear quantidade de pilulas (detecta novo turno)
+  const lastPillCountRef = useRef(pillPool.length)
+
+  // Reset flags quando uma pilula e consumida (novo turno)
+  // Isso resolve o bug de handcuffs onde turno pula de volta para IA
+  useEffect(() => {
+    if (pillPool.length !== lastPillCountRef.current) {
+      lastPillCountRef.current = pillPool.length
+      // Reset para permitir nova jogada
+      hasScheduledRef.current = false
+      hasUsedItemRef.current = false
+    }
+  }, [pillPool.length])
+
+  // Reset quando phase volta para idle (fim de animacao/processamento)
+  useEffect(() => {
+    if (phase === 'idle' && currentPlayer.isAI) {
+      // Permite nova jogada quando processamento termina
+      hasScheduledRef.current = false
+    }
+  }, [phase, currentPlayer.isAI])
 
   useEffect(() => {
     // Condicoes para IA jogar:
@@ -95,7 +116,7 @@ export function useAIPlayer({
                 if (selectedPillId) {
                   startConsumption(selectedPillId)
                 }
-                hasScheduledRef.current = false
+                // Nao reseta hasScheduledRef aqui - sera resetado pelo effect de pillPool.length
               }, getAIThinkingDelay() / 2)
 
               return
@@ -109,8 +130,7 @@ export function useAIPlayer({
         if (selectedPillId) {
           startConsumption(selectedPillId)
         }
-
-        hasScheduledRef.current = false
+        // Nao reseta hasScheduledRef aqui - sera resetado pelo effect de pillPool.length ou phase
       }, delay)
     }
 
