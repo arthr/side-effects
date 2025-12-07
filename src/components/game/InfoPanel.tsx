@@ -6,7 +6,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/8bit/tooltip'
 import { LivesDisplay } from './LivesDisplay'
-import { HealthBar } from './HealthBar'
+import { ResistanceDisplay } from './ResistanceDisplay'
 
 /**
  * Painel informativo com demonstracao dos elementos do jogo
@@ -14,45 +14,43 @@ import { HealthBar } from './HealthBar'
  */
 export function InfoPanel() {
   return (
-    <div className="flex flex-col items-center gap-6 p-4">
+    <div className="flex flex-col items-center gap-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">
+        <h2 className="text-2xl text-foreground mb-2">
           Como Jogar
         </h2>
-        <p className="text-muted-foreground text-sm max-w-md">
-          Um jogo de estrategia por turnos onde dois jogadores competem 
-          para ser o ultimo sobrevivente atraves da gestao de risco.
+        <p className="text-muted-foreground text-sm max-w-lg">
+          Um jogo de estratégia por turnos onde dois jogadores competem
+          para ser o último sobrevivente através da gestão de risco.
         </p>
       </div>
 
       {/* Player Stats Example */}
-      <Card className="w-full max-w-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Seus Stats</CardTitle>
+      <Card className="w-full max-w-sm py-2 gap-2">
+        <CardHeader className="text-center border-b pb-0!">
+          <CardTitle className="text-base font-normal">Seus Stats</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Lives - usando componente reutilizavel */}
-          <div className="flex items-center justify-between">
-            <LivesDisplay lives={2} maxLives={3} />
+          <div className="flex flex-wrap gap-2 justify-center">
+            {/* Lives - usando componente reutilizavel */}
+            <LivesDisplay showLabel={false} lives={2} maxLives={3} />
             <span className="text-xs text-muted-foreground">
-              Perder todas = Game Over
+              Perder todas = Derrota
             </span>
-          </div>
 
-          {/* Resistance Bar - usando componente reutilizavel */}
-          <div className="space-y-1">
-            <HealthBar current={4} max={6} height="lg" />
-            <p className="text-xs text-muted-foreground">
-              Ao zerar, voce perde 1 vida e reseta a barra
-            </p>
+            {/* Resistance Bar - usando componente reutilizavel */}
+            <ResistanceDisplay showLabel={false} resistance={4} maxResistance={6} />
+            <span className="text-xs text-muted-foreground">
+              Perder todas = -1 Vida
+            </span>
           </div>
         </CardContent>
       </Card>
 
       {/* Pill Types Legend */}
-      <Card className="w-full max-w-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Tipos de Pilulas</CardTitle>
+      <Card className="w-full max-w-sm py-2 gap-2">
+        <CardHeader className="text-center border-b pb-0!">
+          <CardTitle className="text-base font-normal">Tipos de Pílulas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2 justify-center">
@@ -62,7 +60,7 @@ export function InfoPanel() {
                   SAFE
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>Placebo - Sem efeito</TooltipContent>
+              <TooltipContent>Placebo - Neutro</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -89,7 +87,7 @@ export function InfoPanel() {
                   FATAL
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>Zera resistencia instantaneamente!</TooltipContent>
+              <TooltipContent>Zera resistência instantaneamente!</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -98,7 +96,7 @@ export function InfoPanel() {
                   CURA
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>Antidoto: +2 de resistencia</TooltipContent>
+              <TooltipContent>Antidoto: +2 de resistência</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -107,12 +105,12 @@ export function InfoPanel() {
                   ???
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent>Pilula oculta - tipo desconhecido</TooltipContent>
+              <TooltipContent>Pílula oculta - tipo desconhecido</TooltipContent>
             </Tooltip>
           </div>
 
           <p className="text-xs text-muted-foreground text-center mt-3">
-            Voce ve a contagem total de cada tipo, mas nao sabe qual e qual!
+            Você vê a contagem total de cada tipo, mas não sabe qual é qual!
           </p>
         </CardContent>
       </Card>

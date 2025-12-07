@@ -38,7 +38,7 @@ function GameContent() {
             Bem-vindo ao Side Effects
           </h2>
           <p className="text-muted-foreground">
-            Escolha uma pilula. Sobreviva. Seja o ultimo.
+            Escolha uma pílula. Sobreviva. Seja o último.
           </p>
         </div>
 

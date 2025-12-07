@@ -45,7 +45,7 @@ export function Pill({
         ${sizeClasses[size]}
         rounded-full border-2 
         flex items-center justify-center
-        font-bold text-white
+        font-normal text-foreground
         transition-colors duration-200
         focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
         ${colorClass}
@@ -88,7 +88,7 @@ export function Pill({
           },
         },
       })}
-      aria-label={`Pilula ${label}${isRevealed ? '' : ' (oculta)'}`}
+      aria-label={`Pílula ${label}${isRevealed ? '' : ' (oculta)'}`}
       title={label}
     >
       <span className="select-none">{displayChar}</span>
@@ -97,7 +97,7 @@ export function Pill({
 }
 
 /**
- * Grid de pilulas com animacao de entrada escalonada
+ * Grid de pílulas com animação de entrada escalonada
  */
 interface PillGridProps {
   pills: PillType[]

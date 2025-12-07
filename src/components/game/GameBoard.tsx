@@ -105,9 +105,9 @@ export function GameBoard() {
           disabled={isProcessing || !isHumanTurn || isRoundEnding}
           instructionMessage={
             isRoundEnding
-              ? 'Preparando proxima rodada...'
+              ? 'Preparando próxima rodada...'
               : isHumanTurn
-                ? 'Clique em uma pilula para consumi-la'
+                ? 'Clique em uma pílula para consumi-la'
                 : 'Aguardando IA...'
           }
         />

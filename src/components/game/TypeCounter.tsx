@@ -23,7 +23,7 @@ export function TypeCounter({ counts }: TypeCounterProps) {
   const types: PillType[] = ['SAFE', 'DMG_LOW', 'DMG_HIGH', 'FATAL', 'HEAL']
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap-4">
       {types.map((type) => {
         const count = counts[type]
         
@@ -34,9 +34,9 @@ export function TypeCounter({ counts }: TypeCounterProps) {
           <Badge
             key={type}
             variant="outline"
-            className={`${typeStyles[type]} font-medium`}
+            className={`${typeStyles[type]}`}
           >
-            {PILL_LABELS[type]}: {count}
+            {count} {PILL_LABELS[type]}
           </Badge>
         )
       })}

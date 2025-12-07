@@ -110,7 +110,7 @@ export function GameOverDialog({
             />
             <StatCard
               icon={<Pill className="w-4 h-4" />}
-              label="Pilulas"
+              label="Pílulas"
               value={stats.pillsConsumed}
               color="text-purple-400"
             />

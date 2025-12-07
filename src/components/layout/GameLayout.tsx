@@ -10,14 +10,14 @@ interface GameLayoutProps {
  */
 export function GameLayout({ children }: GameLayoutProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="retro min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
+          <h1 className="font-normal text-foreground tracking-tight">
             Side Effects
           </h1>
-          <span className="text-sm text-muted-foreground">Pill Roulette</span>
+          <span className="text-xs text-muted-foreground">Pill Roulette</span>
         </div>
       </header>
 
@@ -28,7 +28,7 @@ export function GameLayout({ children }: GameLayoutProps) {
 
       {/* Footer */}
       <footer className="border-t border-border py-3 text-center text-xs text-muted-foreground">
-        Gestao de Risco & Informacao Oculta
+        Developed by <a href="https://github.com/arthr" target="_blank" rel="noopener noreferrer" className="text-game-accent">@arthr</a>
       </footer>
     </div>
   )

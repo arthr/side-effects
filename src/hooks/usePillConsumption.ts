@@ -90,15 +90,15 @@ export function usePillConsumption() {
       return 'FATAL! Eliminado!'
     }
     if (effect.collapsed) {
-      return 'COLAPSO! Perdeu 1 vida'
+      return 'COLAPSO! Perdeu 1 vida!'
     }
     if (effect.damageDealt > 0) {
-      return 'Dano na resistencia'
+      return 'Dano na resistência'
     }
     if (effect.healReceived > 0) {
-      return 'Resistencia restaurada'
+      return 'Resistência restaurada'
     }
-    return 'Pilula segura!'
+    return 'Pílula segura!'
   }, [])
 
   /**

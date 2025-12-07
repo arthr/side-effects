@@ -34,8 +34,8 @@ export function PillPool({
 }: PillPoolProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-center font-semibold text-foreground">
-        Mesa de Pilulas
+      <h3 className="text-center text-foreground text-xs">
+        Mesa de Pílulas
       </h3>
 
       {/* Contagem publica de tipos */}

@@ -152,7 +152,7 @@ export function AnimatedPlayerArea({
       )}>
         {/* Header: Nome + Tag IA */}
         <CardHeader className="border-b pb-0! items-center">
-          {/* <Avatar className="size-8" variant="pixel" font="retro">
+          {/* <Avatar className="size-8" variant="pixel">
               <AvatarImage src="/avatars/orcdev.jpeg" alt={player.name} />
               <AvatarFallback className="text-[8px]">
                 {player.name.charAt(0).toUpperCase() + player.name.charAt(1).toUpperCase()}
@@ -162,9 +162,9 @@ export function AnimatedPlayerArea({
           <div className="flex gap-1 items-center justify-between">
             <h3 className="font-medium truncate text-xs">{player.name}</h3>
             {player.isAI ? (
-              <Badge variant="default" className="text-[8px] bg-accent text-game-accent" font="retro">IA</Badge>
+              <Badge variant="default" className="text-[8px] bg-accent text-game-accent">IA</Badge>
             ) : (
-              <Badge variant="secondary" className="text-[8px]" font="retro">Lv.25</Badge>
+              <Badge variant="secondary" className="text-[8px]">Lv.25</Badge>
             )}
           </div>
         </CardHeader>
