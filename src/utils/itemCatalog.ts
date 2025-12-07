@@ -23,6 +23,13 @@ export const CATEGORY_BG_COLORS: Record<ItemCategory, string> = {
   chaos: 'bg-purple-500/20',
 }
 
+export const CATEGORY_HEX_COLORS: Record<ItemCategory, string> = {
+  intel: '#60a5fa',     // blue-400
+  sustain: '#34d399',   // emerald-400
+  control: '#facc15',   // yellow-400
+  chaos: '#c084fc',     // purple-400
+}
+
 export const CATEGORY_LABELS: Record<ItemCategory, string> = {
   intel: 'Intel',
   sustain: 'Sustain',

@@ -162,7 +162,7 @@
   - Estado "target" (selecao de alvo)
   - Estado "inverted" / "doubled" (visual)
 
-- [ ] TASK-IS-029: Criar `src/components/overlays/ItemEffectOverlay.tsx`
+- [x] TASK-IS-029: Criar `src/components/overlays/ItemEffectOverlay.tsx`
   - Animacao de efeito por tipo
   - Auto-dismiss apos animacao
   - Integracao com overlayStore
