@@ -80,22 +80,23 @@
 
 ---
 
-### TASK-008: Implementar lógica de efeitos das pílulas
-- [ ] Criar `src/utils/gameLogic.ts`
-- [ ] Implementar `applyPillEffect(pill, player)` que retorna novo estado do player
-- [ ] Implementar lógica para cada tipo: SAFE, DMG_LOW, DMG_HIGH, FATAL, HEAL
-- [ ] Implementar cap de resistência no máximo para cura
+### TASK-008: Implementar logica de efeitos das pilulas
+- [x] Criar `src/utils/gameLogic.ts`
+- [x] Implementar `applyPillEffect(pill, player)` que retorna novo estado do player
+- [x] Implementar logica para cada tipo: SAFE, DMG_LOW, DMG_HIGH, FATAL, HEAL
+- [x] Implementar cap de resistencia no maximo para cura
 
-**Critério de Aceite:** Cada tipo de pílula aplica efeito correto
+**Criterio de Aceite:** Cada tipo de pilula aplica efeito correto [CONCLUIDO]
 
 ---
 
-### TASK-009: Implementar lógica de colapso
-- [ ] Implementar `checkCollapse(player)` que verifica se resistência <= 0
-- [ ] Implementar `processCollapse(player)` que reduz vida e reseta resistência
-- [ ] Implementar `checkGameOver(player)` que verifica se vidas <= 0
+### TASK-009: Implementar logica de colapso
+- [x] Implementar `checkCollapse(player)` que verifica se resistencia <= 0
+- [x] Implementar `processCollapse(player)` que reduz vida e reseta resistencia
+- [x] Implementar `checkGameOver(player)` que verifica se vidas <= 0
 
-**Critério de Aceite:** Colapso processa corretamente e detecta game over
+**Criterio de Aceite:** Colapso processa corretamente e detecta game over [CONCLUIDO]
+*Nota: Implementado junto com TASK-008 em `src/utils/gameLogic.ts`*
 
 ---
 
