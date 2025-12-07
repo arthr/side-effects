@@ -4,6 +4,7 @@ import { useGameStore } from '@/stores/gameStore'
 import { useOverlayStore } from '@/stores/overlayStore'
 import { useToastStore, type ToastType } from '@/stores/toastStore'
 import { applyPillEffect } from '@/utils/gameLogic'
+import { ANIMATION_FALLBACK_TIMEOUT } from '@/utils/constants'
 
 type ConsumptionPhase = 'idle' | 'revealing' | 'feedback'
 
@@ -53,6 +54,8 @@ export function usePillConsumption() {
 
   // Ref para rastrear a rodada anterior
   const prevRoundRef = useRef(round)
+  // Ref para fallback timeout (seguranca contra animacoes pausadas)
+  const fallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Detecta mudanca de rodada e abre overlay
   useEffect(() => {
@@ -115,6 +118,11 @@ export function usePillConsumption() {
       const effect = applyPillEffect(revealedPill, currentPlayer)
       const feedbackType = determineFeedbackType(pill.type, effect)
 
+      // Limpa timeout anterior se existir
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current)
+      }
+
       // Atualiza estado local
       setState({
         phase: 'revealing',
@@ -126,6 +134,16 @@ export function usePillConsumption() {
 
       // Abre overlay de revelacao
       openPillReveal(revealedPill, currentPlayer.isAI)
+
+      // Fallback timeout: forca fechamento do overlay se animacao travar
+      // (ex: usuario trocou de aba e requestAnimationFrame foi pausado)
+      fallbackTimeoutRef.current = setTimeout(() => {
+        const overlay = useOverlayStore.getState().current
+        if (overlay === 'pillReveal') {
+          console.warn('[usePillConsumption] Fallback timeout: forcando fechamento do overlay')
+          useOverlayStore.getState().close()
+        }
+      }, ANIMATION_FALLBACK_TIMEOUT)
     },
     [getPillById, currentTurn, players, openPillReveal]
   )
@@ -182,9 +200,23 @@ export function usePillConsumption() {
   useEffect(() => {
     // Se estava revelando e overlay fechou, confirma
     if (state.phase === 'revealing' && currentOverlay === null && state.revealedPill) {
+      // Limpa fallback timeout pois animacao completou normalmente
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current)
+        fallbackTimeoutRef.current = null
+      }
       confirmReveal()
     }
   }, [currentOverlay, state.phase, state.revealedPill, confirmReveal])
+
+  // Cleanup do fallback timeout quando componente desmonta
+  useEffect(() => {
+    return () => {
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return {
     // Estado

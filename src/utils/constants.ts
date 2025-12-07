@@ -48,6 +48,13 @@ export const FATAL_DAMAGE = 999
 export const ROUND_TRANSITION_DELAY = 2000
 
 /**
+ * Timeout de seguranca para animacoes (fallback)
+ * Se animacao demorar mais que isso, forca transicao de fase
+ * Previne jogo travado quando usuario troca de aba do navegador
+ */
+export const ANIMATION_FALLBACK_TIMEOUT = 8000
+
+/**
  * Cores associadas a cada tipo de pilula (Tailwind classes)
  */
 export const PILL_COLORS: Record<PillType, string> = {
