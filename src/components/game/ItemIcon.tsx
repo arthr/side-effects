@@ -12,6 +12,12 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { ItemType } from '@/types'
+import { ITEM_CATALOG, CATEGORY_LABELS } from '@/utils/itemCatalog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/8bit/tooltip'
 
 // Imports estaticos das imagens para melhor performance e bundling
 import scannerImg from '@/assets/items/scanned.JPG'
@@ -69,6 +75,8 @@ interface ItemIconProps {
   style?: React.CSSProperties
   /** Forcar uso do icone (ignorar imagem) */
   forceIcon?: boolean
+  /** Exibir tooltip com nome e descricao */
+  showTooltip?: boolean
 }
 
 /**
@@ -85,37 +93,65 @@ export function ItemIcon({
   className = '',
   style,
   forceIcon = false,
+  showTooltip = false,
 }: ItemIconProps) {
   const [imageError, setImageError] = useState(false)
   
   const imageSrc = IMAGE_MAP[type]
   const FallbackIcon = ICON_MAP[type]
+  const itemDef = ITEM_CATALOG[type]
   
   // Usa imagem se disponivel e nao houve erro
   const shouldUseImage = !forceIcon && imageSrc && !imageError
   
-  if (shouldUseImage) {
-    return (
-      <img
-        src={imageSrc}
-        alt={type}
-        width={size}
-        height={size}
-        className={`object-contain ${className}`}
-        style={{ width: size, height: size, ...style }}
-        onError={() => setImageError(true)}
-        draggable={false}
-      />
-    )
+  // Renderiza o icone/imagem
+  const renderIcon = () => {
+    if (shouldUseImage) {
+      return (
+        <img
+          src={imageSrc}
+          alt={itemDef.name}
+          width={size}
+          height={size}
+          className={`object-contain ${className}`}
+          style={{ width: size, height: size, ...style }}
+          onError={() => setImageError(true)}
+          draggable={false}
+        />
+      )
+    }
+    
+    if (FallbackIcon) {
+      return <FallbackIcon size={size} className={className} style={style} />
+    }
+    
+    return null
   }
   
-  // Fallback para icone Lucide
-  if (FallbackIcon) {
-    return <FallbackIcon size={size} className={className} style={style} />
+  // Sem tooltip - retorna icone diretamente
+  if (!showTooltip) {
+    return renderIcon()
   }
   
-  // Fallback final (nunca deveria chegar aqui)
-  return null
+  // Com tooltip - envolve o icone
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex cursor-help">
+          {renderIcon()}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-48">
+        <div className="space-y-1">
+          <p className="font-bold text-sm">{itemDef.name}</p>
+          <p className="text-xs text-muted-foreground">{itemDef.description}</p>
+          <p className="text-[10px] text-primary/80 uppercase tracking-wider">
+            {CATEGORY_LABELS[itemDef.category]}
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
 /**

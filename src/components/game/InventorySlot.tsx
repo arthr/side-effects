@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion'
 import type { InventoryItem } from '@/types'
-import { ITEM_CATALOG, CATEGORY_BG_COLORS } from '@/utils/itemCatalog'
+import { ITEM_CATALOG, CATEGORY_BG_COLORS, CATEGORY_LABELS } from '@/utils/itemCatalog'
 import { ItemIcon } from './ItemIcon'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/8bit/tooltip'
 
 interface InventorySlotProps {
   /** Item no slot (undefined = vazio) */
@@ -103,34 +108,46 @@ export function InventorySlot({
   }
 
   return (
-    <motion.button
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        w-10 h-10 rounded-md
-        flex items-center justify-center
-        border-2 transition-colors duration-200
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
-        ${bgColor}
-        ${disabled
-          ? 'opacity-40 cursor-not-allowed border-muted'
-          : 'cursor-pointer hover:brightness-125'
-        }
-        ${isUsing
-          ? 'border-primary ring-2 ring-primary/50'
-          : 'border-transparent hover:border-primary/50'
-        }
-      `}
-      variants={slotVariants}
-      initial="initial"
-      animate={getAnimationState()}
-      exit="exit"
-      whileHover={!disabled ? { scale: 1.15 } : undefined}
-      whileTap={!disabled ? { scale: 0.9 } : undefined}
-      aria-label={`${itemDef.name}: ${itemDef.description}`}
-      title={`${itemDef.name}: ${itemDef.description}`}
-    >
-      <ItemIcon type={item.type} size={34} />
-    </motion.button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
+          onClick={onClick}
+          disabled={disabled}
+          className={`
+            w-10 h-10 rounded-md
+            flex items-center justify-center
+            border-2 transition-colors duration-200
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+            ${bgColor}
+            ${disabled
+              ? 'opacity-40 cursor-not-allowed border-muted'
+              : 'cursor-pointer hover:brightness-125'
+            }
+            ${isUsing
+              ? 'border-primary ring-2 ring-primary/50'
+              : 'border-transparent hover:border-primary/50'
+            }
+          `}
+          variants={slotVariants}
+          initial="initial"
+          animate={getAnimationState()}
+          exit="exit"
+          whileHover={!disabled ? { scale: 1.15 } : undefined}
+          whileTap={!disabled ? { scale: 0.9 } : undefined}
+          aria-label={`${itemDef.name}: ${itemDef.description}`}
+        >
+          <ItemIcon type={item.type} size={34} />
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-52">
+        <div className="space-y-1">
+          <p className="font-bold text-sm">{itemDef.name}</p>
+          <p className="text-xs text-muted-foreground">{itemDef.description}</p>
+          <p className="text-[10px] text-primary/80 uppercase tracking-wider">
+            {CATEGORY_LABELS[itemDef.category]}
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
