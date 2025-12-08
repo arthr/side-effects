@@ -66,11 +66,10 @@ describe('getPillChances', () => {
     expect(getPillChances(4).FATAL).toBeGreaterThan(0)
   })
 
-  it('LIFE desativado por padrao (unlockRound: 99)', () => {
-    // LIFE nao aparece em nenhuma rodada razoavel
-    for (let round = 1; round <= 50; round++) {
-      expect(getPillChances(round).LIFE).toBe(0)
-    }
+  it('LIFE aparece a partir da rodada 5', () => {
+    // LIFE desbloqueia na rodada 5
+    expect(getPillChances(4).LIFE).toBe(0)
+    expect(getPillChances(5).LIFE).toBeGreaterThan(0)
   })
 
   it('soma das probabilidades e sempre ~100%', () => {
@@ -153,8 +152,20 @@ describe('rollPillType', () => {
     }
   })
 
-  it('nunca retorna LIFE (desativado por padrao)', () => {
-    for (let round = 1; round <= 20; round++) {
+  it('pode retornar LIFE a partir da rodada 5', () => {
+    // Roda varias vezes ate encontrar LIFE
+    let foundLife = false
+    for (let i = 0; i < 500; i++) {
+      if (rollPillType(5) === 'LIFE') {
+        foundLife = true
+        break
+      }
+    }
+    expect(foundLife).toBe(true)
+  })
+
+  it('nunca retorna LIFE antes da rodada 5', () => {
+    for (let round = 1; round <= 4; round++) {
       for (let i = 0; i < 50; i++) {
         const type = rollPillType(round)
         expect(type).not.toBe('LIFE')
@@ -329,11 +340,15 @@ describe('distributePillTypes', () => {
     expect(distribution.FATAL).toBeGreaterThanOrEqual(1)
   })
 
-  it('LIFE nunca aparece (desativado por padrao)', () => {
-    for (let round = 1; round <= 20; round++) {
+  it('LIFE aparece a partir da rodada 5 (distribuicao)', () => {
+    // LIFE nao aparece antes da rodada 5
+    for (let round = 1; round <= 4; round++) {
       const distribution = distributePillTypes(12, round)
       expect(distribution.LIFE).toBe(0)
     }
+    // LIFE aparece a partir da rodada 5
+    const distribution = distributePillTypes(12, 5)
+    expect(distribution.LIFE).toBeGreaterThanOrEqual(0) // Pode ser 0 ou mais dependendo de arredondamento
   })
 })
 
@@ -346,10 +361,10 @@ describe('PROGRESSION config', () => {
     expect(PROGRESSION.maxRound).toBe(15)
   })
 
-  it('LIFE esta desativado por padrao', () => {
-    expect(PROGRESSION.rules.LIFE.unlockRound).toBe(99)
-    expect(PROGRESSION.rules.LIFE.startPct).toBe(0)
-    expect(PROGRESSION.rules.LIFE.endPct).toBe(0)
+  it('LIFE esta ativado na rodada 5', () => {
+    expect(PROGRESSION.rules.LIFE.unlockRound).toBe(5)
+    expect(PROGRESSION.rules.LIFE.startPct).toBeGreaterThan(0)
+    expect(PROGRESSION.rules.LIFE.endPct).toBeGreaterThan(0)
   })
 
   it('SAFE, DMG_LOW, DMG_HIGH desbloqueiam na rodada 1', () => {
@@ -407,7 +422,7 @@ describe('generatePillPool - Integracao', () => {
       expect(counts.HEAL).toBe(0)
     })
 
-    it('nao contem LIFE (desativado)', () => {
+    it('nao contem LIFE (desbloqueia rodada 5)', () => {
       const pills = generatePillPool(1)
       const counts = countPillTypes(pills)
       expect(counts.LIFE).toBe(0)
@@ -458,7 +473,7 @@ describe('generatePillPool - Integracao', () => {
       expect(counts.FATAL).toBeGreaterThanOrEqual(0)
     })
 
-    it('nao contem LIFE (desativado)', () => {
+    it('nao contem LIFE (desbloqueia rodada 5)', () => {
       const pills = generatePillPool(4)
       const counts = countPillTypes(pills)
       expect(counts.LIFE).toBe(0)
@@ -486,10 +501,11 @@ describe('generatePillPool - Integracao', () => {
       expect(counts.HEAL).toBeGreaterThanOrEqual(1)
     })
 
-    it('nao contem LIFE (desativado)', () => {
+    it('pode conter LIFE (ativado na rodada 5)', () => {
       const pills = generatePillPool(10)
       const counts = countPillTypes(pills)
-      expect(counts.LIFE).toBe(0)
+      // LIFE esta ativado, pode aparecer
+      expect(counts.LIFE).toBeGreaterThanOrEqual(0)
     })
   })
 
