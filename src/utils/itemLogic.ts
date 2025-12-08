@@ -112,7 +112,7 @@ function applyDouble(pill?: Pill): ItemEffectResult {
 // ============================================
 
 /** Valor de cura do Pocket Pill */
-export const POCKET_PILL_HEAL = 2
+export const POCKET_PILL_HEAL = 4
 
 /**
  * Pocket Pill: Cura resistencia do jogador

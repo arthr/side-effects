@@ -86,13 +86,20 @@ function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * Decrementa roundsRemaining dos efeitos do jogador e remove expirados
+ * NOTA: Shield NAO e decrementado por turno - ele dura uma rodada inteira
  */
 function decrementPlayerEffects(player: Player): Player {
   const updatedEffects = player.effects
-    .map((effect) => ({
-      ...effect,
-      roundsRemaining: effect.roundsRemaining - 1,
-    }))
+    .map((effect) => {
+      // Shield dura a rodada inteira, nao decrementa por turno
+      if (effect.type === 'shield') {
+        return effect
+      }
+      return {
+        ...effect,
+        roundsRemaining: effect.roundsRemaining - 1,
+      }
+    })
     .filter((effect) => effect.roundsRemaining > 0)
 
   return {
@@ -413,6 +420,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Remove efeitos de Shield (duram apenas 1 rodada)
+    const player1WithoutShield: Player = {
+      ...player1,
+      effects: player1.effects.filter((e) => e.type !== 'shield'),
+    }
+    const player2WithoutShield: Player = {
+      ...player2,
+      effects: player2.effects.filter((e) => e.type !== 'shield'),
+    }
+
     const newPillPool = generatePillPool(
       DEFAULT_GAME_CONFIG.pillsPerRound,
       PILL_CONFIG
@@ -433,6 +450,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       round: state.round + 1,
       actionHistory: [...state.actionHistory, roundAction],
       revealedPills: [], // Limpa pilulas reveladas da rodada anterior
+      players: {
+        player1: player1WithoutShield,
+        player2: player2WithoutShield,
+      },
     })
   },
 
@@ -727,7 +748,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // ========== SUSTAIN ITEMS ==========
 
       case 'pocket_pill': {
-        // Cura +2 resistencia no jogador atual
+        // Cura +4 resistencia no jogador atual
         const healResult = applyHeal(updatedCurrentPlayer, POCKET_PILL_HEAL)
         newState.players = {
           ...state.players,
@@ -744,7 +765,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             ...updatedCurrentPlayer,
             effects: [
               ...updatedCurrentPlayer.effects,
-              { type: 'shield', roundsRemaining: 2 }, // 2 para durar ate o proximo turno do jogador
+              { type: 'shield', roundsRemaining: 1 }, // 1 rodada de duracao
             ],
           }
           newState.players = {
