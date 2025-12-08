@@ -7,32 +7,13 @@ import {
   PILL_HEX_COLORS,
   PILL_SHAPES,
 } from './constants'
+import { rollPillType, getPillCount } from './pillProgression'
 
 /**
  * Gera um numero aleatorio dentro de um range [min, max]
  */
 function randomInRange(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
-}
-
-/**
- * Seleciona um tipo de pilula baseado nas probabilidades configuradas
- */
-function selectPillType(probabilities: Record<PillType, number>): PillType {
-  const random = Math.random()
-  let cumulative = 0
-
-  const types: PillType[] = ['SAFE', 'DMG_LOW', 'DMG_HIGH', 'FATAL', 'HEAL', 'LIFE']
-
-  for (const type of types) {
-    cumulative += probabilities[type]
-    if (random < cumulative) {
-      return type
-    }
-  }
-
-  // Fallback para SAFE se algo der errado
-  return 'SAFE'
 }
 
 /**
@@ -96,20 +77,45 @@ export function createPill(type: PillType, config: PillConfig = PILL_CONFIG): Pi
 }
 
 /**
- * Gera um pool de pilulas para uma rodada
+ * Gera um pool de pilulas para uma rodada com progressao dinamica
  *
- * @param count - Quantidade de pilulas a gerar
- * @param config - Configuracao de probabilidades e dano
+ * @param round - Numero da rodada (determina quantidade e tipos disponiveis)
+ * @param config - Configuracao de dano/cura (opcional)
  * @returns Array de pilulas com isRevealed = false
  */
 export function generatePillPool(
+  round: number = 1,
+  config: PillConfig = PILL_CONFIG
+): Pill[] {
+  const count = getPillCount(round)
+  const pills: Pill[] = []
+
+  for (let i = 0; i < count; i++) {
+    const type = rollPillType(round)
+    pills.push(createPill(type, config))
+  }
+
+  return pills
+}
+
+/**
+ * Gera um pool de pilulas com quantidade especifica (override manual)
+ * Util para testes ou modos especiais
+ *
+ * @param count - Quantidade de pilulas a gerar
+ * @param round - Numero da rodada (determina tipos disponiveis)
+ * @param config - Configuracao de dano/cura (opcional)
+ * @returns Array de pilulas com isRevealed = false
+ */
+export function generatePillPoolWithCount(
   count: number,
+  round: number = 1,
   config: PillConfig = PILL_CONFIG
 ): Pill[] {
   const pills: Pill[] = []
 
   for (let i = 0; i < count; i++) {
-    const type = selectPillType(config.probabilities)
+    const type = rollPillType(round)
     pills.push(createPill(type, config))
   }
 
@@ -157,9 +163,15 @@ export function revealPill(pill: Pill): Pill {
 /**
  * Gera um pool garantindo pelo menos uma pilula de cada tipo especificado
  * Util para balanceamento em partidas
+ *
+ * @param count - Quantidade de pilulas a gerar
+ * @param round - Numero da rodada (determina tipos disponiveis para o resto)
+ * @param guaranteedTypes - Tipos garantidos no pool
+ * @param config - Configuracao de dano/cura (opcional)
  */
 export function generateBalancedPillPool(
   count: number,
+  round: number = 1,
   guaranteedTypes: PillType[] = ['SAFE', 'HEAL'],
   config: PillConfig = PILL_CONFIG
 ): Pill[] {
@@ -172,9 +184,9 @@ export function generateBalancedPillPool(
     }
   }
 
-  // Preenche o resto com pilulas aleatorias
+  // Preenche o resto com pilulas aleatorias baseadas na rodada
   while (pills.length < count) {
-    const type = selectPillType(config.probabilities)
+    const type = rollPillType(round)
     pills.push(createPill(type, config))
   }
 

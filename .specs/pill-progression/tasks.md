@@ -52,12 +52,12 @@
 
 ### 3.1 Atualizar Geracao de Pilulas
 
-- [ ] TASK-PP-018: Atualizar `calculatePillStats()` para suportar tipo `LIFE`
-- [ ] TASK-PP-019: Atualizar `createPill()` para incluir `livesRestore` no stats
-- [ ] TASK-PP-020: Modificar assinatura de `generatePillPool(round, config?)` - usar `getPillCount()` internamente
-- [ ] TASK-PP-021: Substituir `selectPillType()` por `rollPillType()` importado de pillProgression
-- [ ] TASK-PP-022: Atualizar `countPillTypes()` para incluir contagem de `LIFE`
-- [ ] TASK-PP-057: Criar funcao auxiliar `generatePillPoolWithCount(count, round, config?)` para override manual
+- [x] TASK-PP-018: Atualizar `calculatePillStats()` para suportar tipo `LIFE` (feito na Fase 1)
+- [x] TASK-PP-019: Atualizar `createPill()` para incluir `livesRestore` no stats (feito na Fase 1)
+- [x] TASK-PP-020: Modificar assinatura de `generatePillPool(round, config?)` - usar `getPillCount()` internamente
+- [x] TASK-PP-021: Substituir `selectPillType()` por `rollPillType()` importado de pillProgression
+- [x] TASK-PP-022: Atualizar `countPillTypes()` para incluir contagem de `LIFE` (feito na Fase 1)
+- [x] TASK-PP-057: Criar funcao auxiliar `generatePillPoolWithCount(count, round, config?)` para override manual
 
 ---
 
