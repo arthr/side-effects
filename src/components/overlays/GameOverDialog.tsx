@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { Trophy, Skull, RotateCcw, Pill, Heart, Zap, Target } from 'lucide-react'
+import { Trophy, Skull, RotateCcw, Pill, Heart, Zap, Target, Bot } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,34 @@ import {
   DialogFooter,
 } from '@/components/ui/8bit/dialog'
 import { Button } from '@/components/ui/8bit/button'
+import { Card, CardContent } from '@/components/ui/8bit/card'
+import { Separator } from '@/components/ui/8bit/separator'
+import { Badge } from '@/components/ui/8bit/badge'
 import type { Player, PlayerId, GameStats } from '@/types'
+import { cn } from '@/lib/utils'
+
+/**
+ * Configuracao de tema baseada no resultado do jogo
+ */
+interface ThemeConfig {
+  border: string
+  bg: string
+  bgSolid: string
+  text: string
+  title: string
+}
+
+/**
+ * Props do componente StatCard
+ */
+interface StatCardProps {
+  icon: LucideIcon
+  label: string
+  value: number
+  delay: number
+  highlight?: boolean
+  alert?: boolean
+}
 
 interface GameOverDialogProps {
   /** ID do jogador vencedor */
@@ -26,6 +54,39 @@ interface GameOverDialogProps {
 }
 
 /**
+ * Retorna configuracao de tema baseada no resultado
+ */
+function getThemeConfig(winnerPlayer: Player | null, isHumanWinner: boolean): ThemeConfig {
+  if (!winnerPlayer) {
+    return {
+      border: '',
+      bg: 'bg-muted/10',
+      bgSolid: 'bg-muted-foreground',
+      text: 'text-muted-foreground',
+      title: 'EMPATE',
+    }
+  }
+
+  if (isHumanWinner) {
+    return {
+      border: 'border-primary',
+      bg: 'bg-primary/10',
+      bgSolid: 'bg-primary',
+      text: 'text-primary',
+      title: 'VENCEDOR!',
+    }
+  }
+
+  return {
+    border: 'border-destructive',
+    bg: 'bg-destructive/10',
+    bgSolid: 'bg-destructive',
+    text: 'text-destructive',
+    title: 'SE FUDEU!',
+  }
+}
+
+/**
  * Dialog de fim de jogo
  * Exibe o vencedor, estatisticas e opcao de reiniciar
  */
@@ -36,137 +97,163 @@ export function GameOverDialog({
   onRestart,
 }: GameOverDialogProps) {
   const winnerPlayer = winner ? players[winner] : null
-  const loserPlayer = winner
-    ? players[winner === 'player1' ? 'player2' : 'player1']
-    : null
-
-  const isHumanWinner = winnerPlayer && !winnerPlayer.isAI
+  const isHumanWinner = winnerPlayer !== null && !winnerPlayer.isAI
+  const isAiPlayer = players.player2.isAI;
+  const theme = getThemeConfig(winnerPlayer, isHumanWinner)
 
   return (
     <Dialog open>
       <DialogContent
-        className="sm:max-w-md bg-background/95 backdrop-blur-sm"
+        className={cn(
+          'w-[90%] sm:max-w-md',
+          'p-0 rounded-none bg-background shadow-2xl gap-0'
+        )}
       >
-        <DialogHeader className="text-center sm:text-center">
-          {/* Icone animado */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="mx-auto mb-4"
-          >
-            {isHumanWinner ? (
-              <div className="w-20 h-20 rounded-full bg-linear-to-br from-yellow-400 to-amber-600 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-                <Trophy className="w-10 h-10 text-white" />
-              </div>
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-linear-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-500/30">
-                <Skull className="w-10 h-10 text-white" />
-              </div>
-            )}
-          </motion.div>
-
-          {/* Titulo */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <DialogTitle className="text-2xl font-bold">
-              {isHumanWinner ? 'Vitoria!' : 'Derrota!'}
-            </DialogTitle>
-            <DialogDescription className="text-base mt-2">
-              {winnerPlayer ? (
-                <>
-                  <span className="text-primary font-semibold">
-                    {winnerPlayer.name}
-                  </span>{' '}
-                  venceu a partida!
-                </>
-              ) : (
-                'Empate!'
+        {/* BODY */}
+        <div className="px-4 py-3 sm:p-6">
+          <DialogHeader className="flex flex-col items-center justify-center space-y-1 sm:space-y-4">
+            {/* ICONE ANIMADO */}
+            <motion.div
+              initial={{ scale: 0, y: -10 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className={cn(
+                'relative flex items-center justify-center border-4 bg-background',
+                'w-14 h-14 sm:w-24 sm:h-24 mb-1 sm:mb-0',
+                isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
+                theme.border
               )}
-            </DialogDescription>
+            >
+              <div className={cn(
+                'absolute inset-0 opacity-20 animate-pulse', 
+                isHumanWinner ? 'bg-yellow-500!' : 'bg-red-500!',
+                theme.bg
+              )} />
+              {isHumanWinner ? (
+                <Trophy className={cn('size-7 sm:size-12', theme.text, 'text-yellow-500')} />
+              ) : (
+                <Skull className={cn('size-7 sm:size-12', theme.text, 'text-red-500')} />
+              )}
+
+              {/* Cantos decorativos 8-bit */}
+              <div className={cn(
+                'absolute -top-1 -left-1 size-1.5 bg-background border-r border-b', 
+                isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
+                theme.border
+              )} />
+              <div className={cn(
+                'absolute -top-1 -right-1 size-1.5 bg-background border-l border-b', 
+                isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
+                theme.border
+              )} />
+              <div className={cn(
+                'absolute -bottom-1 -left-1 size-1.5 bg-background border-r border-t', 
+                isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
+                theme.border
+              )} />
+              <div className={cn(
+                'absolute -bottom-1 -right-1 size-1.5 bg-background border-l border-t', 
+                isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
+                theme.border
+              )} />
+            </motion.div>
+
+            {/* TITULO E DESCRICAO */}
+            <div className="text-center">
+              <DialogTitle
+                className={cn(
+                  'font-mono uppercase tracking-widest drop-shadow-md leading-none',
+                  'text-2xl sm:text-4xl pb-1',
+                  theme.text
+                )}
+              >
+                {theme.title}
+              </DialogTitle>
+              <DialogDescription asChild>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[10px] sm:text-xs font-mono text-muted-foreground uppercase tracking-wider"
+                >
+                  {winnerPlayer ? `Vencedor: ${winnerPlayer.name}` : 'Sem Vencedor'}
+                </motion.p>
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          {/* GRID DE STATS */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 gap-2 mt-3 sm:mt-8"
+          >
+            <StatCard label="Rodadas" value={stats.totalRounds} icon={Target} delay={0.4} />
+            <StatCard label="Pilulas" value={stats.pillsConsumed} icon={Pill} delay={0.5} />
+            <StatCard label="Overdoses" value={stats.totalCollapses} icon={Zap} delay={0.6} alert={stats.totalCollapses > 2} />
+            <StatCard label="Vidas" value={winnerPlayer?.lives ?? 0} icon={Heart} delay={0.7} highlight />
           </motion.div>
-        </DialogHeader>
 
-        {/* Estatisticas */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="py-4"
-        >
-          <h4 className="text-sm font-medium text-muted-foreground mb-3 text-center">
-            Estatisticas da Partida
-          </h4>
+          {/* SEPARADOR 8-BIT */}
+          <Separator className="mt-3 sm:mt-6" />
 
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={<Target className="w-4 h-4" />}
-              label="Rodadas"
-              value={stats.totalRounds}
-              color="text-blue-400"
-            />
-            <StatCard
-              icon={<Pill className="w-4 h-4" />}
-              label="Pílulas"
-              value={stats.pillsConsumed}
-              color="text-purple-400"
-            />
-            <StatCard
-              icon={<Zap className="w-4 h-4" />}
-              label="Colapsos"
-              value={stats.totalCollapses}
-              color="text-orange-400"
-            />
-            <StatCard
-              icon={<Heart className="w-4 h-4" />}
-              label="Vidas Restantes"
-              value={winnerPlayer?.lives ?? 0}
-              color="text-emerald-400"
-            />
-          </div>
+          {/* PLACAR FINAL (VS) */}
+          <div className="pt-2 sm:pt-4">
+            <div className="grid grid-cols-[1fr_100px_1fr] align-middle justify-center font-mono text-[10px] sm:text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="size-1.5 sm:size-2 bg-primary animate-pulse" />
+                <span className="text-primary font-bold truncate max-w-[80px] sm:max-w-none">
+                  {players.player1.name}
+                </span>
+              </div>
 
-          {/* Resumo dos jogadores */}
-          {winnerPlayer && loserPlayer && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-500" />
-                  <span className="text-muted-foreground">
-                    {winnerPlayer.name}
-                  </span>
-                  <span className="text-emerald-400">
-                    {winnerPlayer.lives} vidas
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skull className="w-4 h-4 text-red-500" />
-                  <span className="text-muted-foreground">
-                    {loserPlayer.name}
-                  </span>
-                  <span className="text-red-400">0 vidas</span>
-                </div>
+              <div className="col-span-1 flex items-center justify-center">
+                <Badge variant="outline" className="text-[9px] sm:text-[10px] border-red-500">
+                  VS
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-end gap-1.5">
+
+                <span
+                  className={cn(
+                    'font-normal tracking-tight truncate max-w-[80px] sm:max-w-none',
+                    !isHumanWinner ? 'text-destructive' : isAiPlayer ? 'text-accent' : 'text-muted-foreground',
+                  )}
+                >
+                  {players.player2.name}
+                </span>
+                <div
+                  className={cn(
+                    'size-1.5 sm:size-2',
+                    !isHumanWinner ? 'bg-destructive animate-pulse' : 'bg-muted'
+                  )}
+                />
               </div>
             </div>
-          )}
-        </motion.div>
+          </div>
+        </div>
 
-        {/* Botao de reiniciar */}
-        <DialogFooter className="sm:justify-center">
+        {/* FOOTER */}
+        <DialogFooter className="p-3 sm:p-4 bg-muted/20 border-t-2 border-border mt-0">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="w-full sm:w-auto"
+            className="w-full"
           >
             <Button
               onClick={onRestart}
               size="lg"
-              className="w-full gap-2 bg-primary hover:bg-primary/90"
+              className={cn(
+                'w-full font-mono uppercase tracking-widest gap-2 transition-all active:scale-[0.98]',
+                'h-10 sm:h-12 text-sm sm:text-base',
+                isHumanWinner
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              )}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Jogar Novamente
             </Button>
           </motion.div>
@@ -177,24 +264,46 @@ export function GameOverDialog({
 }
 
 /**
- * Card de estatistica individual
+ * Card de estatistica individual com estilo 8-bit
  */
-interface StatCardProps {
-  icon: React.ReactNode
-  label: string
-  value: number
-  color: string
-}
-
-function StatCard({ icon, label, value, color }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, delay, highlight, alert }: StatCardProps) {
   return (
-    <div className="bg-muted/50 rounded-lg p-3 text-center">
-      <div className={`flex items-center justify-center gap-1.5 mb-1 ${color}`}>
-        {icon}
-        <span className="text-lg font-bold">{value}</span>
-      </div>
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay }}
+    >
+      <Card className="p-0">
+        <CardContent
+          className={cn(
+            'flex items-center justify-between p-2 sm:p-3',
+            'bg-background hover:bg-muted/10 transition-colors',
+            alert && 'bg-accent/10',
+            highlight && 'bg-primary/10'
+          )}
+        >
+          <div className="flex flex-col">
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground font-mono leading-none mb-1">
+              {label}
+            </span>
+            <Icon
+              className={cn(
+                'size-3.5 sm:size-4',
+                alert ? 'text-accent' : highlight ? 'text-primary' : 'text-foreground'
+              )}
+            />
+          </div>
+
+          <span
+            className={cn(
+              'text-lg sm:text-2xl font-mono leading-none',
+              alert ? 'text-accent' : highlight ? 'text-primary' : 'text-foreground'
+            )}
+          >
+            {value}
+          </span>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }
-
