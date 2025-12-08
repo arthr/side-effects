@@ -72,5 +72,7 @@ export interface PlayerEffectResult {
   damageDealt: number
   /** Cura total recebida */
   healReceived: number
+  /** Vidas restauradas (para pilula LIFE) */
+  livesRestored: number
 }
 

@@ -2,7 +2,7 @@
  * Tipos de pilulas disponiveis no jogo
  * Conforme documentacao em docs/GAME-IDEA.md
  */
-export type PillType = 'SAFE' | 'DMG_LOW' | 'DMG_HIGH' | 'FATAL' | 'HEAL'
+export type PillType = 'SAFE' | 'DMG_LOW' | 'DMG_HIGH' | 'FATAL' | 'HEAL' | 'LIFE'
 
 /**
  * Formas visuais das pilulas
@@ -19,6 +19,8 @@ export interface PillStats {
   isFatal: boolean
   /** Quantidade de cura (0 para nao-cura, 2+ para HEAL) */
   heal: number
+  /** Quantidade de vidas restauradas (para pilula LIFE) */
+  livesRestore: number
 }
 
 /**

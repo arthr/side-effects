@@ -22,7 +22,7 @@ function selectPillType(probabilities: Record<PillType, number>): PillType {
   const random = Math.random()
   let cumulative = 0
 
-  const types: PillType[] = ['SAFE', 'DMG_LOW', 'DMG_HIGH', 'FATAL', 'HEAL']
+  const types: PillType[] = ['SAFE', 'DMG_LOW', 'DMG_HIGH', 'FATAL', 'HEAL', 'LIFE']
 
   for (const type of types) {
     cumulative += probabilities[type]
@@ -41,29 +41,32 @@ function selectPillType(probabilities: Record<PillType, number>): PillType {
 function calculatePillStats(
   type: PillType,
   config: PillConfig
-): { damage: number; isFatal: boolean; heal: number } {
+): { damage: number; isFatal: boolean; heal: number; livesRestore: number } {
   switch (type) {
     case 'SAFE':
-      return { damage: 0, isFatal: false, heal: 0 }
+      return { damage: 0, isFatal: false, heal: 0, livesRestore: 0 }
 
     case 'DMG_LOW': {
       const [min, max] = config.damageRange.DMG_LOW
-      return { damage: randomInRange(min, max), isFatal: false, heal: 0 }
+      return { damage: randomInRange(min, max), isFatal: false, heal: 0, livesRestore: 0 }
     }
 
     case 'DMG_HIGH': {
       const [min, max] = config.damageRange.DMG_HIGH
-      return { damage: randomInRange(min, max), isFatal: false, heal: 0 }
+      return { damage: randomInRange(min, max), isFatal: false, heal: 0, livesRestore: 0 }
     }
 
     case 'FATAL':
-      return { damage: FATAL_DAMAGE, isFatal: true, heal: 0 }
+      return { damage: FATAL_DAMAGE, isFatal: true, heal: 0, livesRestore: 0 }
 
     case 'HEAL':
-      return { damage: 0, isFatal: false, heal: config.healAmount }
+      return { damage: 0, isFatal: false, heal: config.healAmount, livesRestore: 0 }
+
+    case 'LIFE':
+      return { damage: 0, isFatal: false, heal: 0, livesRestore: 1 }
 
     default:
-      return { damage: 0, isFatal: false, heal: 0 }
+      return { damage: 0, isFatal: false, heal: 0, livesRestore: 0 }
   }
 }
 
@@ -81,6 +84,7 @@ export function createPill(type: PillType, config: PillConfig = PILL_CONFIG): Pi
       damage: stats.damage,
       isFatal: stats.isFatal,
       heal: stats.heal,
+      livesRestore: stats.livesRestore,
     },
     visuals: {
       // Cor oculta por padrao (sera revelada quando isRevealed = true)
@@ -123,6 +127,7 @@ export function countPillTypes(pills: Pill[]): Record<PillType, number> {
     DMG_HIGH: 0,
     FATAL: 0,
     HEAL: 0,
+    LIFE: 0,
   }
 
   for (const pill of pills) {

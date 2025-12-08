@@ -12,18 +12,18 @@
 
 ### 1.1 Extensao do Sistema de Tipos
 
-- [ ] TASK-PP-001: Adicionar tipo `LIFE` ao enum `PillType` em `src/types/pill.ts`
-- [ ] TASK-PP-002: Adicionar campo `livesRestore` ao `PillStats` em `src/types/pill.ts`
-- [ ] TASK-PP-003: Adicionar campo `livesRestored` ao `PlayerEffectResult` em `src/types/player.ts`
+- [x] TASK-PP-001: Adicionar tipo `LIFE` ao enum `PillType` em `src/types/pill.ts`
+- [x] TASK-PP-002: Adicionar campo `livesRestore` ao `PillStats` em `src/types/pill.ts`
+- [x] TASK-PP-003: Adicionar campo `livesRestored` ao `PlayerEffectResult` em `src/types/player.ts`
 
 ### 1.2 Constantes e Configuracoes
 
-- [ ] TASK-PP-004: Adicionar `LIFE` ao `PILL_COLORS` em `src/utils/constants.ts`
-- [ ] TASK-PP-005: Adicionar `LIFE` ao `PILL_HEX_COLORS` em `src/utils/constants.ts`
-- [ ] TASK-PP-006: Adicionar `LIFE` ao `PILL_LABELS` em `src/utils/constants.ts`
-- [ ] TASK-PP-007: Adicionar `LIFE` ao `PILL_DESCRIPTIONS` em `src/utils/constants.ts`
-- [ ] TASK-PP-008: Adicionar `LIFE` ao `PILL_SHAPES` em `src/utils/constants.ts`
-- [ ] TASK-PP-009: Adicionar cor CSS `bg-pill-life` ao Tailwind config (se necessario)
+- [x] TASK-PP-004: Adicionar `LIFE` ao `PILL_COLORS` em `src/utils/constants.ts`
+- [x] TASK-PP-005: Adicionar `LIFE` ao `PILL_HEX_COLORS` em `src/utils/constants.ts`
+- [x] TASK-PP-006: Adicionar `LIFE` ao `PILL_LABELS` em `src/utils/constants.ts`
+- [x] TASK-PP-007: Adicionar `LIFE` ao `PILL_DESCRIPTIONS` em `src/utils/constants.ts`
+- [x] TASK-PP-008: Adicionar `LIFE` ao `PILL_SHAPES` em `src/utils/constants.ts`
+- [x] TASK-PP-009: Adicionar cor CSS `bg-pill-life` ao Tailwind config (se necessario)
 
 ---
 
@@ -31,10 +31,10 @@
 
 ### 2.1 Criar Novo Modulo - Progressao de Tipos
 
-- [ ] TASK-PP-010: Criar arquivo `src/utils/pillProgression.ts`
-- [ ] TASK-PP-011: Definir interface `PillRule` com campos `unlockRound`, `startPct`, `endPct`
-- [ ] TASK-PP-012: Definir interface `ProgressionConfig` com `maxRound` e `rules`
-- [ ] TASK-PP-013: Implementar constante `PROGRESSION` com regras de balanceamento
+- [x] TASK-PP-010: Criar arquivo `src/utils/pillProgression.ts`
+- [x] TASK-PP-011: Definir interface `PillRule` com campos `unlockRound`, `startPct`, `endPct`
+- [x] TASK-PP-012: Definir interface `ProgressionConfig` com `maxRound` e `rules`
+- [x] TASK-PP-013: Implementar constante `PROGRESSION` com regras de balanceamento
 - [ ] TASK-PP-014: Implementar funcao `lerp(start, end, t)` para interpolacao linear
 - [ ] TASK-PP-015: Implementar funcao `getPillChances(round, config?)` com normalizacao
 - [ ] TASK-PP-016: Implementar funcao `rollPillType(round, config?)` para sorteio

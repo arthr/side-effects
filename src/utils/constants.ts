@@ -21,6 +21,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
     DMG_HIGH: 0.15,
     FATAL: 0.10,
     HEAL: 0.15,
+    LIFE: 0,  // Desativado por padrao - ativado via pillProgression
   },
 }
 
@@ -63,6 +64,7 @@ export const PILL_COLORS: Record<PillType, string> = {
   DMG_HIGH: 'bg-pill-dmg-high',
   FATAL: 'bg-pill-fatal',
   HEAL: 'bg-pill-heal',
+  LIFE: 'bg-pill-life',
 }
 
 /**
@@ -74,6 +76,7 @@ export const PILL_HEX_COLORS: Record<PillType, string> = {
   DMG_HIGH: '#ef4444',
   FATAL: '#7c3aed',
   HEAL: '#06b6d4',
+  LIFE: '#ec4899',
 }
 
 /**
@@ -91,6 +94,7 @@ export const PILL_LABELS: Record<PillType, string> = {
   DMG_HIGH: 'Toxina',
   FATAL: 'Cianeto',
   HEAL: 'Antidoto',
+  LIFE: 'Vida',
 }
 
 /**
@@ -102,6 +106,7 @@ export const PILL_DESCRIPTIONS: Record<PillType, string> = {
   DMG_HIGH: 'Causa 3-4 de dano a resistencia.',
   FATAL: 'Zera a resistencia instantaneamente!',
   HEAL: 'Recupera +2 de resistencia.',
+  LIFE: 'Restaura +1 vida perdida.',
 }
 
 /**
@@ -113,6 +118,7 @@ export const PILL_SHAPES: Record<PillType, string> = {
   DMG_HIGH: 'oval',
   FATAL: 'triangle',
   HEAL: 'hexagon',
+  LIFE: 'capsule',
 }
 
 /**

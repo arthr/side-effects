@@ -94,6 +94,7 @@ export function applyPillEffect(
     eliminated,
     damageDealt,
     healReceived,
+    livesRestored: 0,
   }
 }
 
@@ -167,6 +168,7 @@ export function applyDamage(player: Player, amount: number): PlayerEffectResult 
     eliminated,
     damageDealt: amount,
     healReceived: 0,
+    livesRestored: 0,
   }
 }
 
@@ -186,6 +188,7 @@ export function applyHeal(player: Player, amount: number): PlayerEffectResult {
     eliminated: false,
     damageDealt: 0,
     healReceived: actualHeal,
+    livesRestored: 0,
   }
 }
 
