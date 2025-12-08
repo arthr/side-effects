@@ -47,6 +47,7 @@ export function OverlayManager() {
           players={gameOverData.players}
           stats={gameOverData.stats}
           onRestart={handleRestart}
+          onClose={close}
         />
       )}
 

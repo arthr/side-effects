@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Trophy, Skull, RotateCcw, Pill, Heart, Zap, Target, Bot } from 'lucide-react'
+import { Trophy, Skull, RotateCcw, Pill, Heart, Zap, Target } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import {
   Dialog,
@@ -51,6 +51,8 @@ interface GameOverDialogProps {
   stats: GameStats
   /** Callback para reiniciar o jogo */
   onRestart: () => void
+  /** Callback para fechar o dialog */
+  onClose: () => void
 }
 
 /**
@@ -95,6 +97,7 @@ export function GameOverDialog({
   players,
   stats,
   onRestart,
+  onClose,
 }: GameOverDialogProps) {
   const winnerPlayer = winner ? players[winner] : null
   const isHumanWinner = winnerPlayer !== null && !winnerPlayer.isAI
@@ -102,7 +105,15 @@ export function GameOverDialog({
   const theme = getThemeConfig(winnerPlayer, isHumanWinner)
 
   return (
-    <Dialog open>
+    <Dialog
+      open={true}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onClose()
+          onRestart()
+        }
+      }}
+    >
       <DialogContent
         className={cn(
           'w-[90%] sm:max-w-md',
@@ -125,7 +136,7 @@ export function GameOverDialog({
               )}
             >
               <div className={cn(
-                'absolute inset-0 opacity-20 animate-pulse', 
+                'absolute inset-0 opacity-20 animate-pulse',
                 isHumanWinner ? 'bg-yellow-500!' : 'bg-red-500!',
                 theme.bg
               )} />
@@ -137,22 +148,22 @@ export function GameOverDialog({
 
               {/* Cantos decorativos 8-bit */}
               <div className={cn(
-                'absolute -top-1 -left-1 size-1.5 bg-background border-r border-b', 
+                'absolute -top-1 -left-1 size-1.5 bg-background border-r border-b',
                 isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
                 theme.border
               )} />
               <div className={cn(
-                'absolute -top-1 -right-1 size-1.5 bg-background border-l border-b', 
+                'absolute -top-1 -right-1 size-1.5 bg-background border-l border-b',
                 isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
                 theme.border
               )} />
               <div className={cn(
-                'absolute -bottom-1 -left-1 size-1.5 bg-background border-r border-t', 
+                'absolute -bottom-1 -left-1 size-1.5 bg-background border-r border-t',
                 isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
                 theme.border
               )} />
               <div className={cn(
-                'absolute -bottom-1 -right-1 size-1.5 bg-background border-l border-t', 
+                'absolute -bottom-1 -right-1 size-1.5 bg-background border-l border-t',
                 isHumanWinner ? 'border-yellow-500!' : 'border-red-500!',
                 theme.border
               )} />
@@ -234,8 +245,11 @@ export function GameOverDialog({
           </div>
         </div>
 
+        {/* SEPARADOR 8-BIT */}
+        <Separator />
+
         {/* FOOTER */}
-        <DialogFooter className="p-3 sm:p-4 bg-muted/20 border-t-2 border-border mt-0">
+        <DialogFooter className="p-3 sm:p-4 bg-muted/20 mt-0">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -243,7 +257,10 @@ export function GameOverDialog({
             className="w-full"
           >
             <Button
-              onClick={onRestart}
+              onClick={() => {
+                onRestart()
+                onClose()
+              }}
               size="lg"
               className={cn(
                 'w-full font-mono uppercase tracking-widest gap-2 transition-all active:scale-[0.98]',

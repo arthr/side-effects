@@ -150,6 +150,18 @@ case 'discard': {
 
 ---
 
+## Bug #6: Item Handcuff sendo removido em nova rodada
+
+**Status:** PENDENTE
+**Severidade:** Alta
+**Arquivo:** `precisa mapear`
+
+### Descricao
+Quando o item Handcuff é usado no último turno da rodada, o oponente recebe o efeito mas perde logo em seguida quando inicia uma nova rodada.
+
+---
+
+
 ## Checklist de Correcoes
 
 - [x] Fix #1: Refatorar reset de flags em useAIPlayer

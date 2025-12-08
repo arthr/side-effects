@@ -12,6 +12,7 @@ import {
   getAllCategories,
 } from '@/utils/itemCatalog'
 import { cn } from '@/lib/utils'
+import { Button } from '../ui/8bit/button'
 
 /**
  * Tela de selecao de itens pre-jogo
@@ -158,7 +159,7 @@ export function ItemSelectionScreen() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <button
+        <Button
           onClick={confirmSelection}
           disabled={selectedCount === 0 || player1Confirmed}
           className={`
@@ -171,7 +172,7 @@ export function ItemSelectionScreen() {
           `}
         >
           {player1Confirmed ? 'Aguardando IA...' : 'Confirmar seleção'}
-        </button>
+        </Button>
       </motion.div>
     </motion.div>
   )
