@@ -65,10 +65,10 @@
 
 ### 4.1 Atualizar GameLogic
 
-- [ ] TASK-PP-023: Adicionar case `LIFE` em `applyPillEffect()` para restaurar vidas
-- [ ] TASK-PP-024: Implementar logica de `LIFE` invertida (perde vida)
-- [ ] TASK-PP-025: Implementar logica de `LIFE` dobrada (restaura mais vidas)
-- [ ] TASK-PP-026: Garantir cap de vidas no `maxLives` do jogador
+- [x] TASK-PP-023: Adicionar case `LIFE` em `applyPillEffect()` para restaurar vidas
+- [x] TASK-PP-024: Implementar logica de `LIFE` invertida (perde vida)
+- [x] TASK-PP-025: Implementar logica de `LIFE` dobrada (restaura mais vidas)
+- [x] TASK-PP-026: Garantir cap de vidas no `maxLives` do jogador
 
 ---
 

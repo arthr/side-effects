@@ -28,6 +28,66 @@ export function applyPillEffect(
   const { stats, inverted, doubled } = pill
   const hasShield = options?.hasShield ?? false
 
+  // Caso especial: LIFE afeta vidas diretamente, nao resistencia
+  if (pill.type === 'LIFE') {
+    if (!inverted) {
+      // LIFE normal: restaura vidas (cap em maxLives)
+      let livesToRestore = stats.livesRestore
+      if (doubled) livesToRestore *= 2
+
+      const newLives = Math.min(player.lives + livesToRestore, player.maxLives)
+      const actualRestored = newLives - player.lives
+
+      return {
+        player: { ...player, lives: newLives },
+        collapsed: false,
+        eliminated: false,
+        damageDealt: 0,
+        healReceived: 0,
+        livesRestored: actualRestored,
+      }
+    } else {
+      // LIFE invertida: causa dano em RESISTENCIA (proporcional)
+      let damageAmount = stats.livesRestore * 3
+      if (doubled) damageAmount *= 2
+      if (hasShield) damageAmount = 0 // Shield bloqueia dano
+
+      const newResistance = player.resistance - damageAmount
+      const collapsed = newResistance <= 0
+
+      let finalPlayer = { ...player, resistance: Math.max(0, newResistance) }
+
+      // Se colapsou, perde vida e reseta resistencia
+      if (collapsed) {
+        const newLives = player.lives - 1
+        const eliminated = newLives <= 0
+        finalPlayer = {
+          ...finalPlayer,
+          lives: Math.max(0, newLives),
+          resistance: eliminated ? 0 : player.maxResistance,
+        }
+
+        return {
+          player: finalPlayer,
+          collapsed: true,
+          eliminated,
+          damageDealt: damageAmount,
+          healReceived: 0,
+          livesRestored: 0,
+        }
+      }
+
+      return {
+        player: finalPlayer,
+        collapsed: false,
+        eliminated: false,
+        damageDealt: damageAmount,
+        healReceived: 0,
+        livesRestored: 0,
+      }
+    }
+  }
+
   // Calcula valores base considerando modificadores
   let baseDamage = stats.damage
   let baseHeal = stats.heal
