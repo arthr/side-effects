@@ -116,17 +116,17 @@
 
 ### 7.2 Testes Unitarios - Pool Scaling
 
-- [ ] TASK-PP-060: Testar `getPillCount()` retorna baseCount na rodada 1
-- [ ] TASK-PP-061: Testar `getPillCount()` mantem valor dentro do ciclo (rodadas 1-3 = 5)
-- [ ] TASK-PP-062: Testar `getPillCount()` aumenta apos ciclo (rodada 4 = 6)
+- [ ] TASK-PP-060: Testar `getPillCount()` retorna baseCount na rodada 1 (6)
+- [ ] TASK-PP-061: Testar `getPillCount()` mantem valor dentro do ciclo (rodadas 1-3 = 6)
+- [ ] TASK-PP-062: Testar `getPillCount()` aumenta apos ciclo (rodada 4 = 7)
 - [ ] TASK-PP-063: Testar `getPillCount()` respeita maxCap
 - [ ] TASK-PP-064: Testar `getPillCount()` com config customizada
 - [ ] TASK-PP-065: Testar `getPillCount()` sem maxCap definido
 
 ### 7.3 Testes de Integracao
 
-- [ ] TASK-PP-042: Verificar geracao de pilulas na rodada 1 (sem FATAL, 5 pilulas)
-- [ ] TASK-PP-043: Verificar geracao de pilulas na rodada 5 (com FATAL, 6 pilulas)
+- [ ] TASK-PP-042: Verificar geracao de pilulas na rodada 1 (sem FATAL/HEAL, 6 pilulas)
+- [ ] TASK-PP-043: Verificar geracao de pilulas na rodada 4 (com FATAL, 7 pilulas)
 - [ ] TASK-PP-044: Verificar transicao de rodada mantem consistencia
 - [ ] TASK-PP-045: Verificar itens funcionam com novos tipos (Scanner, Inverter, etc)
 - [ ] TASK-PP-066: Verificar quantidade de pilulas aumenta corretamente entre rodadas
@@ -146,7 +146,7 @@
 
 > **NOTA:** Estas tasks sao para quando decidirmos ativar a pilula LIFE.
 
-- [ ] TASK-PP-050: Alterar `PROGRESSION.rules.LIFE` para { unlockRound: 8, startPct: 10, endPct: 15 }
+- [ ] TASK-PP-050: Alterar `PROGRESSION.rules.LIFE` para { unlockRound: 10, startPct: 10, endPct: 15 }
 - [ ] TASK-PP-051: Atualizar CSS para cor `bg-pill-life` visivel
 - [ ] TASK-PP-052: Testar balanceamento com LIFE ativo
 - [ ] TASK-PP-053: Ajustar porcentagens se necessario
@@ -234,15 +234,16 @@ LIFE: { unlockRound: 99, startPct: 0, endPct: 0 }
 Para ativar no futuro:
 
 ```typescript
-LIFE: { unlockRound: 8, startPct: 10, endPct: 15 }
+LIFE: { unlockRound: 10, startPct: 10, endPct: 15 }
 ```
 
 ### Retrocompatibilidade
 
-O comportamento da rodada 1 foi calibrado para ser similar ao sistema atual:
-- 70% SAFE (era ~35% - mais seguro no inicio)
+O comportamento da rodada 1 foi calibrado para manter tensao:
+- 45% SAFE (era ~35% - um pouco mais seguro no inicio)
 - 30% DMG_LOW (era ~25% - similar)
-- 0% resto (antes tinha FATAL desde o inicio)
+- 15% DMG_HIGH (era ~15% - igual)
+- FATAL atrasa para rodada 4 (era desde rodada 1 com 10%)
 
 Se quiser manter exatamente igual ao antigo, pode criar um modo "legacy":
 
@@ -264,11 +265,11 @@ export const LEGACY_PROGRESSION: ProgressionConfig = {
 
 ### Configuracao POOL_SCALING
 
-A configuracao padrao e conservadora para nao impactar muito a experiencia:
+A configuracao padrao e retrocompativel (comeca com 6, igual ao sistema atual):
 
 ```typescript
 export const POOL_SCALING: PoolScalingConfig = {
-  baseCount: 5,    // Comeca com menos que antes (era 6)
+  baseCount: 6,    // Retrocompativel com sistema atual
   increaseBy: 1,   // Aumenta devagar
   frequency: 3,    // A cada 3 rodadas
   maxCap: 12,      // Limite para UI
@@ -278,14 +279,13 @@ export const POOL_SCALING: PoolScalingConfig = {
 **Tabela de referencia rapida:**
 | Rodadas | Pilulas |
 |---------|---------|
-| 1-3     | 5       |
-| 4-6     | 6       |
-| 7-9     | 7       |
-| 10-12   | 8       |
-| 13-15   | 9       |
-| 16-18   | 10      |
-| 19-21   | 11      |
-| 22+     | 12 (cap)|
+| 1-3     | 6       |
+| 4-6     | 7       |
+| 7-9     | 8       |
+| 10-12   | 9       |
+| 13-15   | 10      |
+| 16-18   | 11      |
+| 19+     | 12 (cap)|
 
 Se quiser quantidade fixa como antes:
 

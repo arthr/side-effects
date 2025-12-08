@@ -100,21 +100,27 @@ export interface ProgressionConfig {
 
 /**
  * Configuracao padrao - Single Source of Truth do balanceamento
+ * 
+ * NOTAS DE DESIGN:
+ * - Rodada 1 ja tem algum risco (DMG_HIGH 15%) para criar tensao imediata
+ * - HEAL desbloqueia rodada 2, ANTES de FATAL, como "valvula de escape"
+ * - FATAL limitado a 18% max para evitar late game muito punitivo/aleatorio
+ * - maxRound 15 para evitar estagnacao em partidas longas
  */
 export const PROGRESSION: ProgressionConfig = {
-  maxRound: 10,
+  maxRound: 15,
   rules: {
-    SAFE:     { unlockRound: 1, startPct: 70, endPct: 10 },  // Decai drasticamente
+    SAFE:     { unlockRound: 1, startPct: 45, endPct: 10 },  // Menos seguro no inicio
     DMG_LOW:  { unlockRound: 1, startPct: 30, endPct: 15 },  // Estabiliza
-    DMG_HIGH: { unlockRound: 3, startPct: 20, endPct: 25 },  // Sobe no mid-game
-    HEAL:     { unlockRound: 3, startPct: 10, endPct: 10 },  // Constante apos unlock
-    FATAL:    { unlockRound: 5, startPct: 5,  endPct: 25 },  // Sobe no fim
+    DMG_HIGH: { unlockRound: 1, startPct: 15, endPct: 25 },  // Presente desde rodada 1
+    HEAL:     { unlockRound: 2, startPct: 10, endPct: 15 },  // Antes de FATAL
+    FATAL:    { unlockRound: 4, startPct: 5,  endPct: 18 },  // Atrasa e limita max
     LIFE:     { unlockRound: 99, startPct: 0, endPct: 0 },   // DESATIVADO por padrao
   }
 }
 
 // Para ativar LIFE no futuro, basta mudar para:
-// LIFE: { unlockRound: 8, startPct: 10, endPct: 15 }
+// LIFE: { unlockRound: 10, startPct: 10, endPct: 15 }
 ```
 
 ### Pool Scaling Configuration (`src/utils/pillProgression.ts`)
@@ -137,10 +143,10 @@ export interface PoolScalingConfig {
 
 /**
  * Configuracao padrao de pool scaling
- * "Comeca com 5, aumenta +1 a cada 3 rodadas, max 12"
+ * "Comeca com 6 (retrocompativel), aumenta +1 a cada 3 rodadas, max 12"
  */
 export const POOL_SCALING: PoolScalingConfig = {
-  baseCount: 5,
+  baseCount: 6,
   increaseBy: 1,
   frequency: 3,
   maxCap: 12,
@@ -151,14 +157,13 @@ export const POOL_SCALING: PoolScalingConfig = {
 
 | Rodadas | Pilulas | Calculo |
 |---------|---------|---------|
-| 1-3     | 5       | 5 + floor(0/3) * 1 = 5 |
-| 4-6     | 6       | 5 + floor(3/3) * 1 = 6 |
-| 7-9     | 7       | 5 + floor(6/3) * 1 = 7 |
-| 10-12   | 8       | 5 + floor(9/3) * 1 = 8 |
-| 13-15   | 9       | 5 + floor(12/3) * 1 = 9 |
-| 16-18   | 10      | 5 + floor(15/3) * 1 = 10 |
-| 19-21   | 11      | 5 + floor(18/3) * 1 = 11 |
-| 22+     | 12      | cap atingido |
+| 1-3     | 6       | 6 + floor(0/3) * 1 = 6 |
+| 4-6     | 7       | 6 + floor(3/3) * 1 = 7 |
+| 7-9     | 8       | 6 + floor(6/3) * 1 = 8 |
+| 10-12   | 9       | 6 + floor(9/3) * 1 = 9 |
+| 13-15   | 10      | 6 + floor(12/3) * 1 = 10 |
+| 16-18   | 11      | 6 + floor(15/3) * 1 = 11 |
+| 19+     | 12      | cap atingido |
 
 ---
 
@@ -297,10 +302,10 @@ export function getPillCount(
 
 **Exemplos de uso:**
 ```typescript
-getPillCount(1)   // 5 (base)
-getPillCount(3)   // 5 (ainda no primeiro ciclo)
-getPillCount(4)   // 6 (primeiro aumento)
-getPillCount(10)  // 8 (terceiro aumento)
+getPillCount(1)   // 6 (base, retrocompativel)
+getPillCount(3)   // 6 (ainda no primeiro ciclo)
+getPillCount(4)   // 7 (primeiro aumento)
+getPillCount(10)  // 9 (terceiro aumento)
 getPillCount(100) // 12 (cap atingido)
 ```
 
@@ -464,25 +469,44 @@ export function applyPillEffect(
     }
   }
 
-  // Se LIFE invertida: perde vida ao inves de ganhar
+  // Se LIFE invertida: causa dano em RESISTENCIA (proporcional)
+  // NOTA: Mantemos consistencia com outros tipos - inversao afeta resistencia, nao vidas
   if (pill.type === 'LIFE' && inverted) {
-    let livesToLose = stats.livesRestore
-    if (doubled) livesToLose *= 2
+    let damageAmount = stats.livesRestore * 3  // Equivalente em dano de resistencia
+    if (doubled) damageAmount *= 2
 
-    const newLives = player.lives - livesToLose
-    const eliminated = newLives <= 0
+    const newResistance = player.resistance - damageAmount
+    const collapsed = newResistance <= 0
+
+    let finalPlayer = { ...player, resistance: Math.max(0, newResistance) }
+
+    // Se colapsou, perde vida e reseta resistencia (fluxo normal)
+    if (collapsed) {
+      const newLives = player.lives - 1
+      const eliminated = newLives <= 0
+      finalPlayer = {
+        ...finalPlayer,
+        lives: Math.max(0, newLives),
+        resistance: eliminated ? 0 : player.maxResistance,
+      }
+
+      return {
+        player: finalPlayer,
+        collapsed: true,
+        eliminated,
+        damageDealt: damageAmount,
+        healReceived: 0,
+        livesRestored: 0,
+      }
+    }
 
     return {
-      player: {
-        ...player,
-        lives: Math.max(0, newLives),
-        resistance: eliminated ? 0 : player.resistance,
-      },
+      player: finalPlayer,
       collapsed: false,
-      eliminated,
-      damageDealt: 0,
+      eliminated: false,
+      damageDealt: damageAmount,
       healReceived: 0,
-      livesRestored: -livesToLose,
+      livesRestored: 0,
     }
   }
 
@@ -523,22 +547,23 @@ export const PILL_SHAPES: Record<PillType, string> = {
 
 ## Tabela de Probabilidades por Rodada
 
-Referencia visual do comportamento esperado:
+Referencia visual do comportamento esperado (valores aproximados, normalizados):
 
 | Rodada | SAFE  | DMG_LOW | DMG_HIGH | HEAL  | FATAL | LIFE* |
 |--------|-------|---------|----------|-------|-------|-------|
-| 1      | 70%   | 30%     | 0%       | 0%    | 0%    | 0%    |
-| 2      | 63.3% | 28.3%   | 2.9%     | 1.4%  | 0%    | 0%    |
-| 3      | 56.7% | 26.7%   | 5.7%     | 2.9%  | 0%    | 0%    |
-| 4      | 45.8% | 23.3%   | 11.7%    | 5.0%  | 0%    | 0%    |
-| 5      | 35.0% | 20.0%   | 17.5%    | 7.5%  | 5.0%  | 0%    |
-| 6      | 29.2% | 18.3%   | 19.2%    | 7.9%  | 10.4% | 0%    |
-| 7      | 23.3% | 16.7%   | 20.8%    | 8.3%  | 15.8% | 0%    |
-| 8      | 17.5% | 15.0%   | 22.5%    | 8.8%  | 21.2% | 0%    |
-| 9      | 11.7% | 13.3%   | 24.2%    | 9.2%  | 26.7% | 0%    |
-| 10     | 10.0% | 15.0%   | 25.0%    | 10.0% | 25.0% | 0%    |
+| 1      | 50.0% | 33.3%   | 16.7%    | 0%    | 0%    | 0%    |
+| 2      | 46.3% | 31.6%   | 16.8%    | 5.3%  | 0%    | 0%    |
+| 3      | 42.9% | 30.0%   | 17.1%    | 10.0% | 0%    | 0%    |
+| 4      | 39.2% | 27.5%   | 17.6%    | 10.8% | 4.9%  | 0%    |
+| 5      | 35.8% | 26.0%   | 18.3%    | 11.4% | 8.5%  | 0%    |
+| 6      | 32.4% | 24.3%   | 18.9%    | 12.2% | 12.2% | 0%    |
+| 7      | 29.3% | 22.9%   | 19.6%    | 12.8% | 15.4% | 0%    |
+| 8      | 26.1% | 21.5%   | 20.3%    | 13.5% | 18.6% | 0%    |
+| 10     | 20.0% | 18.8%   | 21.8%    | 14.1% | 25.3% | 0%    |
+| 15     | 12.0% | 18.1%   | 30.1%    | 18.1% | 21.7% | 0%    |
 
 > *LIFE desativado por padrao. Ativar altera distribuicao.
+> Nota: Valores sao normalizados para soma = 100%. FATAL limitado a ~18% endPct.
 
 ---
 
@@ -640,10 +665,13 @@ A IA nao precisa de mudancas - ela escolhe pilulas aleatoriamente e a distribuic
 ```typescript
 describe('pillProgression', () => {
   describe('getPillChances', () => {
-    it('retorna apenas SAFE e DMG_LOW na rodada 1', () => {
+    it('retorna SAFE, DMG_LOW e DMG_HIGH na rodada 1 (sem HEAL, FATAL, LIFE)', () => {
       const chances = getPillChances(1)
-      expect(chances.DMG_HIGH).toBe(0)
-      expect(chances.FATAL).toBe(0)
+      expect(chances.SAFE).toBeGreaterThan(0)
+      expect(chances.DMG_LOW).toBeGreaterThan(0)
+      expect(chances.DMG_HIGH).toBeGreaterThan(0)
+      expect(chances.HEAL).toBe(0)  // Desbloqueia rodada 2
+      expect(chances.FATAL).toBe(0) // Desbloqueia rodada 4
       expect(chances.LIFE).toBe(0)
     })
 
@@ -655,9 +683,14 @@ describe('pillProgression', () => {
       }
     })
 
-    it('FATAL aparece a partir da rodada 5', () => {
-      expect(getPillChances(4).FATAL).toBe(0)
-      expect(getPillChances(5).FATAL).toBeGreaterThan(0)
+    it('FATAL aparece a partir da rodada 4', () => {
+      expect(getPillChances(3).FATAL).toBe(0)
+      expect(getPillChances(4).FATAL).toBeGreaterThan(0)
+    })
+
+    it('HEAL aparece a partir da rodada 2', () => {
+      expect(getPillChances(1).HEAL).toBe(0)
+      expect(getPillChances(2).HEAL).toBeGreaterThan(0)
     })
 
     it('LIFE desativado por padrao', () => {
@@ -668,31 +701,31 @@ describe('pillProgression', () => {
   })
 
   describe('rollPillType', () => {
-    it('nunca retorna tipo nao desbloqueado', () => {
+    it('nunca retorna tipo nao desbloqueado na rodada 1', () => {
       for (let i = 0; i < 100; i++) {
         const type = rollPillType(1)
-        expect(['SAFE', 'DMG_LOW']).toContain(type)
+        expect(['SAFE', 'DMG_LOW', 'DMG_HIGH']).toContain(type)
       }
     })
   })
 
   describe('getPillCount', () => {
     it('retorna baseCount na rodada 1', () => {
-      expect(getPillCount(1)).toBe(5)
+      expect(getPillCount(1)).toBe(6)
     })
 
     it('mantem mesmo valor dentro do ciclo', () => {
-      // Rodadas 1-3 devem retornar 5 (primeiro ciclo)
-      expect(getPillCount(1)).toBe(5)
-      expect(getPillCount(2)).toBe(5)
-      expect(getPillCount(3)).toBe(5)
+      // Rodadas 1-3 devem retornar 6 (primeiro ciclo)
+      expect(getPillCount(1)).toBe(6)
+      expect(getPillCount(2)).toBe(6)
+      expect(getPillCount(3)).toBe(6)
     })
 
     it('aumenta apos completar ciclo', () => {
       // Rodada 4 inicia segundo ciclo
-      expect(getPillCount(4)).toBe(6)
-      expect(getPillCount(5)).toBe(6)
-      expect(getPillCount(6)).toBe(6)
+      expect(getPillCount(4)).toBe(7)
+      expect(getPillCount(5)).toBe(7)
+      expect(getPillCount(6)).toBe(7)
     })
 
     it('respeita maxCap', () => {
@@ -765,7 +798,7 @@ As configuracoes `ProgressionConfig` e `PoolScalingConfig` podem ser substituida
 ```typescript
 // Modo Rapido: menos pilulas, aumenta devagar
 const FAST_MODE: PoolScalingConfig = {
-  baseCount: 4,
+  baseCount: 5,
   increaseBy: 1,
   frequency: 5,
   maxCap: 8,
@@ -773,13 +806,13 @@ const FAST_MODE: PoolScalingConfig = {
 
 // Modo Caos: muitas pilulas, aumenta rapido
 const CHAOS_MODE: PoolScalingConfig = {
-  baseCount: 6,
+  baseCount: 7,
   increaseBy: 2,
   frequency: 2,
   maxCap: 16,
 }
 
-// Modo Classico: quantidade fixa
+// Modo Classico: quantidade fixa (retrocompativel com sistema antigo)
 const CLASSIC_MODE: PoolScalingConfig = {
   baseCount: 6,
   increaseBy: 0,

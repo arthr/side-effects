@@ -17,19 +17,19 @@ O sistema possui dois eixos de progressao:
 **EARS:** O sistema DEVE calcular as probabilidades de cada tipo de pilula com base no numero da rodada atual.
 
 **Criterios:**
-- Rodadas iniciais (1-2): Predominancia de pilulas seguras (Placebo, Veneno)
-- Rodadas intermediarias (3-5): Introducao gradual de Toxina, Antidoto e Cianeto
-- Rodadas tardias (6-10): Aumento de letalidade, introducao opcional de Vida
+- Rodadas iniciais (1-2): Mix balanceado com algum risco (Placebo, Veneno, Toxina leve)
+- Rodadas intermediarias (3-5): Introducao gradual de Antidoto e Cianeto
+- Rodadas tardias (6-15): Aumento de letalidade controlado, introducao opcional de Vida
 
 **Mapeamento de Tipos:**
 | Tipo Interno | Nome Display | Desbloqueio |
 |--------------|--------------|-------------|
 | SAFE         | Placebo      | Rodada 1    |
 | DMG_LOW      | Veneno       | Rodada 1    |
-| DMG_HIGH     | Toxina       | Rodada 3    |
-| HEAL         | Antidoto     | Rodada 3    |
-| FATAL        | Cianeto      | Rodada 5    |
-| LIFE         | Vida         | Rodada 8*   |
+| DMG_HIGH     | Toxina       | Rodada 1    |
+| HEAL         | Antidoto     | Rodada 2    |
+| FATAL        | Cianeto      | Rodada 4    |
+| LIFE         | Vida         | Rodada 10*  |
 
 > *LIFE e uma feature futura, implementada mas desativada por padrao.
 
@@ -45,10 +45,10 @@ onde t = (rodadaAtual - unlockRound) / (maxRound - unlockRound)
 ```
 
 **Exemplo - Placebo:**
-- unlockRound: 1, startPct: 70%, endPct: 10%
-- Rodada 1: 70%
-- Rodada 5: ~40%
-- Rodada 10: 10%
+- unlockRound: 1, startPct: 45%, endPct: 10%
+- Rodada 1: 45%
+- Rodada 8: ~20%
+- Rodada 15: 10%
 
 ---
 
@@ -141,18 +141,18 @@ interface PoolScalingConfig {
 
 **Exemplo - Configuracao Padrao:**
 ```
-baseCount: 5, increaseBy: 1, frequency: 3, maxCap: 12
+baseCount: 6, increaseBy: 1, frequency: 3, maxCap: 12
 
-Rodada 1-3:  5 pilulas
-Rodada 4-6:  6 pilulas
-Rodada 7-9:  7 pilulas
-Rodada 10-12: 8 pilulas
+Rodada 1-3:  6 pilulas
+Rodada 4-6:  7 pilulas
+Rodada 7-9:  8 pilulas
+Rodada 10-12: 9 pilulas
 ...
-Rodada 22+: 12 pilulas (cap)
+Rodada 19+: 12 pilulas (cap)
 ```
 
 **Criterios:**
-- Quantidade inicial configuravel (padrao: 5)
+- Quantidade inicial configuravel (padrao: 6, retrocompativel)
 - Incremento configuravel (padrao: +1)
 - Frequencia de incremento configuravel (padrao: a cada 3 rodadas)
 - Limite maximo respeitado (padrao: 12)
