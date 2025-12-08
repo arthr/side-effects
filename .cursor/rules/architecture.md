@@ -172,3 +172,10 @@ Selecao automatica de itens pela IA:
 ### gameLogic.ts
 - `applyPillEffect(pill, player, options?)` - Aplica efeito com suporte a Shield
 - `hasPlayerEffect(player, effectType)` - Verifica efeitos ativos
+
+### pillProgression.ts
+- `PROGRESSION` - Configuracao de desbloqueio e distribuicao de tipos por rodada
+- `POOL_SCALING` - Configuracao de quantidade de pilulas por rodada (step function)
+- `getPillChances(round, config?)` - Calcula probabilidades normalizadas por rodada
+- `rollPillType(round, config?)` - Sorteia tipo de pilula baseado na rodada
+- `getPillCount(round, config?)` - Calcula quantidade de pilulas por rodada

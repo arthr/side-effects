@@ -127,18 +127,18 @@
 
 - [x] TASK-PP-042: Verificar geracao de pilulas na rodada 1 (sem FATAL/HEAL, 6 pilulas)
 - [x] TASK-PP-043: Verificar geracao de pilulas na rodada 4 (com FATAL, 7 pilulas)
-- [ ] TASK-PP-044: Verificar transicao de rodada mantem consistencia (MANUAL)
-- [ ] TASK-PP-045: Verificar itens funcionam com novos tipos (Scanner, Inverter, etc) (MANUAL)
+- [x] TASK-PP-044: Verificar transicao de rodada mantem consistencia (MANUAL)
+- [x] TASK-PP-045: Verificar itens funcionam com novos tipos (Scanner, Inverter, etc) (MANUAL)
 - [x] TASK-PP-066: Verificar quantidade de pilulas aumenta corretamente entre rodadas
 
 ### 7.4 Validacao Manual
 
-- [ ] TASK-PP-046: Jogar partida completa (10+ rodadas)
-- [ ] TASK-PP-047: Verificar curva de dificuldade perceptivel
-- [ ] TASK-PP-048: Verificar IA funciona normalmente
-- [ ] TASK-PP-049: Verificar todos os overlays e toasts
-- [ ] TASK-PP-067: Verificar UI de PillPool adapta-se a quantidade variavel (5-12 pilulas)
-- [ ] TASK-PP-068: Verificar que cap de 12 pilulas nao quebra layout
+- [x] TASK-PP-046: Jogar partida completa (10+ rodadas)
+- [x] TASK-PP-047: Verificar curva de dificuldade perceptivel
+- [x] TASK-PP-048: Verificar IA funciona normalmente
+- [x] TASK-PP-049: Verificar todos os overlays e toasts
+- [x] TASK-PP-067: Verificar UI de PillPool adapta-se a quantidade variavel (5-12 pilulas)
+- [x] TASK-PP-068: Verificar que cap de 12 pilulas nao quebra layout
 
 ---
 
