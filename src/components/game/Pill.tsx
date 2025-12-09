@@ -28,9 +28,9 @@ interface PillProps {
  * Classes de tamanho para o container
  */
 const sizeClasses = {
-  sm: 'w-10 h-10',
-  md: 'w-12 h-12',
-  lg: 'w-16 h-16',
+  sm: 'size-8',
+  md: 'size-10',
+  lg: 'size-12',
 }
 
 /**
@@ -126,7 +126,7 @@ export function Pill({
       <img
         src={shapeImage}
         alt={shapeLabel}
-        className="w-full h-full object-contain select-none pointer-events-none"
+        className="w-full h-full object-contain drop-shadow-lg drop-shadow-black select-none pointer-events-none"
         draggable={false}
       />
 

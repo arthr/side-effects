@@ -41,7 +41,7 @@ export function ShapeIcon({
       <img
         src={shapeImage}
         alt={label}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain drop-shadow-md drop-shadow-black"
         draggable={false}
       />
     </div>
