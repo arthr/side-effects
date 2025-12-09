@@ -25,6 +25,22 @@ Jogo de estrategia por turnos onde dois jogadores competem para ser o ultimo sob
 | FATAL    | Zera resistencia          | Roxo     | Rodada 4  |
 | LIFE     | +1 vida                   | Rosa     | Rodada 5  |
 
+### Sistema de Formas (Shapes)
+
+Cada pilula possui uma forma visual independente do tipo:
+
+| Shape    | Fallback Visual  |
+|----------|------------------|
+| capsule  | Capsula alongada |
+| round    | Circulo          |
+| triangle | Triangulo        |
+| oval     | Oval             |
+| hexagon  | Hexagono         |
+
+**Status:** Estrutura implementada, mecanicas em desenvolvimento.
+
+Ver `.specs/shape-system/requirements.md` para especificacao completa.
+
 ### Sistema de Progressao
 
 O jogo utiliza um sistema de progressao dinamica:
@@ -36,15 +52,15 @@ O jogo utiliza um sistema de progressao dinamica:
 Ver `docs/GAME-BALANCE.md` para detalhes de balanceamento.
 
 ### Sistema de Itens (Power-ups)
-Cada jogador seleciona 5 itens antes da partida. Itens podem ser usados durante o turno.
+Cada jogador seleciona 5 itens antes da partida (inventario fixo de 5 slots). Itens podem ser usados durante o turno.
 
 | Categoria | Item        | Efeito                                |
 |-----------|-------------|---------------------------------------|
 | Intel     | Scanner     | Revela tipo de 1 pilula               |
 | Intel     | Inverter    | Inverte efeito de 1 pilula            |
 | Intel     | Double      | Dobra efeito de 1 pilula              |
-| Sustain   | Pocket Pill | Cura +2 resistencia                   |
-| Sustain   | Shield      | Imunidade a dano por 1 turno          |
+| Sustain   | Pocket Pill | Cura +4 resistencia                   |
+| Sustain   | Shield      | Imunidade a efeitos por 1 rodada      |
 | Control   | Handcuffs   | Oponente perde proximo turno          |
 | Control   | Force Feed  | Forca oponente a consumir pilula      |
 | Chaos     | Shuffle     | Embaralha pilulas da mesa             |
@@ -57,7 +73,18 @@ Cada jogador seleciona 5 itens antes da partida. Itens podem ser usados durante 
 4. **RoundEnding:** Quando pilulas acabam, nova rodada inicia
 5. **Ended:** Jogo termina quando um jogador perde todas as vidas
 
-## Funcionalidades Futuras (nao implementadas)
-- Modo PvP (multiplayer)
-- Sistema de sons
-- Leaderboard/ranking
+## Backlog de Funcionalidades
+
+### Prioridade Alta
+- [ ] Sistema de Shapes completo (aleatoriedade, mecanicas, objetivos)
+- [ ] Itens baseados em Shape (Shape Bomb, Shape Shift)
+
+### Prioridade Media
+- [ ] Item "Give Me" (troca de itens entre jogadores)
+- [ ] Expansao de slots de inventario (4-8 configuraveis)
+- [ ] Sistema de sons
+
+### Prioridade Baixa
+- [ ] Modo PvP (multiplayer)
+- [ ] Leaderboard/ranking
+- [ ] Modos de dificuldade (Easy/Normal/Hard)
