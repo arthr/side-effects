@@ -2,11 +2,8 @@ import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
 import type { Pill as PillType } from '@/types'
 import {
-  PILL_COLORS,
   PILL_LABELS,
-  HIDDEN_PILL_COLOR,
-  SHAPE_CLASSES,
-  SHAPE_CLIP_PATHS,
+  SHAPE_IMAGES,
   SHAPE_LABELS,
 } from '@/utils/constants'
 
@@ -28,16 +25,17 @@ interface PillProps {
 }
 
 /**
- * Classes de tamanho base (altura fixa, largura ajustada pelo aspect ratio)
+ * Classes de tamanho para o container
  */
 const sizeClasses = {
-  sm: 'h-10 min-w-10 text-xs',
-  md: 'h-12 min-w-12 text-sm',
-  lg: 'h-16 min-w-16 text-base',
+  sm: 'w-10 h-10',
+  md: 'w-12 h-12',
+  lg: 'w-16 h-16',
 }
 
 /**
  * Componente visual de uma pilula
+ * Usa imagens PNG para representar shapes
  * Estados: oculta, revelada, hover, selecionada, scanned, target, inverted, doubled
  */
 export function Pill({
@@ -51,14 +49,11 @@ export function Pill({
 }: PillProps) {
   // Pilula visivel se: revelada normalmente OU escaneada
   const showType = pill.isRevealed || isScanned
-  const colorClass = showType ? PILL_COLORS[pill.type] : HIDDEN_PILL_COLOR
   const label = showType ? PILL_LABELS[pill.type] : '???'
-  const displayChar = showType ? pill.type.charAt(0) : '?'
 
   // Shape visual (sempre visivel, mesmo quando pilula oculta)
   const shape = pill.visuals.shape
-  const shapeClass = SHAPE_CLASSES[shape]
-  const clipPath = SHAPE_CLIP_PATHS[shape]
+  const shapeImage = SHAPE_IMAGES[shape]
   const shapeLabel = SHAPE_LABELS[shape]
 
   // Modifiers visuais
@@ -77,25 +72,19 @@ export function Pill({
     <motion.button
       onClick={onClick}
       disabled={disabled && !isValidTarget}
-      style={clipPath ? { clipPath } : undefined}
       className={`
         ${sizeClasses[size]}
-        ${shapeClass}
-        border-2 
         flex items-center justify-center
-        font-normal text-foreground
-        transition-colors duration-200
+        transition-all duration-200
         focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
-        ${colorClass}
         ${disabled && !isValidTarget
           ? 'opacity-50 cursor-not-allowed' 
           : 'cursor-pointer'
         }
         ${selected 
-          ? 'border-primary ring-2 ring-primary/50' 
-          : 'border-transparent hover:border-primary/50'
+          ? 'ring-2 ring-primary/50' 
+          : ''
         }
-        ${!showType ? 'bg-pill-hidden' : ''}
         ${targetClasses}
         ${scannedClasses}
         relative
@@ -130,15 +119,21 @@ export function Pill({
           },
         },
       })}
-      aria-label={`Pílula ${shapeLabel}${showType ? ` - ${label}` : ' (oculta)'}${hasInverted ? ' (invertida)' : ''}${hasDoubled ? ' (dobrada)' : ''}`}
+      aria-label={`Pilula ${shapeLabel}${showType ? ` - ${label}` : ' (oculta)'}${hasInverted ? ' (invertida)' : ''}${hasDoubled ? ' (dobrada)' : ''}`}
       title={`${shapeLabel}${showType ? ` - ${label}` : ''}`}
     >
-      <span className="select-none">{displayChar}</span>
+      {/* Imagem da Shape */}
+      <img
+        src={shapeImage}
+        alt={shapeLabel}
+        className="w-full h-full object-contain select-none pointer-events-none"
+        draggable={false}
+      />
 
       {/* Badge de Invertido */}
       {hasInverted && (
         <motion.div
-          className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"
+          className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center z-10"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           title="Efeito invertido"
@@ -150,7 +145,7 @@ export function Pill({
       {/* Badge de Dobrado */}
       {hasDoubled && (
         <motion.div
-          className={`absolute ${hasInverted ? '-top-1 -left-1' : '-top-1 -right-1'} w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center`}
+          className={`absolute ${hasInverted ? '-top-1 -left-1' : '-top-1 -right-1'} w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center z-10`}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           title="Efeito dobrado"
@@ -163,7 +158,7 @@ export function Pill({
 }
 
 /**
- * Grid de pílulas com animação de entrada escalonada
+ * Grid de pilulas com animacao de entrada escalonada
  */
 interface PillGridProps {
   pills: PillType[]
@@ -223,4 +218,3 @@ export function PillGrid({
     </motion.div>
   )
 }
-

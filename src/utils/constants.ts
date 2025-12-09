@@ -1,5 +1,23 @@
 import type { GameConfig, PillConfig, PillShape, PillType } from '@/types'
 
+// Shape images (16 shapes com PNG)
+import shapeCapsule from '@/assets/shapes/shape_1.png'
+import shapeCross from '@/assets/shapes/shape_2.png'
+import shapeSkull from '@/assets/shapes/shape_3.png'
+import shapeFlower from '@/assets/shapes/shape_4.png'
+import shapeBear from '@/assets/shapes/shape_5.png'
+import shapeRound from '@/assets/shapes/shape_6.png'
+import shapePineapple from '@/assets/shapes/shape_7.png'
+import shapeTriangle from '@/assets/shapes/shape_8.png'
+import shapeHeart from '@/assets/shapes/shape_9.png'
+import shapeFruit from '@/assets/shapes/shape_10.png'
+import shapeOval from '@/assets/shapes/shape_11.png'
+import shapePumpkin from '@/assets/shapes/shape_12.png'
+import shapeStar from '@/assets/shapes/shape_13.png'
+import shapeCoin from '@/assets/shapes/shape_14.png'
+import shapeGem from '@/assets/shapes/shape_15.png'
+import shapeDomino from '@/assets/shapes/shape_16.png'
+
 /**
  * Configuracao padrao do jogo
  */
@@ -110,43 +128,103 @@ export const PILL_SHAPES: Record<PillType, string> = {
   DMG_LOW: 'capsule',
   DMG_HIGH: 'oval',
   FATAL: 'triangle',
-  HEAL: 'hexagon',
+  HEAL: 'star',
   LIFE: 'capsule',
 }
 
+// ============================================
+// SHAPE IMAGES (16 shapes com PNG)
+// ============================================
+
 /**
- * Classes CSS para cada shape
- * Usadas pelo componente Pill.tsx para renderizar formato visual
+ * Mapeamento de shapes para imagens PNG
+ * Cada shape tem uma imagem com fundo transparente
  */
-export const SHAPE_CLASSES: Record<PillShape, string> = {
-  round: 'rounded-full aspect-square',
-  capsule: 'rounded-full aspect-[1.6]',
-  oval: 'rounded-full aspect-[1.3]',
-  triangle: 'aspect-square', // Usa clip-path
-  hexagon: 'aspect-square',  // Usa clip-path
+export const SHAPE_IMAGES: Record<PillShape, string> = {
+  capsule: shapeCapsule,
+  round: shapeRound,
+  triangle: shapeTriangle,
+  oval: shapeOval,
+  cross: shapeCross,
+  heart: shapeHeart,
+  flower: shapeFlower,
+  star: shapeStar,
+  pumpkin: shapePumpkin,
+  coin: shapeCoin,
+  bear: shapeBear,
+  gem: shapeGem,
+  skull: shapeSkull,
+  domino: shapeDomino,
+  pineapple: shapePineapple,
+  fruit: shapeFruit,
 }
 
 /**
- * Clip-paths CSS para shapes nao-circulares
- * null = usa apenas border-radius (round, capsule, oval)
+ * Classes CSS para cada shape (fallback se imagem nao carregar)
+ * Usadas pelo componente Pill.tsx para renderizar formato visual
+ */
+export const SHAPE_CLASSES: Record<PillShape, string> = {
+  capsule: 'rounded-full aspect-[1.6]',
+  round: 'rounded-full aspect-square',
+  triangle: 'aspect-square',
+  oval: 'rounded-full aspect-[1.3]',
+  cross: 'aspect-square',
+  heart: 'aspect-square',
+  flower: 'aspect-square',
+  star: 'aspect-square',
+  pumpkin: 'aspect-square',
+  coin: 'rounded-full aspect-square',
+  bear: 'aspect-square',
+  gem: 'aspect-square',
+  skull: 'aspect-square',
+  domino: 'aspect-[1.5]',
+  pineapple: 'aspect-square',
+  fruit: 'aspect-square',
+}
+
+/**
+ * Clip-paths CSS para shapes (fallback se imagem nao carregar)
+ * null = usa apenas border-radius
  */
 export const SHAPE_CLIP_PATHS: Record<PillShape, string | null> = {
-  round: null,
   capsule: null,
-  oval: null,
+  round: null,
   triangle: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-  hexagon: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+  oval: null,
+  cross: 'polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%)',
+  heart: null,
+  flower: null,
+  star: null,
+  pumpkin: null,
+  coin: null,
+  bear: null,
+  gem: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+  skull: null,
+  domino: 'rounded',
+  pineapple: null,
+  fruit: null,
 }
 
 /**
  * Labels de exibicao para cada shape (para UI e acessibilidade)
  */
 export const SHAPE_LABELS: Record<PillShape, string> = {
-  round: 'Circulo',
   capsule: 'Capsula',
-  oval: 'Oval',
+  round: 'Redonda',
   triangle: 'Triangulo',
-  hexagon: 'Hexagono',
+  oval: 'Oval',
+  cross: 'Cruz',
+  heart: 'Coracao',
+  flower: 'Flor',
+  star: 'Estrela',
+  pumpkin: 'Abobora',
+  coin: 'Moeda',
+  bear: 'Urso',
+  gem: 'Gema',
+  skull: 'Caveira',
+  domino: 'Domino',
+  pineapple: 'Abacaxi',
+  fruit: 'Fruta',
 }
 
 /**

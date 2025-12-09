@@ -1,6 +1,28 @@
 import type { Pill, PillShape } from '@/types'
 
 /**
+ * Lista de todas as shapes disponiveis
+ */
+export const ALL_SHAPES: PillShape[] = [
+  'capsule',
+  'round',
+  'triangle',
+  'oval',
+  'cross',
+  'heart',
+  'flower',
+  'star',
+  'pumpkin',
+  'coin',
+  'bear',
+  'gem',
+  'skull',
+  'domino',
+  'pineapple',
+  'fruit',
+]
+
+/**
  * Regra de progressao para uma shape
  */
 export interface ShapeRule {
@@ -23,24 +45,70 @@ export interface ShapeProgressionConfig {
 }
 
 /**
- * Configuracao padrao de progressao de shapes
+ * Configuracao padrao de progressao de shapes (16 shapes)
  *
  * NOTAS DE DESIGN:
- * - Rodada 1: apenas round e capsule (formas basicas, faceis de distinguir)
- * - Rodada 2: oval entra (forma intermediaria)
- * - Rodada 3: triangle entra (forma angular, mais distinta)
- * - Rodada 5: hexagon entra (forma complexa, late game)
- * - Late game: distribuicao mais equilibrada entre todas shapes
+ * - Rodada 1: capsule, round (2 basicas)
+ * - Rodada 2: + triangle, oval (4)
+ * - Rodada 3: + cross, heart (6)
+ * - Rodada 4: + flower, star (8)
+ * - Rodada 5: + pumpkin, coin (10)
+ * - Rodada 6: + bear, gem (12)
+ * - Rodada 7: + skull, domino (14)
+ * - Rodada 8+: + pineapple, fruit (16 - todas)
  */
 export const SHAPE_PROGRESSION: ShapeProgressionConfig = {
   maxRound: 15,
   rules: {
-    round: { unlockRound: 1, startPct: 50, endPct: 15 },
-    capsule: { unlockRound: 1, startPct: 50, endPct: 20 },
-    oval: { unlockRound: 2, startPct: 20, endPct: 20 },
-    triangle: { unlockRound: 3, startPct: 15, endPct: 25 },
-    hexagon: { unlockRound: 5, startPct: 10, endPct: 20 },
+    // Rodada 1 - Basicas
+    capsule: { unlockRound: 1, startPct: 50, endPct: 8 },
+    round: { unlockRound: 1, startPct: 50, endPct: 8 },
+    // Rodada 2
+    triangle: { unlockRound: 2, startPct: 25, endPct: 7 },
+    oval: { unlockRound: 2, startPct: 25, endPct: 7 },
+    // Rodada 3
+    cross: { unlockRound: 3, startPct: 20, endPct: 6 },
+    heart: { unlockRound: 3, startPct: 20, endPct: 6 },
+    // Rodada 4
+    flower: { unlockRound: 4, startPct: 15, endPct: 6 },
+    star: { unlockRound: 4, startPct: 15, endPct: 6 },
+    // Rodada 5
+    pumpkin: { unlockRound: 5, startPct: 12, endPct: 6 },
+    coin: { unlockRound: 5, startPct: 12, endPct: 6 },
+    // Rodada 6
+    bear: { unlockRound: 6, startPct: 10, endPct: 6 },
+    gem: { unlockRound: 6, startPct: 10, endPct: 6 },
+    // Rodada 7
+    skull: { unlockRound: 7, startPct: 8, endPct: 6 },
+    domino: { unlockRound: 7, startPct: 8, endPct: 6 },
+    // Rodada 8 - Raras
+    pineapple: { unlockRound: 8, startPct: 6, endPct: 5 },
+    fruit: { unlockRound: 8, startPct: 6, endPct: 5 },
   },
+}
+
+/**
+ * Cria um objeto Record<PillShape, number> inicializado com zeros
+ */
+function createEmptyShapeCounts(): Record<PillShape, number> {
+  return {
+    capsule: 0,
+    round: 0,
+    triangle: 0,
+    oval: 0,
+    cross: 0,
+    heart: 0,
+    flower: 0,
+    star: 0,
+    pumpkin: 0,
+    coin: 0,
+    bear: 0,
+    gem: 0,
+    skull: 0,
+    domino: 0,
+    pineapple: 0,
+    fruit: 0,
+  }
 }
 
 /**
@@ -58,14 +126,7 @@ export function getShapeChances(
   const { maxRound, rules } = config
   const clampedRound = Math.max(1, Math.min(round, maxRound))
 
-  const rawWeights: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
-
+  const rawWeights = createEmptyShapeCounts()
   let totalWeight = 0
 
   for (const [shape, rule] of Object.entries(rules)) {
@@ -139,14 +200,7 @@ export function distributeShapes(
   config: ShapeProgressionConfig = SHAPE_PROGRESSION
 ): Record<PillShape, number> {
   const chances = getShapeChances(round, config)
-
-  const distribution: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
+  const distribution = createEmptyShapeCounts()
 
   // Calcula quantidades ideais e floors
   const idealAmounts: Array<{
@@ -191,13 +245,7 @@ export function distributeShapes(
  * @returns Contagem de cada shape
  */
 export function countPillShapes(pills: Pill[]): Record<PillShape, number> {
-  const counts: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
+  const counts = createEmptyShapeCounts()
 
   for (const pill of pills) {
     counts[pill.visuals.shape]++
@@ -206,3 +254,10 @@ export function countPillShapes(pills: Pill[]): Record<PillShape, number> {
   return counts
 }
 
+/**
+ * Retorna um objeto Record<PillShape, number> inicializado com zeros
+ * Util para inicializacao de estado
+ */
+export function getInitialShapeCounts(): Record<PillShape, number> {
+  return createEmptyShapeCounts()
+}

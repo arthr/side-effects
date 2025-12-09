@@ -5,9 +5,26 @@
 export type PillType = 'SAFE' | 'DMG_LOW' | 'DMG_HIGH' | 'FATAL' | 'HEAL' | 'LIFE'
 
 /**
- * Formas visuais das pilulas
+ * Formas visuais das pilulas (16 shapes com imagens PNG)
+ * Desbloqueadas progressivamente conforme rodadas avancam
  */
-export type PillShape = 'capsule' | 'round' | 'triangle' | 'oval' | 'hexagon'
+export type PillShape =
+  | 'capsule'    // shape_1 - Rodada 1
+  | 'round'      // shape_6 - Rodada 1
+  | 'triangle'   // shape_8 - Rodada 2
+  | 'oval'       // shape_11 - Rodada 2
+  | 'cross'      // shape_2 - Rodada 3
+  | 'heart'      // shape_9 - Rodada 3
+  | 'flower'     // shape_4 - Rodada 4
+  | 'star'       // shape_13 - Rodada 4
+  | 'pumpkin'    // shape_12 - Rodada 5
+  | 'coin'       // shape_14 - Rodada 5
+  | 'bear'       // shape_5 - Rodada 6
+  | 'gem'        // shape_15 - Rodada 6
+  | 'skull'      // shape_3 - Rodada 7
+  | 'domino'     // shape_16 - Rodada 7
+  | 'pineapple'  // shape_7 - Rodada 8
+  | 'fruit'      // shape_10 - Rodada 8
 
 /**
  * Estatisticas de efeito da pilula

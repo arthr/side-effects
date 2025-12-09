@@ -14,17 +14,30 @@ O Shape System adiciona uma nova camada de gamificacao ao jogo, onde cada pilula
 
 ## Shapes Disponiveis
 
-| Shape | Fallback Visual | Descricao |
-| :--- | :--- | :--- |
-| `capsule` | Retangulo arredondado | Formato farmaceutico classico |
-| `round` | Circulo | Pilula redonda |
-| `triangle` | Triangulo | Formato angular |
-| `oval` | Elipse | Formato alongado |
-| `hexagon` | Hexagono | Formato geometrico |
+**ATUALIZADO:** Expandido para 16 shapes com imagens PNG.
 
-**Total:** 5 shapes disponiveis (ja definidas em `PillShape`).
+| Shape | Arquivo | Desbloqueio | Descricao |
+| :--- | :--- | :--- | :--- |
+| `capsule` | shape_1.png | Rodada 1 | Capsula azul horizontal |
+| `round` | shape_6.png | Rodada 1 | Pilula redonda azul |
+| `triangle` | shape_8.png | Rodada 2 | Triangulo vermelho |
+| `oval` | shape_11.png | Rodada 2 | Oval amarela |
+| `cross` | shape_2.png | Rodada 3 | Cruz roxa |
+| `heart` | shape_9.png | Rodada 3 | Coracao vermelho |
+| `flower` | shape_4.png | Rodada 4 | Flor rosa |
+| `star` | shape_13.png | Rodada 4 | Estrela verde |
+| `pumpkin` | shape_12.png | Rodada 5 | Abobora laranja |
+| `coin` | shape_14.png | Rodada 5 | Moeda dourada |
+| `bear` | shape_5.png | Rodada 6 | Urso verde |
+| `gem` | shape_15.png | Rodada 6 | Gema roxa |
+| `skull` | shape_3.png | Rodada 7 | Caveira roxa |
+| `domino` | shape_16.png | Rodada 7 | Domino laranja |
+| `pineapple` | shape_7.png | Rodada 8 | Abacaxi rosa |
+| `fruit` | shape_10.png | Rodada 8 | Fruta rosa |
 
-> **Nota:** O visual usa CSS (clip-path, border-radius). SVGs podem ser adicionados futuramente sem quebrar o sistema.
+**Total:** 16 shapes disponiveis com imagens PNG em `src/assets/shapes/`.
+
+> **Nota:** O visual usa imagens PNG com fundo transparente. CSS classes servem como fallback.
 
 ---
 
@@ -64,20 +77,24 @@ const SHAPE_PROGRESSION: Record<PillShape, ShapeRule> = {
 }
 ```
 
-#### 1.2 Tabela de Desbloqueio
+#### 1.2 Tabela de Desbloqueio (16 Shapes)
 
-| Rodada | Shapes Disponiveis | Notas |
+| Rodada | Shapes Disponiveis | Total |
 | :--- | :--- | :--- |
-| 1 | round, capsule | Formas basicas, faceis de distinguir |
-| 2 | + oval | Forma intermediaria |
-| 3 | + triangle | Forma angular, mais distinta |
-| 5+ | + hexagon | Forma complexa, "rara" |
+| 1 | capsule, round | 2 |
+| 2 | + triangle, oval | 4 |
+| 3 | + cross, heart | 6 |
+| 4 | + flower, star | 8 |
+| 5 | + pumpkin, coin | 10 |
+| 6 | + bear, gem | 12 |
+| 7 | + skull, domino | 14 |
+| 8+ | + pineapple, fruit | 16 (todas) |
 
 #### 1.3 Exemplo de Distribuicao por Rodada
 
-| Rodada | round | capsule | oval | triangle | hexagon |
+| Rodada | capsule | round | triangle | oval | ... |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | 50% | 50% | 0% | 0% | 0% |
+| 1 | 50% | 50% | 0% | 0% | ... |
 | 2 | 42% | 42% | 16% | 0% | 0% |
 | 3 | 35% | 36% | 17% | 12% | 0% |
 | 5 | 25% | 28% | 18% | 19% | 10% |
