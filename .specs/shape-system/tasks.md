@@ -307,7 +307,7 @@
   - Estado: disponivel, indisponivel (cinza), nao pode comprar (coins insuficientes)
   - onClick para comprar
 
-- [ ] TASK-SS-092: Criar componente `WaitingForOpponent.tsx`
+- [x] TASK-SS-092: Criar componente `WaitingForOpponent.tsx`
   - Exibido para quem NAO sinalizou `wantsStore` na fase shopping
   - "Aguardando oponente fazer compras..."
   - Timer visual
