@@ -69,3 +69,27 @@ export type {
   RoomStatus,
 } from './multiplayer'
 
+// Event types
+export type {
+  CartUpdatedEvent,
+  GameEndedEvent,
+  GameEvent,
+  GameEventBase,
+  GameEventType,
+  GameStartedEvent,
+  ItemDeselectedEvent,
+  ItemSelectedEvent,
+  ItemUsedEvent,
+  PillConsumedEvent,
+  PlayerDisconnectedEvent,
+  PlayerJoinedEvent,
+  PlayerLeftEvent,
+  PlayerReconnectedEvent,
+  RoomCreatedEvent,
+  RoundResetEvent,
+  SelectionConfirmedEvent,
+  StoreConfirmedEvent,
+  TurnEndedEvent,
+  WantsStoreToggledEvent,
+} from './events'
+

@@ -50,15 +50,15 @@
 ---
 
 ### TASK-MP-004: Criar types de eventos
-- [ ] Criar `src/types/events.ts`
-- [ ] Definir `GameEventType`, `GameEventBase`
-- [ ] Definir eventos especificos (PillConsumedEvent, ItemUsedEvent, etc)
-- [ ] Definir union `GameEvent`
-- [ ] Atualizar `src/types/index.ts` com exports
+- [x] Criar `src/types/events.ts`
+- [x] Definir `GameEventType`, `GameEventBase`
+- [x] Definir eventos especificos (PillConsumedEvent, ItemUsedEvent, etc)
+- [x] Definir union `GameEvent`
+- [x] Atualizar `src/types/index.ts` com exports
 
 **Arquivos:**
-- `src/types/events.ts` (novo)
-- `src/types/index.ts`
+- `src/types/events.ts` (criado)
+- `src/types/index.ts` (atualizado)
 
 ---
 
