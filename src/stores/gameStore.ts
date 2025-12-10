@@ -359,15 +359,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const pillIndex = state.pillPool.findIndex((p) => p.id === pillId)
     if (pillIndex === -1) return
 
-    // Emite evento multiplayer (antes de aplicar para garantir sincronia)
-    emitMultiplayerEvent(state.mode, {
-      type: 'pill_consumed',
-      payload: {
-        pillId,
-        forcedTarget: options?.forcedTarget,
-      },
-    })
-
     const pill = state.pillPool[pillIndex]
 
     // Determina quem consome: forcedTarget (Force Feed) ou currentTurn
@@ -384,6 +375,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Aplica o efeito (com imunidade a dano se tiver Shield)
     const result = applyPillEffect(revealedPill, consumerPlayer, {
       hasShield: playerHasShield,
+    })
+
+    // Determina tipo de efeito para feedback visual remoto
+    const getEffectType = (): 'damage' | 'heal' | 'safe' | 'collapse' | 'fatal' => {
+      if (result.eliminated) return 'fatal'
+      if (result.collapsed) return 'collapse'
+      if (result.damageDealt > 0) return 'damage'
+      if (result.healReceived > 0) return 'heal'
+      return 'safe'
+    }
+
+    // Emite evento multiplayer com dados de feedback para UI remota
+    emitMultiplayerEvent(state.mode, {
+      type: 'pill_consumed',
+      payload: {
+        pillId,
+        forcedTarget: options?.forcedTarget,
+        feedback: {
+          pillType: revealedPill.type,
+          effectType: getEffectType(),
+          effectValue: result.damageDealt || result.healReceived,
+          consumerId,
+        },
+      },
     })
 
     // Remove pilula do pool
@@ -956,12 +971,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const itemDef = ITEM_CATALOG[item.type]
     if (!itemDef) return
 
-    // Emite evento multiplayer (antes de aplicar)
+    // Emite evento multiplayer (antes de aplicar) com itemType para feedback remoto
     emitMultiplayerEvent(state.mode, {
       type: 'item_used',
       payload: {
         itemId,
         targetId,
+        itemType: item.type,
       },
     })
 
@@ -1979,7 +1995,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       switch (event.type) {
         case 'pill_consumed': {
-          const payload = event.payload as { pillId: string; forcedTarget?: PlayerId }
+          const payload = event.payload as {
+            pillId: string
+            forcedTarget?: PlayerId
+            feedback?: {
+              pillType: PillType
+              effectType: 'damage' | 'heal' | 'safe' | 'collapse' | 'fatal'
+              effectValue: number
+              consumerId: PlayerId
+            }
+          }
 
           console.log('[GameStore] pill_consumed payload:', payload)
 
@@ -1990,11 +2015,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
           get().consumePill(payload.pillId, {
             forcedTarget: payload.forcedTarget,
           })
+
+          // Mostra toast de feedback para evento remoto
+          if (payload.feedback) {
+            const { pillType, effectType, effectValue, consumerId } = payload.feedback
+            const opponentName = state.players[event.playerId]?.name ?? 'Oponente'
+
+            // Mapeia effectType para ToastType
+            const toastType = effectType === 'fatal' ? 'fatal'
+              : effectType === 'collapse' ? 'collapse'
+              : effectType === 'damage' ? 'damage'
+              : effectType === 'heal' ? 'heal'
+              : 'safe'
+
+            // Mensagem contextualizada
+            const getMessage = () => {
+              if (effectType === 'fatal') return `${opponentName} se fudeu!`
+              if (effectType === 'collapse') return `${opponentName}: teto preto?!`
+              if (effectType === 'damage') return `${opponentName} tomou dano`
+              if (effectType === 'heal') return `${opponentName} se curou`
+              return `${opponentName} consumiu pilula`
+            }
+
+            useToastStore.getState().show({
+              type: toastType,
+              message: getMessage(),
+              pillType,
+              value: effectValue || undefined,
+              playerId: consumerId,
+              duration: 1500,
+            })
+          }
           break
         }
 
         case 'item_used': {
-          const payload = event.payload as { itemId: string; targetId?: string }
+          const payload = event.payload as {
+            itemId: string
+            targetId?: string
+            itemType?: ItemType
+          }
 
           // Verifica turno (apenas warning) e valida item
           warnIfWrongTurn()
@@ -2011,6 +2071,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }
 
           get().executeItem(payload.itemId, payload.targetId)
+
+          // Mostra toast de feedback para evento remoto
+          if (payload.itemType) {
+            const opponentName = state.players[event.playerId]?.name ?? 'Oponente'
+            const itemDef = ITEM_CATALOG[payload.itemType]
+            const itemName = itemDef?.name ?? 'item'
+
+            useToastStore.getState().show({
+              type: 'item',
+              message: `${opponentName} usou ${itemName}`,
+              itemType: payload.itemType,
+              duration: 1500,
+            })
+          }
           break
         }
 

@@ -122,6 +122,11 @@ export interface SelectionConfirmedEvent extends GameEventBase {
 // ============================================
 
 /**
+ * Tipo de efeito para feedback visual
+ */
+export type PillEffectType = 'damage' | 'heal' | 'safe' | 'collapse' | 'fatal'
+
+/**
  * Evento: pilula consumida
  */
 export interface PillConsumedEvent extends GameEventBase {
@@ -130,6 +135,17 @@ export interface PillConsumedEvent extends GameEventBase {
     pillId: string
     /** PlayerId forcado (Force Feed) */
     forcedTarget?: PlayerId
+    /** Dados para feedback visual remoto */
+    feedback?: {
+      /** Tipo da pilula revelada */
+      pillType: import('./pill').PillType
+      /** Tipo do efeito aplicado */
+      effectType: PillEffectType
+      /** Valor do efeito (dano ou cura) */
+      effectValue: number
+      /** ID do jogador que sofreu o efeito */
+      consumerId: PlayerId
+    }
   }
 }
 
@@ -142,6 +158,8 @@ export interface ItemUsedEvent extends GameEventBase {
     itemId: string
     /** ID do alvo (pilula ou oponente) */
     targetId?: string
+    /** Tipo do item para feedback visual remoto */
+    itemType?: import('./item').ItemType
   }
 }
 

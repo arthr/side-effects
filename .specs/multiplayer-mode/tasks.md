@@ -653,6 +653,31 @@ encontrar o item com ID correto no cliente remoto.
 
 ---
 
+### HOTFIX-MP-008: Feedback visual para eventos remotos (Opcao C - Hibrido)
+- [x] Adicionar tipo `PillEffectType` em events.ts
+- [x] Expandir `PillConsumedEvent.payload.feedback` com dados visuais
+- [x] Expandir `ItemUsedEvent.payload.itemType` para identificacao
+- [x] Calcular dados de feedback antes de emitir `pill_consumed`
+- [x] Incluir `itemType` na emissao de `item_used`
+- [x] Mostrar toast informativo em `applyRemoteEvent` para `pill_consumed`
+- [x] Mostrar toast informativo em `applyRemoteEvent` para `item_used`
+
+**Problema resolvido:**
+Jogador remoto nao recebia feedback visual quando oponente consumia pills ou
+usava itens. Agora, toasts informativos sao exibidos com mensagem contextualizada
+(ex: "Oponente tomou dano", "Oponente usou Scanner").
+
+**Filosofia da solucao (Opcao C - Hibrido):**
+- Animacoes bloqueantes (overlays) apenas para quem executa a acao
+- Feedback informativo (toasts) para quem observa
+- Mantem fluidez sem sacrificar informacao
+
+**Arquivos:**
+- `src/types/events.ts` (PillEffectType, PillConsumedEvent, ItemUsedEvent)
+- `src/stores/gameStore.ts` (consumePill, executeItem, applyRemoteEvent)
+
+---
+
 ## Ordem de Execucao Recomendada
 
 1. **Infraestrutura:** TASK-MP-001, TASK-MP-002
