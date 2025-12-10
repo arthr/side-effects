@@ -1,12 +1,35 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
-import type { Pill as PillType } from '@/types'
+import type { Pill as PillType, PillShape } from '@/types'
 import {
   PILL_LABELS,
   PILL_HEX_COLORS,
   SHAPE_IMAGES,
   SHAPE_LABELS,
+  SHAPE_CLASSES,
+  SHAPE_CLIP_PATHS,
 } from '@/utils/constants'
+
+/** Cores padrao para fallback de shapes */
+const SHAPE_FALLBACK_COLORS: Record<PillShape, string> = {
+  capsule: '#60a5fa',
+  round: '#4ade80',
+  triangle: '#f87171',
+  oval: '#facc15',
+  cross: '#a78bfa',
+  heart: '#fb7185',
+  flower: '#f472b6',
+  star: '#4ade80',
+  pumpkin: '#fb923c',
+  coin: '#fbbf24',
+  bear: '#4ade80',
+  gem: '#c084fc',
+  skull: '#a78bfa',
+  domino: '#fb923c',
+  pineapple: '#f472b6',
+  fruit: '#f472b6',
+}
 
 interface PillProps {
   /** Dados da pilula */
@@ -49,6 +72,8 @@ export function Pill({
   isValidTarget = false,
 }: PillProps) {
   void _selected // Suprimir warning - prop mantida para API compativel
+  const [imageError, setImageError] = useState(false)
+  
   // Pilula visivel se: revelada normalmente OU escaneada
   const showType = pill.isRevealed || isScanned
   const label = showType ? PILL_LABELS[pill.type] : '???'
@@ -57,6 +82,9 @@ export function Pill({
   const shape = pill.visuals.shape
   const shapeImage = SHAPE_IMAGES[shape]
   const shapeLabel = SHAPE_LABELS[shape]
+  const shapeClass = SHAPE_CLASSES[shape]
+  const clipPath = SHAPE_CLIP_PATHS[shape]
+  const fallbackColor = SHAPE_FALLBACK_COLORS[shape]
 
   // Cor do tipo para drop-shadow (quando visivel)
   const typeColor = showType ? PILL_HEX_COLORS[pill.type] : null
@@ -64,6 +92,9 @@ export function Pill({
   // Modifiers visuais
   const hasInverted = pill.inverted === true
   const hasDoubled = pill.doubled === true
+  
+  // Determina se deve usar fallback
+  const useFallback = imageError || !shapeImage
 
   return (
     <motion.button
@@ -108,31 +139,61 @@ export function Pill({
       aria-label={`Pilula ${shapeLabel}${showType ? ` - ${label}` : ' (oculta)'}${hasInverted ? ' (invertida)' : ''}${hasDoubled ? ' (dobrada)' : ''}`}
       title={`${shapeLabel}${showType ? ` - ${label}` : ''}`}
     >
-      {/* Imagem da Shape com drop-shadow colorido baseado no tipo */}
-      <motion.img
-        src={shapeImage}
-        alt={shapeLabel}
-        className="w-full h-full object-contain select-none pointer-events-none"
-        style={{
-          filter: typeColor 
-            ? `drop-shadow(0 0 4px ${typeColor}) drop-shadow(0 0 8px ${typeColor}) drop-shadow(0 0 16px ${typeColor}80)`
-            : 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))',
-        }}
-        draggable={false}
-        // Animacao de pulse quando revelada por scanner (temporario)
-        animate={isScanned && !pill.isRevealed ? {
-          scale: [1, 1.08, 1],
-          transition: {
-            duration: 0.8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          },
-        } : {
-          scale: 1,
-        }}
-        // Transicao suave do filtro
-        transition={{ filter: { duration: 0.3 } }}
-      />
+      {/* Fallback CSS quando imagem nao carrega */}
+      {useFallback ? (
+        <motion.div
+          className={`
+            w-full h-full
+            ${shapeClass}
+            select-none pointer-events-none
+          `}
+          style={{
+            clipPath: clipPath || undefined,
+            background: `linear-gradient(135deg, ${typeColor || fallbackColor}, ${typeColor || fallbackColor}90)`,
+            boxShadow: typeColor 
+              ? `0 0 8px ${typeColor}, 0 0 16px ${typeColor}60`
+              : `0 2px 8px ${fallbackColor}50, inset 0 1px 0 rgba(255,255,255,0.3)`,
+            border: `2px solid ${typeColor || fallbackColor}`,
+          }}
+          animate={isScanned && !pill.isRevealed ? {
+            scale: [1, 1.08, 1],
+            transition: {
+              duration: 0.8,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            },
+          } : {
+            scale: 1,
+          }}
+        />
+      ) : (
+        /* Imagem da Shape com drop-shadow colorido baseado no tipo */
+        <motion.img
+          src={shapeImage}
+          alt={shapeLabel}
+          className="w-full h-full object-contain select-none pointer-events-none"
+          style={{
+            filter: typeColor 
+              ? `drop-shadow(0 0 4px ${typeColor}) drop-shadow(0 0 8px ${typeColor}) drop-shadow(0 0 16px ${typeColor}80)`
+              : 'drop-shadow(0 2px 3px rgba(0,0,0,0.6))',
+          }}
+          draggable={false}
+          onError={() => setImageError(true)}
+          // Animacao de pulse quando revelada por scanner (temporario)
+          animate={isScanned && !pill.isRevealed ? {
+            scale: [1, 1.08, 1],
+            transition: {
+              duration: 0.8,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            },
+          } : {
+            scale: 1,
+          }}
+          // Transicao suave do filtro
+          transition={{ filter: { duration: 0.3 } }}
+        />
+      )}
 
       {/* Badge de Invertido */}
       {hasInverted && (
