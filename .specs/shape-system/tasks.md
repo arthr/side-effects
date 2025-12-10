@@ -153,23 +153,23 @@
 
 ### 4.1 Gerador de Quests
 
-- [ ] TASK-SS-025: Criar arquivo `src/utils/questGenerator.ts`
+- [x] TASK-SS-025: Criar arquivo `src/utils/questGenerator.ts`
 
-- [ ] TASK-SS-026: Implementar constante `DEFAULT_QUEST_CONFIG` com:
+- [x] TASK-SS-026: Implementar constante `DEFAULT_QUEST_CONFIG` com:
   - minLength: 2
   - maxLength: 3
   - increaseLengthAfterRound: 5
 
-- [ ] TASK-SS-027: Implementar funcao `generateSequenceFromPool(length, shapeCounts)` 
+- [x] TASK-SS-027: Implementar funcao `generateSequenceFromPool(length, shapeCounts)` 
   - Gera sequencia APENAS com shapes disponiveis no pool
   - Respeita quantidade de cada shape (nao pede mais do que existe)
 
-- [ ] TASK-SS-029: Implementar funcao `generateShapeQuest(round, shapeCounts, config?)`
+- [x] TASK-SS-029: Implementar funcao `generateShapeQuest(round, shapeCounts, config?)`
   - Recebe shapeCounts para gerar quest realizavel
   - Limita tamanho da sequencia ao total de pilulas no pool
   - NAO gera reward - ao completar, jogador recebe +1 Pill Coin
 
-- [ ] TASK-SS-030: Implementar funcao `checkQuestProgress(quest, consumedShape)` 
+- [x] TASK-SS-030: Implementar funcao `checkQuestProgress(quest, consumedShape)` 
   - Retorna { updatedQuest, justCompleted }
   - Ao completar: marca completed = true (NAO gera novo quest)
   - Se justCompleted = true, caller deve dar +1 Pill Coin
