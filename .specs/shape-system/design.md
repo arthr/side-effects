@@ -622,6 +622,10 @@ export function checkQuestProgress(
 ```typescript
 import type { StoreConfig, StoreItem } from '@/types'
 import { Heart, Shield, Eye, Bomb, Syringe, Scan } from 'lucide-react'
+import { GAME_LIMITS } from './constants'
+
+/** Limite de itens no inventario */
+const MAX_INVENTORY_ITEMS = 5 // ou GAME_LIMITS.MAX_INVENTORY_ITEMS
 
 export const STORE_ITEMS: StoreItem[] = [
   // BOOSTS (efeitos imediatos)
@@ -655,36 +659,48 @@ export const STORE_ITEMS: StoreItem[] = [
     boostType: 'reveal_start',
   },
   
-  // POWER-UPS (adiciona ao inventario)
+  // POWER-UPS (adiciona itens existentes ao inventario)
+  // Permite que jogadores "reabastecam" itens gastos durante o jogo
+  // Novos itens podem ser adicionados conforme o ITEM_CATALOG expandir
   {
-    id: 'power_antidote',
+    id: 'power_scanner',
     type: 'power_up',
-    name: 'Antidoto',
-    description: 'Adiciona Antidote ao inventario',
-    cost: 2,
-    icon: Syringe,
-    itemType: 'antidote',
-    isAvailable: (player) => player.items.length < 2, // MAX_ITEMS
-  },
-  {
-    id: 'power_reveal',
-    type: 'power_up',
-    name: 'Revelador',
-    description: 'Adiciona Reveal ao inventario',
+    name: 'Scanner',
+    description: 'Adiciona Scanner ao inventario',
     cost: 2,
     icon: Eye,
-    itemType: 'reveal',
-    isAvailable: (player) => player.items.length < 2,
+    itemType: 'scanner',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
   },
   {
-    id: 'power_bomb',
+    id: 'power_shield',
     type: 'power_up',
-    name: 'Bomba',
-    description: 'Adiciona Bomb ao inventario',
+    name: 'Shield',
+    description: 'Adiciona Shield ao inventario',
+    cost: 2,
+    icon: Shield,
+    itemType: 'shield',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
+  },
+  {
+    id: 'power_pocket_pill',
+    type: 'power_up',
+    name: 'Pocket Pill',
+    description: 'Adiciona Pocket Pill ao inventario',
+    cost: 2,
+    icon: Syringe,
+    itemType: 'pocket_pill',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
+  },
+  {
+    id: 'power_discard',
+    type: 'power_up',
+    name: 'Discard',
+    description: 'Adiciona Discard ao inventario',
     cost: 2,
     icon: Bomb,
-    itemType: 'bomb',
-    isAvailable: (player) => player.items.length < 2,
+    itemType: 'discard',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
   },
 ]
 

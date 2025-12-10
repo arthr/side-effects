@@ -334,9 +334,22 @@ function onPillConsumed(player: Player, pill: Pill) {
 | `reveal_start` | Scanner-2X | Proxima rodada inicia com 2 pills reveladas | 2 | - |
 
 **Power-Ups Disponiveis:**
-- Todos os itens do `ITEM_CATALOG` podem ser comprados
+
+Power-Ups sao itens existentes do `ITEM_CATALOG` que o jogador pode "reabastecer" na loja.
+Itens disponiveis inicialmente:
+
+| ID | Nome | ItemType | Custo |
+| :--- | :--- | :--- | :--- |
+| `power_scanner` | Scanner | `scanner` | 2 |
+| `power_shield` | Shield | `shield` | 2 |
+| `power_pocket_pill` | Pocket Pill | `pocket_pill` | 2 |
+| `power_discard` | Discard | `discard` | 2 |
+
 - Custo base: 2 Pill Coins
-- Condicao: Inventario nao cheio
+- Condicao: Inventario nao cheio (`inventory.items.length < MAX_INVENTORY_ITEMS`)
+
+> **Nota:** Novos power-ups podem ser adicionados conforme o `ITEM_CATALOG` expandir ou
+> conforme balanceamento do jogo indicar necessidade.
 
 #### 5.5 Configuracao da Loja
 
