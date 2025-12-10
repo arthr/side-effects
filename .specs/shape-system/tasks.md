@@ -462,9 +462,10 @@
   - Criados helpers: `getItemsForInitialSelection()`, `getAllItemsForInitialSelection()`, `getItemsForStore()`
   - ItemSelectionScreen e useAIItemSelection atualizados para usar filtro
 
-- [ ] TASK-SS-076: Testar balanceamento de itens de shape
-  - Shape Bomb muito forte? Considerar adicionar na Pill Store com custo alto
-  - Shape Scanner muito fraco? Aumentar utilidade
+- [x] TASK-SS-076: Adicionar itens de shape na Pill Store
+  - Shape Bomb adicionado com custo 3 Pill Coins
+  - Shape Scanner adicionado com custo 3 Pill Coins
+  - Itens exclusivos da loja (availableIn: ['store'])
 
 ### 7.3 Documentacao
 

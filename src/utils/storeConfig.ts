@@ -1,4 +1,4 @@
-import { Heart, Shield, Scan, Syringe, Eye, Bomb } from 'lucide-react'
+import { Heart, Shield, Scan, Syringe, Eye, Bomb, ScanSearch } from 'lucide-react'
 import type { StoreConfig, StoreItem } from '@/types'
 import { GAME_LIMITS } from './constants'
 
@@ -81,6 +81,29 @@ export const STORE_ITEMS: StoreItem[] = [
     cost: 2,
     icon: Bomb,
     itemType: 'discard',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
+  },
+
+  // ============ SHAPE ITEMS (exclusivos da loja) ============
+
+  {
+    id: 'power_shape_bomb',
+    type: 'power_up',
+    name: 'Shape Bomb',
+    description: 'Elimina todas pilulas de uma forma',
+    cost: 3,
+    icon: Bomb,
+    itemType: 'shape_bomb',
+    isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
+  },
+  {
+    id: 'power_shape_scanner',
+    type: 'power_up',
+    name: 'Shape Scanner',
+    description: 'Revela todas pilulas de uma forma',
+    cost: 3,
+    icon: ScanSearch,
+    itemType: 'shape_scanner',
     isAvailable: (player) => player.inventory.items.length < MAX_INVENTORY_ITEMS,
   },
 ]
