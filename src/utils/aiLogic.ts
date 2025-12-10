@@ -124,6 +124,51 @@ export function analyzePoolRisk(ctx: AIDecisionContext): PoolRiskAnalysis {
   return { level, typeOdds: odds, damageOdds, safeOdds, recommendation }
 }
 
+/**
+ * Deduz informacao de pilulas baseado em typeCounts + reveladas
+ * Exemplo: Se typeCounts.FATAL=1 e uma revelada e FATAL, as outras NAO sao FATAL
+ * Usado apenas por nivel Insane (config.usesDeduction)
+ */
+export function deduceNonRevealedTypes(ctx: AIDecisionContext): Map<string, PillType[]> {
+  const { typeCounts, revealedPills, pillPool } = ctx
+  const deductions = new Map<string, PillType[]>()
+
+  // Para cada tipo, verifica se todas instancias estao reveladas
+  const revealedByType: Record<PillType, number> = {
+    SAFE: 0,
+    DMG_LOW: 0,
+    DMG_HIGH: 0,
+    FATAL: 0,
+    HEAL: 0,
+    LIFE: 0,
+  }
+
+  for (const pillId of revealedPills) {
+    const pill = pillPool.find((p) => p.id === pillId)
+    if (pill) revealedByType[pill.type]++
+  }
+
+  // Tipos esgotados (todas reveladas)
+  const exhaustedTypes: PillType[] = []
+  for (const [type, total] of Object.entries(typeCounts)) {
+    if (revealedByType[type as PillType] >= total && total > 0) {
+      exhaustedTypes.push(type as PillType)
+    }
+  }
+
+  // Para cada pilula nao-revelada, deduz tipos impossiveis
+  const allTypes: PillType[] = ['SAFE', 'DMG_LOW', 'DMG_HIGH', 'FATAL', 'HEAL', 'LIFE']
+  for (const pill of pillPool) {
+    if (!revealedPills.includes(pill.id)) {
+      // Esta pilula NAO pode ser nenhum tipo esgotado
+      const possibleTypes = allTypes.filter((t) => !exhaustedTypes.includes(t))
+      deductions.set(pill.id, possibleTypes)
+    }
+  }
+
+  return deductions
+}
+
 // ============================================
 // Selecao de Pilulas
 // ============================================
