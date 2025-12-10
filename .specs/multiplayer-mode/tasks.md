@@ -93,24 +93,24 @@
 ## Fase 2: Integracao com gameStore
 
 ### TASK-MP-007: Adicionar modo ao estado inicial
-- [ ] Adicionar `mode: 'single_player'` em `initialState`
-- [ ] Adicionar `roomId: null` em `initialState`
-- [ ] Atualizar `initGame()` para aceitar `mode` e `roomId`
-- [ ] Atualizar `resetGame()` para resetar `mode` e `roomId`
+- [x] Adicionar `mode: 'single_player'` em `initialState`
+- [x] Adicionar `roomId: null` em `initialState`
+- [x] Atualizar `initGame()` para aceitar `mode` e `roomId`
+- [x] Atualizar `resetGame()` para resetar `mode` e `roomId` (usa initialState que ja tem os valores)
 
 **Arquivos:**
-- `src/stores/gameStore.ts`
+- `src/stores/gameStore.ts` (atualizado)
 
 ---
 
 ### TASK-MP-008: Criar mecanismo de sincronizacao
-- [ ] Adicionar flag `isSyncingFromRemote` (module-level)
-- [ ] Criar helper `setSyncingFromRemote()`
-- [ ] Criar action `applyRemoteEvent()`
-- [ ] Implementar switch para cada tipo de evento
+- [x] Adicionar flag `isSyncingFromRemote` (module-level)
+- [x] Criar helper `setSyncingFromRemote()`
+- [x] Criar action `applyRemoteEvent()`
+- [x] Implementar switch para cada tipo de evento
 
 **Arquivos:**
-- `src/stores/gameStore.ts`
+- `src/stores/gameStore.ts` (atualizado)
 
 ---
 

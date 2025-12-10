@@ -4,6 +4,7 @@ import type {
   DifficultyLevel,
   GameAction,
   GameConfig,
+  GameEvent,
   GameState,
   GameStats,
   InventoryItem,
@@ -28,6 +29,29 @@ import { POCKET_PILL_HEAL } from '@/utils/itemLogic'
 import { generateShapeQuest, checkQuestProgress } from '@/utils/questGenerator'
 import { DEFAULT_STORE_CONFIG, getStoreItemById } from '@/utils/storeConfig'
 import { useToastStore } from '@/stores/toastStore'
+
+// ============ MULTIPLAYER SYNC ============
+
+/**
+ * Flag para evitar loop de sincronizacao
+ * Quando true, acoes NAO emitem eventos (estao sendo aplicadas de fonte remota)
+ */
+let isSyncingFromRemote = false
+
+/**
+ * Define flag de sincronizacao remota
+ * Usado pelo multiplayerStore ao aplicar eventos recebidos
+ */
+export function setSyncingFromRemote(value: boolean): void {
+  isSyncingFromRemote = value
+}
+
+/**
+ * Retorna se esta sincronizando de fonte remota
+ */
+export function getIsSyncingFromRemote(): boolean {
+  return isSyncingFromRemote
+}
 
 /**
  * Interface do Store com estado e actions
@@ -81,6 +105,9 @@ interface GameStore extends GameState {
   checkShoppingComplete: () => void
   applyPendingBoosts: () => void
 
+  // Actions - Multiplayer Sync
+  applyRemoteEvent: (event: GameEvent) => void
+
   // Selectors (computed)
   getCurrentPlayer: () => Player
   getOpponent: () => Player
@@ -133,6 +160,8 @@ const initialState: GameState = {
   turnPhase: 'consume',
   currentTurn: 'player1',
   difficulty: 'normal' as DifficultyLevel,
+  mode: 'single_player',
+  roomId: null,
   players: {
     player1: createPlayer('player1', 'Player 1', 3, 6, false),
     player2: createPlayer('player2', 'Player 2', 3, 6, true),
@@ -243,6 +272,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       turnPhase: 'consume',
       currentTurn: 'player1',
       difficulty: finalConfig.difficulty,
+      mode: finalConfig.mode,
+      roomId: finalConfig.roomId ?? null,
       players: { player1, player2 },
       pillPool,
       typeCounts,
@@ -1706,6 +1737,81 @@ export const useGameStore = create<GameStore>((set, get) => ({
       storeState: null,
       revealAtStart: newRevealAtStart,
     })
+  },
+
+  // ============ MULTIPLAYER SYNC ============
+
+  /**
+   * Aplica evento recebido de jogador remoto
+   * Bypassa emissao de eventos (evita loop)
+   */
+  applyRemoteEvent: (event: GameEvent) => {
+    setSyncingFromRemote(true)
+
+    try {
+      switch (event.type) {
+        case 'pill_consumed': {
+          const payload = event.payload as { pillId: string; forcedTarget?: PlayerId }
+          get().consumePill(payload.pillId, {
+            forcedTarget: payload.forcedTarget,
+          })
+          break
+        }
+
+        case 'item_used': {
+          const payload = event.payload as { itemId: string; targetId?: string }
+          get().executeItem(payload.itemId, payload.targetId)
+          break
+        }
+
+        case 'item_selected': {
+          const payload = event.payload as { itemType: ItemType }
+          get().selectItem(event.playerId, payload.itemType)
+          break
+        }
+
+        case 'item_deselected': {
+          const payload = event.payload as { itemId: string }
+          get().deselectItem(event.playerId, payload.itemId)
+          break
+        }
+
+        case 'selection_confirmed': {
+          get().confirmItemSelection(event.playerId)
+          break
+        }
+
+        case 'wants_store_toggled': {
+          const payload = event.payload as { wantsStore: boolean }
+          const player = get().players[event.playerId]
+          // Toggle apenas se estado diferente
+          if (player.wantsStore !== payload.wantsStore) {
+            get().toggleWantsStore(event.playerId)
+          }
+          break
+        }
+
+        case 'cart_updated': {
+          const payload = event.payload as { action: 'add' | 'remove'; itemId: string }
+          if (payload.action === 'add') {
+            get().addToCart(event.playerId, payload.itemId)
+          } else {
+            get().removeFromCart(event.playerId, payload.itemId)
+          }
+          break
+        }
+
+        case 'store_confirmed': {
+          get().confirmStorePurchases(event.playerId)
+          break
+        }
+
+        default:
+          console.warn('[GameStore] Evento remoto nao tratado:', event.type)
+      }
+    } finally {
+      setSyncingFromRemote(false)
+    }
   },
 
   // ============ SELECTORS ============
