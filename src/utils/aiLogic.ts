@@ -203,6 +203,125 @@ export function calculatePoolRisk(
 // Selecao de Pilulas
 // ============================================
 
+/** Info de pilula revelada */
+interface RevealedPillInfo {
+  id: string
+  type: PillType
+}
+
+/**
+ * Mapeia pilulas reveladas com seus tipos
+ */
+function getRevealedPillsInfo(pillPool: Pill[], revealedPills: string[]): RevealedPillInfo[] {
+  return revealedPills
+    .map((id) => {
+      const pill = pillPool.find((p) => p.id === id)
+      return pill ? { id: pill.id, type: pill.type } : null
+    })
+    .filter((info): info is RevealedPillInfo => info !== null)
+}
+
+/**
+ * Encontra pilula SAFE revelada
+ */
+function findSafeRevealedPill(revealedInfo: RevealedPillInfo[]): string | null {
+  const safe = revealedInfo.find((p) => p.type === 'SAFE')
+  return safe?.id ?? null
+}
+
+/**
+ * Encontra pilula HEAL revelada
+ */
+function findHealRevealedPill(revealedInfo: RevealedPillInfo[]): string | null {
+  const heal = revealedInfo.find((p) => p.type === 'HEAL')
+  return heal?.id ?? null
+}
+
+/**
+ * Encontra pilula nao revelada
+ */
+function findUnknownPill(pillPool: Pill[], revealedPills: string[]): string | null {
+  const unknown = pillPool.find((p) => !revealedPills.includes(p.id))
+  return unknown?.id ?? null
+}
+
+/**
+ * Encontra pilula do quest (proxima shape esperada na sequencia)
+ */
+function findQuestPill(
+  pillPool: Pill[],
+  quest: { sequence: PillShape[]; progress: number },
+  revealedPills: string[]
+): string | null {
+  const targetShape = quest.sequence[quest.progress]
+  if (!targetShape) return null
+
+  const questPill = pillPool.find(
+    (p) => p.visuals.shape === targetShape && !revealedPills.includes(p.id)
+  )
+  return questPill?.id ?? null
+}
+
+/**
+ * Selecao inteligente de pilula (Hard/Insane)
+ * Usa typeCounts, deducao e analise de risco
+ */
+function selectSmartPill(ctx: AIDecisionContext): string | null {
+  const { pillPool, revealedPills, config, aiQuest } = ctx
+
+  // Mapeia pilulas reveladas com seus tipos
+  const revealedInfo = getRevealedPillsInfo(pillPool, revealedPills)
+
+  // Calcula probabilidades e deducoes
+  const riskAnalysis = analyzePoolRisk(ctx)
+  const deductions = config.usesDeduction ? deduceNonRevealedTypes(ctx) : null
+
+  // Prioridade 1: Shape Quest (Insane only)
+  if (config.prioritizesShapeQuest && aiQuest) {
+    const questPill = findQuestPill(pillPool, aiQuest, revealedPills)
+    if (questPill) return questPill
+  }
+
+  // Prioridade 2: Pilulas seguras reveladas
+  const safePill = findSafeRevealedPill(revealedInfo)
+  if (safePill) return safePill
+
+  // Prioridade 3: Pilulas de cura (se precisar)
+  if (ctx.aiPlayer.resistance < ctx.aiPlayer.maxResistance * 0.5) {
+    const healPill = findHealRevealedPill(revealedInfo)
+    if (healPill) return healPill
+  }
+
+  // Prioridade 4 (Insane): Usar deducao para encontrar pilula "segura"
+  if (deductions) {
+    for (const pill of pillPool) {
+      if (revealedPills.includes(pill.id)) continue
+      const possibleTypes = deductions.get(pill.id)
+      if (possibleTypes) {
+        const canBeDangerous =
+          possibleTypes.includes('FATAL') || possibleTypes.includes('DMG_HIGH')
+        if (!canBeDangerous) {
+          return pill.id // Garantido nao ser perigosa!
+        }
+      }
+    }
+  }
+
+  // Prioridade 5: Se risco baixo, pode arriscar qualquer uma
+  if (riskAnalysis.level === 'low') {
+    return selectRandomPill(pillPool)
+  }
+
+  // Prioridade 6: Evitar perigosas reveladas, pegar nao-revelada
+  if (config.avoidsRevealedDanger) {
+    const unknownPill = findUnknownPill(pillPool, revealedPills)
+    if (unknownPill) return unknownPill
+  }
+
+  // Fallback: aleatorio
+  return selectRandomPill(pillPool)
+}
+
 /**
  * Selecao aleatoria simples de pilula
  * Usado pelo nivel Easy e como fallback para outros niveis
