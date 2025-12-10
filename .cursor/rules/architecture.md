@@ -9,6 +9,7 @@
 - `AnimatedPlayerArea.tsx` - Card do jogador com animacoes e inventario
 - `TurnIndicator.tsx` - Indicador de turno atual
 - `TypeCounter.tsx` - Contagem publica de tipos de pilulas
+- `DifficultySelect.tsx` - Seletor de dificuldade da IA (tela setup)
 
 ### Sistema de Itens (`src/components/game/`)
 - `ItemSelectionScreen.tsx` - Tela de selecao de itens (pre-jogo)
@@ -35,11 +36,17 @@ Estado central do jogo:
 - `players` - Dados dos jogadores (vidas, resistencia, inventario, efeitos)
 - `pillPool` - Pilulas na mesa (com flags inverted, doubled)
 - `currentTurn` - Quem esta jogando
-- `phase` - setup | itemSelection | playing | roundEnding | ended
+- `phase` - setup | itemSelection | playing | roundEnding | shopping | ended
 - `round` - Numero da rodada
+- `difficulty` - Nivel de dificuldade da IA (easy | normal | hard | insane)
 - `targetSelection` - Estado de selecao de alvo para itens
 - `revealedPills` - IDs de pilulas reveladas pelo Scanner
 - `itemSelectionConfirmed` - Status de confirmacao por jogador
+- `typeCounts` - Contagem publica de tipos de pilulas (informacao visivel a todos)
+- `shapeCounts` - Contagem publica de shapes (informacao visivel a todos)
+
+Selectors:
+- `useDifficulty()` - Retorna dificuldade atual
 
 ### overlayStore
 Gerencia overlays bloqueantes:
@@ -55,7 +62,7 @@ Fila de notificacoes:
 ## Hooks Principais
 
 ### useGameActions
-Acoes do jogo: `startGame()`, `resetGame()`
+Acoes do jogo: `startGame(config?)`, `resetGame()`
 
 ### usePillConsumption
 Fluxo completo de consumo de pilula:
@@ -80,14 +87,46 @@ Uso de itens durante partida:
 ### useAIPlayer
 Logica da IA durante jogo:
 - Detecta turno da IA
-- Decide se usa item (35% chance, heuristicas)
-- Seleciona pilula aleatoria
+- Constroi `AIDecisionContext` com dados do store
+- Decide se usa item baseado na dificuldade e analise de risco
+- Seleciona pilula usando logica apropriada (random para Easy, smart para Hard/Insane)
+- Delay variavel por dificuldade
 - Dispara consumo
 
 ### useAIItemSelection
 Selecao automatica de itens pela IA:
-- Seleciona 5 itens aleatorios
+- Usa `selectAIInitialItems(difficulty, available)` para selecao baseada na dificuldade
+- Easy: aleatorio | Normal: variedade | Hard: ofensivos | Insane: otimizado
 - Auto-confirma apos delay
+
+### useAIStore
+Comportamento da IA na loja:
+- Auto-toggle `wantsStore` baseado em coins e `storeInterestThreshold`
+- Auto-compra durante fase shopping usando `selectAIStoreItems()`
+
+## Sistema de Dificuldade
+
+### Niveis
+- `easy` (Paciente) - IA previsivel, ideal para aprender
+- `normal` (Cobaia) - Experiencia balanceada (padrao)
+- `hard` (Sobrevivente) - IA agressiva e estrategica
+- `insane` (Hofmann) - IA calculista, sem piedade
+
+### Configuracao (`utils/aiConfig.ts`)
+- `AI_CONFIGS` - Parametros por nivel de dificuldade
+- `getAIConfig(difficulty)` - Retorna configuracao
+- `getAIThinkingDelay(difficulty)` - Delay variavel de "pensamento"
+
+### Comportamento por Nivel
+
+| Caracteristica | Easy | Normal | Hard | Insane |
+|:---|:---:|:---:|:---:|:---:|
+| Usa typeCounts | - | Itens | Sim | Sim |
+| Usa reveladas | - | - | Sim | Sim |
+| Usa deducao | - | - | - | Sim |
+| Prioriza quest | - | - | - | Sim |
+| Estrategia loja | - | - | Sim | Sim |
+| Chance usar item | 15% | 35% | 55% | 80% |
 
 ## Fluxo de Dados
 
@@ -154,7 +193,84 @@ Selecao automatica de itens pela IA:
 [Toast de feedback]
 ```
 
+### Fluxo de Decisao da IA (Turno)
+```
+[Detecta turno da IA]
+       |
+       v
+[buildAIContext() - monta AIDecisionContext]
+       |
+       v
+[getAIThinkingDelay(difficulty)]
+       |
+       v
+[shouldAIUseItem(ctx)?]
+    |         |
+   NAO       SIM
+    |         |
+    |         v
+    |    [selectAIItem(ctx)]
+    |         |
+    |         v
+    |    [selectAIItemTarget(itemType, ctx)]
+    |         |
+    |         v
+    |    [executeItem()]
+    |         |
+    v         v
+[selectAIPill(ctx)]
+       |
+       v
+[startConsumption(pillId)]
+```
+
+## Types
+
+### types/game.ts
+- `DifficultyLevel` - 'easy' | 'normal' | 'hard' | 'insane'
+- `DIFFICULTY_LABELS` - Labels de exibicao
+- `DIFFICULTY_DESCRIPTIONS` - Descricoes para tooltip
+- `GameConfig` - Inclui campo `difficulty`
+- `GameState` - Inclui campo `difficulty`
+
+### types/ai.ts
+- `AIConfig` - Parametros de comportamento da IA
+- `AIDecisionContext` - Contexto para decisoes (inclui typeCounts, shapeCounts)
+- `PoolRiskLevel` - 'critical' | 'high' | 'medium' | 'low'
+- `PoolRiskAnalysis` - Analise de risco do pool
+- `ItemEvaluation` - Resultado de avaliacao de item
+
 ## Utils
+
+### aiConfig.ts (NOVO)
+- `AI_CONFIGS` - Configuracoes por nivel de dificuldade
+- `getAIConfig(difficulty)` - Retorna config para nivel
+- `getAIThinkingDelay(difficulty)` - Delay aleatorio por nivel
+
+### aiLogic.ts (REFATORADO)
+Analise de Risco:
+- `calculateTypeOdds(ctx)` - Probabilidade de cada tipo no pool
+- `analyzePoolRisk(ctx)` - Analise completa de risco
+- `deduceNonRevealedTypes(ctx)` - Deducao logica (Insane)
+- `calculatePoolRisk(typeCounts, poolSize)` - Helper rapido
+
+Selecao de Pilulas:
+- `selectAIPill(ctx)` - Selecao principal baseada na dificuldade
+- `selectRandomPill(pillPool)` - Selecao aleatoria (Easy/fallback)
+- `selectSmartPill(ctx)` - Selecao inteligente (Hard/Insane)
+
+Uso de Itens:
+- `shouldAIUseItem(ctx)` - Decide se usa item (com bonus por risco)
+- `selectAIItem(ctx)` - Seleciona melhor item
+- `evaluateItem(item, ctx)` - Pontua item no contexto
+- `selectAIItemTarget(itemType, ctx, opponentId)` - Seleciona alvo
+
+Pre-jogo:
+- `selectAIInitialItems(difficulty, available)` - Selecao de itens iniciais
+
+Loja:
+- `shouldAIWantStore(difficulty, coins)` - Interesse na loja
+- `selectAIStoreItems(ctx, coins, items)` - Selecao de compras
 
 ### itemCatalog.ts
 - `ITEM_CATALOG` - Definicoes de todos os 9 itens
@@ -163,11 +279,6 @@ Selecao automatica de itens pela IA:
 
 ### itemLogic.ts
 - Logica de aplicacao de efeitos de cada item
-
-### aiLogic.ts
-- `shouldAIUseItem()` - Decide se IA usa item
-- `selectAIItem()` - Seleciona item para IA usar
-- `selectAIItemTarget()` - Seleciona alvo para item
 
 ### gameLogic.ts
 - `applyPillEffect(pill, player, options?)` - Aplica efeito com suporte a Shield

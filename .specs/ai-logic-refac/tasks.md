@@ -12,9 +12,9 @@
 | AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
 | Store | 3 | 3 | 0 |
 | Hooks | 4 | 4 | 0 |
-| Components | 3 | 2 | 1 |
-| Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **33** | **4** |
+| Components | 3 | 3 | 0 |
+| Integration | 4 | 1 | 3 |
+| **TOTAL** | **37** | **35** | **2** |
 
 ---
 
@@ -221,9 +221,10 @@
   - Renderizar `DifficultySelect` acima do botao
   - Passar dificuldade para `startGame()`
 
-- [ ] TASK-033: Atualizar `useGameActions.ts`
+- [x] TASK-033: Atualizar `useGameActions.ts`
   - `startGame()` aceita parametro de dificuldade
   - Propaga para `initGame()`
+  - (Ja funcionava corretamente - sem alteracoes)
 
 ---
 
@@ -246,7 +247,7 @@
   - Usa itens estrategicamente baseado em risco
   - Delay mais curto
 
-- [ ] TASK-037: Atualizar documentacao
+- [x] TASK-037: Atualizar documentacao
   - Atualizar `architecture.md` com novos arquivos
   - Atualizar `product.md` com feature de dificuldade
   - Documentar heuristicas de typeCounts em `aiLogic.ts`
