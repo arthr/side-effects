@@ -49,11 +49,24 @@ interface MultiplayerStore extends MultiplayerContext {
   // Estado de saida voluntaria do host
   hostLeftVoluntarily: boolean
   setHostLeftVoluntarily: (value: boolean) => void
+
+  // Heartbeat system
+  _heartbeatInterval: ReturnType<typeof setInterval> | null
+  _lastOpponentHeartbeat: number
+  _heartbeatCheckInterval: ReturnType<typeof setInterval> | null
+  startHeartbeat: () => void
+  stopHeartbeat: () => void
 }
 
 /**
  * Estado inicial
  */
+/** Intervalo de envio de heartbeat em ms */
+const HEARTBEAT_INTERVAL_MS = 5000
+
+/** Tempo sem heartbeat para considerar oponente desconectado em ms */
+const HEARTBEAT_TIMEOUT_MS = 15000
+
 const initialState: MultiplayerContext & {
   _sequenceNumber: number
   _localPlayerId: string
@@ -61,6 +74,9 @@ const initialState: MultiplayerContext & {
   _unsubscribeStatus: (() => void) | null
   opponentDisconnected: boolean
   hostLeftVoluntarily: boolean
+  _heartbeatInterval: ReturnType<typeof setInterval> | null
+  _lastOpponentHeartbeat: number
+  _heartbeatCheckInterval: ReturnType<typeof setInterval> | null
 } = {
   mode: 'single_player',
   room: null,
@@ -74,6 +90,9 @@ const initialState: MultiplayerContext & {
   _unsubscribeStatus: null,
   opponentDisconnected: false,
   hostLeftVoluntarily: false,
+  _heartbeatInterval: null,
+  _lastOpponentHeartbeat: 0,
+  _heartbeatCheckInterval: null,
 }
 
 /**
@@ -203,6 +222,9 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
    */
   leaveRoom: async (): Promise<void> => {
     const state = get()
+
+    // Para heartbeat antes de sair
+    get().stopHeartbeat()
 
     if (state.room && state.localRole) {
       // Notifica outro jogador com role para tratamento diferenciado
@@ -498,6 +520,18 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         break
       }
 
+      case 'heartbeat': {
+        // Recebemos heartbeat do oponente - atualiza timestamp e reseta flag se estava desconectado
+        set({ _lastOpponentHeartbeat: Date.now() })
+        
+        // Se oponente estava marcado como desconectado, reseta
+        if (state.opponentDisconnected) {
+          console.log('[MultiplayerStore] Heartbeat recebido - oponente reconectado')
+          set({ opponentDisconnected: false })
+        }
+        break
+      }
+
       case 'game_started': {
         // Jogo iniciado pelo host - guest sincroniza usando dados recebidos
         if (state.localRole === 'guest' && state.room) {
@@ -530,6 +564,9 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             syncData: startPayload.syncData as import('@/types').SyncData | undefined,
           })
 
+          // Inicia heartbeat para detectar desconexao
+          get().startHeartbeat()
+
           console.log('[MultiplayerStore] Guest iniciou com dados sincronizados do host')
         } else if (state.localRole === 'host' && state.room) {
           // Host tambem atualiza status
@@ -539,6 +576,9 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
               status: 'playing',
             },
           })
+
+          // Inicia heartbeat para detectar desconexao
+          get().startHeartbeat()
         }
         break
       }
@@ -651,10 +691,83 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   },
 
   /**
+   * Inicia sistema de heartbeat para detectar desconexao do oponente
+   * Envia heartbeat periodicamente e verifica se oponente esta ativo
+   */
+  startHeartbeat: () => {
+    const state = get()
+
+    // Para heartbeat anterior se existir
+    get().stopHeartbeat()
+
+    // So inicia se estiver em multiplayer e conectado
+    if (state.mode !== 'multiplayer' || state.connectionStatus !== 'connected') {
+      return
+    }
+
+    // Inicializa timestamp do ultimo heartbeat do oponente
+    set({ _lastOpponentHeartbeat: Date.now() })
+
+    // Envia heartbeat periodicamente
+    const heartbeatInterval = setInterval(() => {
+      const currentState = get()
+      if (currentState.connectionStatus === 'connected' && currentState.room) {
+        currentState.sendEvent({ type: 'heartbeat' })
+      }
+    }, HEARTBEAT_INTERVAL_MS)
+
+    // Verifica se oponente esta ativo periodicamente
+    const checkInterval = setInterval(() => {
+      const currentState = get()
+      const timeSinceLastHeartbeat = Date.now() - currentState._lastOpponentHeartbeat
+
+      // Se passou muito tempo sem heartbeat do oponente, considera desconectado
+      if (
+        timeSinceLastHeartbeat > HEARTBEAT_TIMEOUT_MS &&
+        !currentState.opponentDisconnected &&
+        currentState.room &&
+        currentState.room.status === 'playing'
+      ) {
+        console.log('[MultiplayerStore] Oponente sem heartbeat por', timeSinceLastHeartbeat, 'ms - considerando desconectado')
+        set({ opponentDisconnected: true })
+      }
+    }, HEARTBEAT_INTERVAL_MS)
+
+    set({
+      _heartbeatInterval: heartbeatInterval,
+      _heartbeatCheckInterval: checkInterval,
+    })
+
+    console.log('[MultiplayerStore] Heartbeat iniciado')
+  },
+
+  /**
+   * Para sistema de heartbeat
+   */
+  stopHeartbeat: () => {
+    const state = get()
+
+    if (state._heartbeatInterval) {
+      clearInterval(state._heartbeatInterval)
+    }
+    if (state._heartbeatCheckInterval) {
+      clearInterval(state._heartbeatCheckInterval)
+    }
+
+    set({
+      _heartbeatInterval: null,
+      _heartbeatCheckInterval: null,
+    })
+  },
+
+  /**
    * Reseta para estado inicial
    */
   reset: () => {
     const state = get()
+
+    // Para heartbeat
+    get().stopHeartbeat()
 
     // Remove listeners
     if (state._unsubscribeEvent) {

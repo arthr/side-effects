@@ -23,6 +23,7 @@ export type GameEventType =
   | 'player_disconnected'
   | 'player_reconnected'
   | 'state_sync'
+  | 'heartbeat'
 
 /**
  * Evento base com metadados comuns

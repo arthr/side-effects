@@ -726,6 +726,34 @@ desconectado e o estado de turno ficava dessincronizado.
 
 ---
 
+### HOTFIX-MP-011: Sistema de heartbeat para detectar desconexao do oponente
+- [x] Adicionar evento `heartbeat` ao `GameEventType` em events.ts
+- [x] Adicionar estado e funcoes de heartbeat no multiplayerStore
+- [x] Implementar `startHeartbeat()` - envia heartbeat a cada 5s e verifica timeout
+- [x] Implementar `stopHeartbeat()` - limpa intervalos
+- [x] Handler `heartbeat` atualiza timestamp e reseta flag se estava desconectado
+- [x] Iniciar heartbeat apos `game_started` para ambos os jogadores
+- [x] Parar heartbeat em `leaveRoom()` e `reset()`
+
+**Problema resolvido:**
+Quando oponente desconecta abruptamente (fechou browser, perdeu internet), o evento
+`player_disconnected` pode nao ser enviado porque a conexao ja caiu. O host nao
+saberia que o guest desconectou.
+
+**Solucao:**
+Sistema de heartbeat onde cada cliente envia pulso a cada 5 segundos. Se nao receber
+heartbeat do oponente por 15 segundos, considera desconectado e exibe overlay.
+
+**Configuracao:**
+- `HEARTBEAT_INTERVAL_MS = 5000` - envia heartbeat a cada 5s
+- `HEARTBEAT_TIMEOUT_MS = 15000` - considera desconectado apos 15s sem heartbeat
+
+**Arquivos:**
+- `src/types/events.ts` (heartbeat event type)
+- `src/stores/multiplayerStore.ts` (heartbeat system, handlers)
+
+---
+
 ## Ordem de Execucao Recomendada
 
 1. **Infraestrutura:** TASK-MP-001, TASK-MP-002
