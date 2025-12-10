@@ -8,13 +8,13 @@
 | Config | 3 | 3 | 0 |
 | AI Logic - Analise | 4 | 4 | 0 |
 | AI Logic - Selecao | 4 | 4 | 0 |
-| AI Logic - Itens | 4 | 1 | 3 |
+| AI Logic - Itens | 4 | 2 | 2 |
 | AI Logic - Pre-jogo/Loja | 4 | 0 | 4 |
 | Store | 3 | 0 | 3 |
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **17** | **20** |
+| **TOTAL** | **37** | **18** | **19** |
 
 ---
 
@@ -123,7 +123,7 @@
   - Usa `config.itemUseChance`
   - Bonus de chance se risco CRITICO/ALTO e tem item defensivo
 
-- [ ] TASK-017: Implementar `evaluateItem(item, ctx)` em `aiLogic.ts`
+- [x] TASK-017: Implementar `evaluateItem(item, ctx)` em `aiLogic.ts`
   - Usa `analyzePoolRisk()` para decisoes contextuais
   - Shield: bonus MAXIMO em risco critico
   - Force Feed: bonus se FATAL odds > 20%

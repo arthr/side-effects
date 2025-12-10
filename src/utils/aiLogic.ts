@@ -1,6 +1,7 @@
 import type {
   AIDecisionContext,
   InventoryItem,
+  ItemEvaluation,
   ItemType,
   Pill,
   PillShape,
@@ -396,6 +397,162 @@ export function shouldAIUseItem(ctx: AIDecisionContext): boolean {
   }
 
   return Math.random() < useChance
+}
+
+/**
+ * Encontra shape com mais pilulas no pool
+ */
+function findShapeWithMostPills(pillPool: Pill[]): { shape: PillShape; count: number } | null {
+  const counts: Partial<Record<PillShape, number>> = {}
+  for (const pill of pillPool) {
+    const shape = pill.visuals.shape
+    counts[shape] = (counts[shape] || 0) + 1
+  }
+
+  let maxShape: PillShape | null = null
+  let maxCount = 0
+  for (const [shape, count] of Object.entries(counts)) {
+    if (count > maxCount) {
+      maxCount = count
+      maxShape = shape as PillShape
+    }
+  }
+
+  return maxShape ? { shape: maxShape, count: maxCount } : null
+}
+
+/**
+ * Avalia valor de um item no contexto atual
+ * Usa analise de risco baseada em typeCounts
+ */
+function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluation {
+  const { aiPlayer, opponent, pillPool, config } = ctx
+
+  const basePriority = ITEM_PRIORITY[item.type]
+  let contextBonus = 0
+  let reason = 'prioridade base'
+
+  // Calcular analise de risco se config permitir
+  const riskAnalysis = config.usesTypeCounts ? analyzePoolRisk(ctx) : null
+
+  const aiResistPct = aiPlayer.resistance / aiPlayer.maxResistance
+  const oppResistPct = opponent.resistance / opponent.maxResistance
+  const isAILowLife = aiPlayer.lives <= 1
+  const isOppLowResist = oppResistPct < 0.4
+  const hasManyPills = pillPool.length >= 4
+
+  switch (item.type) {
+    case 'shield':
+      // Prioridade MAXIMA se risco critico/alto
+      if (riskAnalysis?.level === 'critical') {
+        contextBonus = 35
+        reason = 'risco CRITICO - protecao essencial'
+      } else if (riskAnalysis?.level === 'high') {
+        contextBonus = 28
+        reason = 'risco alto - protecao recomendada'
+      } else if (isAILowLife) {
+        contextBonus = 25
+        reason = 'vida critica - protecao maxima'
+      }
+      break
+
+    case 'pocket_pill':
+      // Mais valioso se risco alto E resistencia baixa
+      if (riskAnalysis?.level === 'high' && aiResistPct < 0.5) {
+        contextBonus = 28
+        reason = 'risco alto + resistencia baixa'
+      } else if (aiResistPct < 0.5) {
+        contextBonus = 20
+        reason = 'resistencia baixa - cura urgente'
+      }
+      break
+
+    case 'scanner':
+    case 'shape_scanner':
+      // Menos valioso se maioria e segura (typeCounts mostra)
+      if (riskAnalysis?.safeOdds && riskAnalysis.safeOdds > 0.6) {
+        contextBonus = 5
+        reason = 'maioria segura - info menos valiosa'
+      } else if (hasManyPills) {
+        contextBonus = 15
+        reason = 'muitas pilulas - informacao valiosa'
+      }
+      break
+
+    case 'force_feed':
+      // MUITO valioso se FATAL presente e pool pequeno
+      if (riskAnalysis?.typeOdds.FATAL && riskAnalysis.typeOdds.FATAL > 0.2) {
+        contextBonus = 30
+        reason = `${Math.round(riskAnalysis.typeOdds.FATAL * 100)}% chance FATAL - forcar!`
+      } else if (config.targetsWeakPlayer && isOppLowResist) {
+        contextBonus = 20
+        reason = 'oponente vulneravel - forcar consumo'
+      }
+      break
+
+    case 'handcuffs':
+      // Valioso em risco critico (forca oponente a encarar perigo)
+      if (riskAnalysis?.level === 'critical') {
+        contextBonus = 25
+        reason = 'risco critico - forcar oponente a encarar'
+      } else if (config.targetsWeakPlayer && isOppLowResist) {
+        contextBonus = 15
+        reason = 'turno extra para finalizar'
+      }
+      break
+
+    case 'discard':
+      // Valioso se FATAL presente (pode remover ela)
+      if (riskAnalysis?.typeOdds.FATAL && riskAnalysis.typeOdds.FATAL > 0) {
+        contextBonus = 18
+        reason = 'pode remover FATAL do pool'
+      }
+      break
+
+    case 'shape_bomb': {
+      const shapeWithMost = findShapeWithMostPills(pillPool)
+      if (shapeWithMost && shapeWithMost.count >= 3) {
+        contextBonus = 18
+        reason = `eliminar ${shapeWithMost.count} pilulas de uma vez`
+      }
+      break
+    }
+
+    case 'inverter':
+      // Insane: inverter HEAL revelada para dano
+      if (config.usesRevealedPills) {
+        const hasRevealedHeal = pillPool.some(
+          (p) => ctx.revealedPills.includes(p.id) && p.type === 'HEAL'
+        )
+        if (hasRevealedHeal) {
+          contextBonus = 12
+          reason = 'inverter cura revelada'
+        }
+      }
+      break
+
+    case 'double':
+      // Insane: dobrar FATAL revelada + Force Feed
+      if (config.usesRevealedPills) {
+        const hasRevealedFatal = pillPool.some(
+          (p) => ctx.revealedPills.includes(p.id) && p.type === 'FATAL'
+        )
+        if (hasRevealedFatal && aiPlayer.inventory.items.some((i) => i.type === 'force_feed')) {
+          contextBonus = 22
+          reason = 'combo: dobrar fatal + forcar'
+        }
+      }
+      break
+
+    default:
+      contextBonus = 0
+  }
+
+  return {
+    item,
+    score: basePriority + contextBonus,
+    reason,
+  }
 }
 
 /**
