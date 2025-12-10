@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { StoreItem } from '@/types'
+import { ItemIcon } from './ItemIcon'
 import dosedPill from '/dosed_pill.svg'
 
 interface StoreItemCardProps {
@@ -51,7 +52,7 @@ export function StoreItemCard({
       whileHover={canBuy ? { scale: 1.02 } : {}}
       whileTap={canBuy ? { scale: 0.98 } : {}}
       className={`
-        relative flex flex-col items-center gap-2 p-3
+        relative flex flex-col items-center gap-1.5 p-3 min-h-[160px]
         border border-border rounded-lg
         transition-all duration-200
         ${getStateClasses()}
@@ -67,31 +68,44 @@ export function StoreItemCard({
         {item.type === 'boost' ? 'Boost' : 'Item'}
       </div>
 
+      {/* Badge de indisponivel */}
+      {!isAvailable && (
+        <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-medium uppercase bg-red-500/30 text-red-400">
+          Indisponivel
+        </div>
+      )}
+
       {/* Icone */}
       <div
         className={`
-          w-10 h-10 flex items-center justify-center rounded-lg mt-2
+          w-12 h-12 flex items-center justify-center rounded-lg mt-3
           ${item.type === 'boost' ? 'bg-emerald-500/10' : 'bg-blue-500/10'}
+          ${!isAvailable ? 'grayscale opacity-50' : ''}
         `}
       >
-        <Icon
-          size={24}
-          className={item.type === 'boost' ? 'text-emerald-400' : 'text-blue-400'}
-        />
+        {/* Power-ups com itemType usam ItemIcon (imagens), boosts usam icone Lucide */}
+        {item.type === 'power_up' && item.itemType ? (
+          <ItemIcon type={item.itemType} size={40} />
+        ) : (
+          <Icon
+            size={24}
+            className={item.type === 'boost' ? 'text-emerald-400' : 'text-blue-400'}
+          />
+        )}
       </div>
 
       {/* Nome */}
-      <span className="text-sm font-medium text-foreground">{item.name}</span>
+      <span className="text-sm font-medium text-foreground mt-1">{item.name}</span>
 
-      {/* Descricao */}
-      <span className="text-[10px] text-muted-foreground text-center line-clamp-2">
+      {/* Descricao - altura fixa para consistencia */}
+      <span className="text-[10px] text-muted-foreground text-center line-clamp-2 h-7 flex items-center">
         {item.description}
       </span>
 
-      {/* Custo */}
+      {/* Custo - posicionado no final */}
       <div
         className={`
-          flex items-center gap-1 px-2 py-0.5 rounded-full
+          flex items-center gap-1 px-2 py-0.5 rounded-full mt-auto
           ${canAfford ? 'bg-amber-500/20' : 'bg-red-500/20'}
         `}
       >
@@ -102,15 +116,6 @@ export function StoreItemCard({
           {item.cost}
         </span>
       </div>
-
-      {/* Indicador de indisponivel */}
-      {!isAvailable && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Indisponivel
-          </span>
-        </div>
-      )}
     </motion.button>
   )
 }

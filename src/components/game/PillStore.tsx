@@ -8,6 +8,7 @@ import { StoreItemCard } from './StoreItemCard'
 import { Button } from '../ui/8bit/button'
 import { Progress } from '../ui/progress'
 import dosedPill from '/dosed_pill.svg'
+import { ScrollArea } from '../ui/8bit/scroll-area'
 
 interface PillStoreProps {
   /** ID do jogador que esta comprando */
@@ -92,8 +93,8 @@ export function PillStore({ playerId }: PillStoreProps) {
         </div>
 
         {/* Grid de Itens */}
-        <div className="p-4 max-h-[50vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
+        <ScrollArea className="h-[50vh]">
+          <div className="grid grid-cols-2 gap-3 p-4">
             {STORE_ITEMS.map((item) => {
               const isAvailable = !item.isAvailable || item.isAvailable(player)
               const canAfford = player.pillCoins >= item.cost
@@ -109,7 +110,7 @@ export function PillStore({ playerId }: PillStoreProps) {
               )
             })}
           </div>
-        </div>
+        </ScrollArea>
 
         {/* Footer */}
         <div className="border-t border-border p-4 bg-muted/30">
