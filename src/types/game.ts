@@ -1,11 +1,13 @@
 import type { TargetSelectionState } from './item'
 import type { Pill, PillShape, PillType } from './pill'
 import type { Player, PlayerId } from './player'
+import type { ShapeQuest } from './quest'
+import type { StoreState } from './store'
 
 /**
  * Fases do jogo
  */
-export type GamePhase = 'setup' | 'itemSelection' | 'playing' | 'roundEnding' | 'ended'
+export type GamePhase = 'setup' | 'itemSelection' | 'playing' | 'roundEnding' | 'shopping' | 'ended'
 
 /**
  * Fases dentro de um turno
@@ -30,6 +32,8 @@ export interface GameState {
   typeCounts: Record<PillType, number>
   /** Contagem publica de shapes de pilulas (visivel para ambos jogadores) */
   shapeCounts: Record<PillShape, number>
+  /** Objetivo de shape de cada jogador */
+  shapeQuests: Record<PlayerId, ShapeQuest | null>
   /** Numero da rodada atual */
   round: number
   /** ID do vencedor (null se jogo em andamento) */
@@ -42,6 +46,8 @@ export interface GameState {
   revealedPills: string[]
   /** Status de confirmacao de selecao de itens por jogador */
   itemSelectionConfirmed: Record<PlayerId, boolean>
+  /** Estado da Pill Store (apenas durante fase shopping) */
+  storeState: StoreState | null
 }
 
 /**

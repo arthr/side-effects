@@ -125,13 +125,13 @@
 
 ### 3.2 Alteracoes no GameState
 
-- [ ] TASK-SS-022: Adicionar `shapeQuests: Record<PlayerId, ShapeQuest | null>` ao `GameState`
+- [x] TASK-SS-022: Adicionar `shapeQuests: Record<PlayerId, ShapeQuest | null>` ao `GameState`
 
-- [ ] TASK-SS-024: Atualizar `initialState` com `shapeQuests`
+- [x] TASK-SS-024: Atualizar `initialState` com `shapeQuests`
 
 ### 3.3 Pill Store - Novos Tipos
 
-- [ ] TASK-SS-024B: Criar arquivo `src/types/store.ts`
+- [x] TASK-SS-024B: Criar arquivo `src/types/store.ts`
   - BoostType tipo
   - StoreItemType tipo
   - StoreItem interface
@@ -139,13 +139,13 @@
   - StoreTimerConfig interface
   - StoreConfig interface
 
-- [ ] TASK-SS-024C: Exportar novos tipos de store em `src/types/index.ts`
+- [x] TASK-SS-024C: Exportar novos tipos de store em `src/types/index.ts`
 
-- [ ] TASK-SS-024D: Adicionar `pillCoins: number` e `wantsStore: boolean` ao `Player` em `src/types/player.ts`
+- [x] TASK-SS-024D: Adicionar `pillCoins: number` e `wantsStore: boolean` ao `Player` em `src/types/player.ts`
 
-- [ ] TASK-SS-024E: Adicionar `storeState: StoreState | null` ao `GameState`
+- [x] TASK-SS-024E: Adicionar `storeState: StoreState | null` ao `GameState`
 
-- [ ] TASK-SS-024F: Adicionar phase `'shopping'` ao tipo `GamePhase`
+- [x] TASK-SS-024F: Adicionar phase `'shopping'` ao tipo `GamePhase`
 
 ---
 

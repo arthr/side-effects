@@ -147,6 +147,10 @@ const initialState: GameState = {
     pineapple: 0,
     fruit: 0,
   },
+  shapeQuests: {
+    player1: null,
+    player2: null,
+  },
   round: 0,
   winner: null,
   actionHistory: [],
@@ -162,6 +166,7 @@ const initialState: GameState = {
     player1: false,
     player2: false,
   },
+  storeState: null,
 }
 
 /**

@@ -275,6 +275,8 @@ export function createPlayer(
       maxItems: 5,
     },
     effects: [],
+    pillCoins: 0,
+    wantsStore: false,
   }
 }
 

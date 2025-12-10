@@ -42,6 +42,10 @@ export interface Player {
   inventory: PlayerInventory
   /** Efeitos ativos no jogador */
   effects: PlayerEffect[]
+  /** Quantidade de Pill Coins acumuladas */
+  pillCoins: number
+  /** Toggle: jogador quer visitar Pill Store ao fim da rodada */
+  wantsStore: boolean
 }
 
 /**
