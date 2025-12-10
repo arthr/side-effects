@@ -11,10 +11,10 @@
 | AI Logic - Itens | 4 | 4 | 0 |
 | AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
 | Store | 3 | 3 | 0 |
-| Hooks | 4 | 0 | 4 |
+| Hooks | 4 | 1 | 3 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **27** | **10** |
+| **TOTAL** | **37** | **28** | **9** |
 
 ---
 
@@ -187,7 +187,7 @@
 
 ## Fase 7: Alteracoes nos Hooks
 
-- [ ] TASK-027: Refatorar `useAIPlayer.ts`
+- [x] TASK-027: Refatorar `useAIPlayer.ts`
   - Construir `AIDecisionContext` com dados do store (incluindo typeCounts, shapeCounts)
   - Usar novo `selectAIPill(ctx)`
   - Usar novo `shouldAIUseItem(ctx)`

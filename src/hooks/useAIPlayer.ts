@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
-import type { GamePhase, Pill, Player, PlayerId } from '@/types'
+import type { AIDecisionContext, GamePhase, Pill, Player, PlayerId } from '@/types'
 import { useGameStore } from '@/stores/gameStore'
+import { getAIConfig, getAIThinkingDelay } from '@/utils/aiConfig'
 import {
-  selectRandomPill,
-  getAIThinkingDelay,
+  selectAIPill,
   shouldAIUseItem,
   selectAIItem,
   selectAIItemTarget,
@@ -28,12 +28,37 @@ interface UseAIPlayerOptions {
 }
 
 /**
+ * Constroi contexto de decisao da IA a partir do estado atual
+ */
+function buildAIContext(aiPlayerId: PlayerId): AIDecisionContext {
+  const state = useGameStore.getState()
+  const difficulty = state.difficulty
+  const config = getAIConfig(difficulty)
+
+  const aiPlayer = state.players[aiPlayerId]
+  const opponentId = aiPlayerId === 'player1' ? 'player2' : 'player1'
+  const opponent = state.players[opponentId]
+
+  return {
+    aiPlayer,
+    opponent,
+    pillPool: state.pillPool,
+    revealedPills: state.revealedPills,
+    typeCounts: state.typeCounts,
+    shapeCounts: state.shapeCounts,
+    aiQuest: state.shapeQuests[aiPlayerId],
+    round: state.round,
+    config,
+  }
+}
+
+/**
  * Hook que gerencia a jogada automatica da IA
- * 
+ *
  * - Detecta quando e turno da IA e phase === 'idle'
- * - Aguarda delay simulado (1-2s) para "pensar"
- * - Decide se usa item (35% chance) antes de consumir pilula
- * - Seleciona pilula aleatoria e inicia consumo
+ * - Aguarda delay simulado (variavel por dificuldade) para "pensar"
+ * - Decide se usa item baseado na dificuldade e analise de risco
+ * - Seleciona pilula usando logica apropriada para a dificuldade
  * - Evita jogar durante animacoes/feedback
  * - Para quando jogo termina ou rodada esta em transicao
  */
@@ -91,35 +116,38 @@ export function useAIPlayer({
     if (shouldAIPlay) {
       hasScheduledRef.current = true
 
-      const delay = getAIThinkingDelay()
+      // Delay variavel por dificuldade
+      const difficulty = useGameStore.getState().difficulty
+      const delay = getAIThinkingDelay(difficulty)
 
       timeoutRef.current = setTimeout(() => {
         // Verificacao de seguranca: confirma que condicoes ainda sao validas
-        // Isso previne execucao se estado mudou durante o delay (ex: fase mudou)
         const currentState = useGameStore.getState()
-        const stillValidTurn = 
+        const stillValidTurn =
           currentState.phase === 'playing' &&
           currentState.players[currentState.currentTurn].isAI &&
           currentState.pillPool.length > 0
 
         if (!stillValidTurn) {
-          // Condicoes mudaram, reseta flag e aborta
           hasScheduledRef.current = false
           return
         }
 
+        // Constroi contexto de decisao
+        const aiPlayerId = currentState.currentTurn
+        const ctx = buildAIContext(aiPlayerId)
+
         // Tenta usar item primeiro (se ainda nao usou neste turno)
         if (!hasUsedItemRef.current && executeItem && opponentId) {
-          const shouldUseItem = shouldAIUseItem(currentPlayer)
+          const shouldUse = shouldAIUseItem(ctx)
 
-          if (shouldUseItem) {
-            const selectedItem = selectAIItem(currentPlayer, pillPool)
+          if (shouldUse) {
+            const selectedItem = selectAIItem(ctx)
 
             if (selectedItem) {
               // Seleciona alvo se necessario
-              const revealedPills = useGameStore.getState().revealedPills
               const targetId = itemRequiresTarget(selectedItem.type)
-                ? selectAIItemTarget(selectedItem.type, pillPool, opponentId, revealedPills)
+                ? selectAIItemTarget(selectedItem.type, ctx, opponentId)
                 : undefined
 
               // Usa o item
@@ -127,15 +155,15 @@ export function useAIPlayer({
               hasUsedItemRef.current = true
 
               // Agenda consumo de pilula apos usar item
-              // Usa getState() para evitar stale closure apos item modificar pillPool
+              const delayAfterItem = getAIThinkingDelay(difficulty) / 2
               setTimeout(() => {
-                const currentPillPool = useGameStore.getState().pillPool
-                const selectedPillId = selectRandomPill(currentPillPool)
+                // Reconstroi contexto com estado atualizado
+                const updatedCtx = buildAIContext(aiPlayerId)
+                const selectedPillId = selectAIPill(updatedCtx)
                 if (selectedPillId) {
                   startConsumption(selectedPillId)
                 }
-                // Nao reseta hasScheduledRef aqui - sera resetado pelo effect de pillPool.length
-              }, getAIThinkingDelay() / 2)
+              }, delayAfterItem)
 
               return
             }
@@ -143,14 +171,11 @@ export function useAIPlayer({
         }
 
         // Consumo normal de pilula (sem usar item)
-        // Usa getState() para garantir valor atualizado do pillPool
-        const currentPillPool = useGameStore.getState().pillPool
-        const selectedPillId = selectRandomPill(currentPillPool)
+        const selectedPillId = selectAIPill(ctx)
 
         if (selectedPillId) {
           startConsumption(selectedPillId)
         }
-        // Nao reseta hasScheduledRef aqui - sera resetado pelo effect de pillPool.length ou phase
       }, delay)
     }
 
@@ -159,20 +184,10 @@ export function useAIPlayer({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
         timeoutRef.current = null
-        // Reset flag para permitir novo agendamento se effect re-executar
-        // Isso corrige bug onde toggle de wantsStore cancelava timeout da IA
         hasScheduledRef.current = false
       }
     }
-  }, [
-    gamePhase,
-    currentPlayer,
-    phase,
-    pillPool,
-    startConsumption,
-    executeItem,
-    opponentId,
-  ])
+  }, [gamePhase, currentPlayer, phase, pillPool, startConsumption, executeItem, opponentId])
 
   // Reset flags quando turno muda para humano
   useEffect(() => {
@@ -182,4 +197,3 @@ export function useAIPlayer({
     }
   }, [currentPlayer.isAI])
 }
-
