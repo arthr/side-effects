@@ -8,6 +8,8 @@ interface TurnIndicatorProps {
   round: number
   /** Se o turno e do jogador humano (para mensagem contextual) */
   isHumanTurn?: boolean
+  /** Se deve mostrar mensagem de aguardando oponente (multiplayer) */
+  showWaitingForOpponent?: boolean
 }
 
 // Variantes estaticas para rodada (vertical)
@@ -25,8 +27,8 @@ const turnVariants = {
   exit: { opacity: 0, scale: 0.9 },
 }
 
-// Variantes para mensagem IA
-const aiMessageVariants = {
+// Variantes para mensagem de espera (IA ou oponente)
+const waitingMessageVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
   pulse: { 
@@ -43,8 +45,10 @@ export function TurnIndicator({
   currentPlayer,
   round,
   isHumanTurn = true,
+  showWaitingForOpponent = false,
 }: TurnIndicatorProps) {
   const isAIThinking = !isHumanTurn && currentPlayer.isAI
+  const showWaitingMessage = isAIThinking || showWaitingForOpponent
 
   return (
     <div className="text-center space-y-1">
@@ -86,19 +90,19 @@ export function TurnIndicator({
         </motion.h3>
       </AnimatePresence>
 
-      {/* Mensagem de IA pensando - altura fixa para evitar layout shift */}
+      {/* Mensagem de espera - altura fixa para evitar layout shift */}
       <div className="h-4">
         <AnimatePresence>
-          {isAIThinking && (
+          {showWaitingMessage && (
             <motion.p
-              key="ai-thinking"
-              variants={aiMessageVariants}
+              key="waiting-message"
+              variants={waitingMessageVariants}
               initial="hidden"
               animate="pulse"
               exit="hidden"
               className="text-xs text-muted-foreground"
             >
-              A IA esta pensando...
+              {showWaitingForOpponent ? 'Aguardando oponente...' : 'A IA esta pensando...'}
             </motion.p>
           )}
         </AnimatePresence>

@@ -305,42 +305,44 @@
 ---
 
 ### TASK-MP-025: Atualizar GameBoard
-- [ ] Importar `useMultiplayer`
-- [ ] Usar `canInteract` para habilitar/desabilitar pills
-- [ ] Usar `isLocalTurn` para feedback visual
-- [ ] Adicionar `DisconnectedOverlay`
+- [x] Importar `useMultiplayer`
+- [x] Usar `canInteract` para habilitar/desabilitar pills
+- [x] Usar `isLocalTurn` para feedback visual
+- [x] ~~Adicionar `DisconnectedOverlay`~~ (movido para App.tsx global)
 
 **Arquivos:**
-- `src/components/game/GameBoard.tsx`
+- `src/components/game/GameBoard.tsx` (atualizado)
 
 ---
 
 ### TASK-MP-026: Atualizar PillPool
-- [ ] Aceitar prop `disabled`
-- [ ] Aplicar estilo visual quando desabilitado
-- [ ] Prevenir clicks quando desabilitado
+- [x] Aceitar prop `disabled` (ja existia)
+- [x] Aplicar estilo visual quando desabilitado (ja existia)
+- [x] Prevenir clicks quando desabilitado (ja existia)
 
 **Arquivos:**
-- `src/components/game/PillPool.tsx`
+- `src/components/game/PillPool.tsx` (sem alteracoes - ja implementado)
 
 ---
 
 ### TASK-MP-027: Atualizar InventoryBar
-- [ ] Usar `canInteract` para habilitar/desabilitar itens
-- [ ] Feedback visual quando nao pode usar
+- [x] Usar `canInteract` para habilitar/desabilitar itens (via AnimatedPlayerArea.isCurrentTurn)
+- [x] Feedback visual quando nao pode usar (ja implementado via prop disabled)
 
 **Arquivos:**
-- `src/components/game/InventoryBar.tsx`
+- `src/components/game/InventoryBar.tsx` (sem alteracoes - ja implementado)
+- `src/components/game/AnimatedPlayerArea.tsx` (ja usa isCurrentTurn para desabilitar)
 
 ---
 
 ### TASK-MP-028: Atualizar TurnIndicator
-- [ ] Aceitar prop `showWaitingMessage`
-- [ ] Exibir "Aguardando oponente..." quando apropriado
-- [ ] Animacao de espera
+- [x] Aceitar prop `showWaitingForOpponent`
+- [x] Exibir "Aguardando oponente..." quando apropriado
+- [x] Animacao de espera (reutiliza animacao pulse existente)
 
 **Arquivos:**
-- `src/components/game/TurnIndicator.tsx`
+- `src/components/game/TurnIndicator.tsx` (atualizado)
+- `src/components/game/GameBoard.tsx` (passa showWaitingForOpponent)
 
 ---
 

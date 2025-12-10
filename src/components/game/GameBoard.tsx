@@ -4,7 +4,7 @@ import { useOverlayStore } from '@/stores/overlayStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
 import { useAIStore } from '@/hooks/useAIStore'
-import { useItemUsage, useToast } from '@/hooks'
+import { useItemUsage, useToast, useMultiplayer } from '@/hooks'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
@@ -54,6 +54,13 @@ export function GameBoard() {
   const currentPlayer = players[currentTurn]
   const isHumanTurn = !currentPlayer.isAI
   const isRoundEnding = gamePhase === 'roundEnding'
+
+  // Multiplayer - verifica se pode interagir
+  const { isMultiplayer, isLocalTurn, canInteract } = useMultiplayer()
+
+  // Em multiplayer, so pode interagir se for turno local
+  // Em single player, pode interagir se for turno humano
+  const canPlayerInteract = isMultiplayer ? canInteract : isHumanTurn
 
   // Hook de comportamento da IA na loja
   useAIStore()
@@ -153,7 +160,7 @@ export function GameBoard() {
 
   // Handler para click em item do inventario
   const handleItemClick = useCallback((itemId: string) => {
-    if (!isHumanTurn || isProcessing || isRoundEnding) return
+    if (!canPlayerInteract || isProcessing || isRoundEnding) return
 
     // Busca o item para verificar o tipo
     const item = currentPlayer.inventory.items.find((i) => i.id === itemId)
@@ -169,7 +176,7 @@ export function GameBoard() {
       toast.item(item.type, currentTurn)
       openItemEffect(item.type)
     }
-  }, [isHumanTurn, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect, toast])
+  }, [canPlayerInteract, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect, toast, currentTurn])
 
   // Modo de jogo
   const mode = useGameStore((s) => s.mode)
@@ -196,7 +203,7 @@ export function GameBoard() {
 
     // Comportamento normal: consumir pilula
     if (isProcessing) return
-    if (!isHumanTurn) return // IA escolhe automaticamente
+    if (!canPlayerInteract) return // Nao e turno do jogador local ou IA escolhe automaticamente
     startConsumption(pillId)
   }
 
@@ -246,6 +253,7 @@ export function GameBoard() {
         currentPlayer={currentPlayer}
         round={round}
         isHumanTurn={isHumanTurn}
+        showWaitingForOpponent={isMultiplayer && !isLocalTurn}
       />
 
       {/* Layout principal: Player1 | Pills | Player2 */}
@@ -270,7 +278,7 @@ export function GameBoard() {
           typeCounts={typeCounts}
           round={round}
           onSelectPill={handlePillSelect}
-          disabled={isProcessing || (!isHumanTurn && !isSelectingTarget) || isRoundEnding}
+          disabled={isProcessing || (!canPlayerInteract && !isSelectingTarget) || isRoundEnding}
           isTargetSelectionMode={isSelectingTarget && validTargets === 'pills'}
           scannedPillIds={revealedPills}
           instructionMessage={
@@ -278,9 +286,11 @@ export function GameBoard() {
               ? 'Selecione uma pilula alvo'
               : isRoundEnding
                 ? 'Preparando proxima rodada...'
-                : isHumanTurn
+                : canPlayerInteract
                   ? 'Clique em uma pilula para consumi-la'
-                  : 'Aguardando IA...'
+                  : isMultiplayer && !isLocalTurn
+                    ? 'Aguardando oponente...'
+                    : 'Aguardando IA...'
           }
         />
 
