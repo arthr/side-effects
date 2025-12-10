@@ -7,14 +7,14 @@
 | Types | 5 | 5 | 0 |
 | Config | 3 | 3 | 0 |
 | AI Logic - Analise | 4 | 4 | 0 |
-| AI Logic - Selecao | 4 | 2 | 2 |
+| AI Logic - Selecao | 4 | 4 | 0 |
 | AI Logic - Itens | 4 | 0 | 4 |
 | AI Logic - Pre-jogo/Loja | 4 | 0 | 4 |
 | Store | 3 | 0 | 3 |
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **14** | **23** |
+| **TOTAL** | **37** | **16** | **21** |
 
 ---
 
@@ -99,13 +99,13 @@
   - Prioriza: quest -> seguras reveladas -> deduzidas seguras -> risco baixo -> evitar perigosas
   - Usado por Hard/Insane
 
-- [ ] TASK-014: Implementar `selectAIPill(ctx)` em `aiLogic.ts`
+- [x] TASK-014: Implementar `selectAIPill(ctx)` em `aiLogic.ts`
   - Funcao principal de selecao
   - Easy: aleatorio puro
   - Normal: aleatorio (typeCounts usado so para itens)
   - Hard/Insane: selectSmartPill
 
-- [ ] TASK-015: Implementar funcoes auxiliares de pilulas
+- [x] TASK-015: Implementar funcoes auxiliares de pilulas
   - `getRevealedPillsInfo()` - mapeia pilulas reveladas com tipos
   - `findSafePill()` - encontra pilula SAFE revelada
   - `findHealPill()` - encontra pilula HEAL revelada

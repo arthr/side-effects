@@ -323,6 +323,27 @@ function selectSmartPill(ctx: AIDecisionContext): string | null {
 }
 
 /**
+ * Seleciona pilula para IA consumir baseado na dificuldade
+ * Funcao principal de selecao de pilulas
+ */
+export function selectAIPill(ctx: AIDecisionContext): string | null {
+  const { pillPool, config } = ctx
+
+  // Easy: aleatorio puro
+  if (!config.usesRevealedPills && !config.usesTypeCounts) {
+    return selectRandomPill(pillPool)
+  }
+
+  // Normal: aleatorio (typeCounts usado so para itens)
+  if (!config.usesRevealedPills) {
+    return selectRandomPill(pillPool)
+  }
+
+  // Hard/Insane: considera reveladas + typeCounts
+  return selectSmartPill(ctx)
+}
+
+/**
  * Selecao aleatoria simples de pilula
  * Usado pelo nivel Easy e como fallback para outros niveis
  * @param pillPool Array de pilulas disponiveis
