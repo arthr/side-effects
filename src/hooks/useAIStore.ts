@@ -50,14 +50,19 @@ function buildAIStoreContext(): AIDecisionContext {
  * Hook que gerencia comportamento da IA na loja
  * - Auto-toggle wantsStore quando IA precisa de algo e pode pagar
  * - Auto-compra na fase shopping
+ * - NAO executa em modo multiplayer - oponente e humano real
  */
 export function useAIStore() {
   const phase = useGameStore((state) => state.phase)
+  const mode = useGameStore((state) => state.mode)
   const isPlayer2AI = useGameStore((state) => state.players.player2.isAI)
   const player2Coins = useGameStore((state) => state.players.player2.pillCoins)
   const player2Lives = useGameStore((state) => state.players.player2.lives)
   const player2Resistance = useGameStore((state) => state.players.player2.resistance)
   const player2WantsStore = useGameStore((state) => state.players.player2.wantsStore)
+
+  // Em multiplayer, IA nao deve operar na loja - oponente e humano real
+  const isMultiplayer = mode === 'multiplayer'
 
   // Refs para controle
   const hasToggledRef = useRef(false)
@@ -67,12 +72,18 @@ export function useAIStore() {
   // Reset quando rodada muda
   const round = useGameStore((state) => state.round)
   useEffect(() => {
+    // Nao executa em multiplayer
+    if (isMultiplayer) return
+
     hasToggledRef.current = false
     hasShoppedRef.current = false
-  }, [round])
+  }, [round, isMultiplayer])
 
   // Auto-toggle wantsStore durante fase playing
   useEffect(() => {
+    // Nao executa em multiplayer
+    if (isMultiplayer) return
+
     if (phase !== 'playing') return
     if (!isPlayer2AI) return
     if (hasToggledRef.current) return
@@ -86,10 +97,13 @@ export function useAIStore() {
       hasToggledRef.current = true
       useGameStore.getState().toggleWantsStore('player2')
     }
-  }, [phase, isPlayer2AI, player2Coins, player2Lives, player2Resistance, player2WantsStore])
+  }, [phase, isPlayer2AI, player2Coins, player2Lives, player2Resistance, player2WantsStore, isMultiplayer])
 
   // Auto-compra durante fase shopping
   useEffect(() => {
+    // Nao executa em multiplayer
+    if (isMultiplayer) return
+
     if (phase !== 'shopping') {
       // Cleanup quando sai da fase
       timeoutsRef.current.forEach(clearTimeout)
@@ -134,6 +148,6 @@ export function useAIStore() {
       }
     }, currentDelay + AI_CONFIRM_DELAY)
     timeoutsRef.current.push(confirmTimeout)
-  }, [phase, isPlayer2AI, player2WantsStore])
+  }, [phase, isPlayer2AI, player2WantsStore, isMultiplayer])
 }
 

@@ -15,17 +15,25 @@ const AI_CONFIRM_DELAY = 800
 /**
  * Hook que gerencia a selecao automatica de itens pela IA
  * Usa selectAIInitialItems para selecao baseada na dificuldade
+ * NAO executa em modo multiplayer - oponente e humano real
  */
 export function useAIItemSelection() {
   // Selectors granulares - retornam primitivos para evitar re-renders
   const phase = useGameStore((state) => state.phase)
+  const mode = useGameStore((state) => state.mode)
   const isPlayer2AI = useGameStore((state) => state.players.player2.isAI)
 
   // Refs para controle de estado
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const hasStartedRef = useRef(false)
 
+  // Em multiplayer, IA nao deve selecionar itens - oponente e humano real
+  const isMultiplayer = mode === 'multiplayer'
+
   useEffect(() => {
+    // Nao executa em multiplayer
+    if (isMultiplayer) return
+
     // Cleanup e reset quando sair da fase de selecao
     if (phase !== 'itemSelection') {
       hasStartedRef.current = false
@@ -74,5 +82,5 @@ export function useAIItemSelection() {
     timeoutsRef.current.push(confirmTimeout)
 
     // Nao retorna cleanup - timeouts sao limpos apenas quando fase muda
-  }, [phase, isPlayer2AI])
+  }, [phase, isPlayer2AI, isMultiplayer])
 }

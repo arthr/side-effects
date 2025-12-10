@@ -143,20 +143,20 @@
 ---
 
 ### TASK-MP-011: Condicionar useAIItemSelection
-- [ ] Importar `useGameStore` para obter `mode`
-- [ ] Adicionar early return se `mode === 'multiplayer'`
+- [x] Importar `useGameStore` para obter `mode`
+- [x] Adicionar early return se `mode === 'multiplayer'`
 
 **Arquivos:**
-- `src/hooks/useAIItemSelection.ts`
+- `src/hooks/useAIItemSelection.ts` (atualizado)
 
 ---
 
 ### TASK-MP-012: Condicionar useAIStore
-- [ ] Importar `useGameStore` para obter `mode`
-- [ ] Adicionar early return se `mode === 'multiplayer'`
+- [x] Importar `useGameStore` para obter `mode`
+- [x] Adicionar early return se `mode === 'multiplayer'`
 
 **Arquivos:**
-- `src/hooks/useAIStore.ts`
+- `src/hooks/useAIStore.ts` (atualizado)
 
 ---
 
