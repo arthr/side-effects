@@ -25,6 +25,7 @@ import { countPillShapes } from '@/utils/shapeProgression'
 import { ITEM_CATALOG } from '@/utils/itemCatalog'
 import { POCKET_PILL_HEAL } from '@/utils/itemLogic'
 import { generateShapeQuest, checkQuestProgress } from '@/utils/questGenerator'
+import { DEFAULT_STORE_CONFIG } from '@/utils/storeConfig'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -69,6 +70,7 @@ interface GameStore extends GameState {
 
   // Actions - Pill Store
   toggleWantsStore: (playerId: PlayerId) => void
+  checkAndStartShopping: () => void
 
   // Selectors (computed)
   getCurrentPlayer: () => Player
@@ -1180,6 +1182,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       playerId,
       duration: 1200,
     })
+  },
+
+  /**
+   * Verifica se deve abrir loja ao fim da rodada
+   * Chamado quando pool esvazia (apos verificar Game Over)
+   */
+  checkAndStartShopping: () => {
+    const state = get()
+    const { players } = state
+
+    // Verifica se alguem quer ir a loja E tem coins
+    const p1Wants = players.player1.wantsStore && players.player1.pillCoins > 0
+    const p2Wants = players.player2.wantsStore && players.player2.pillCoins > 0
+
+    if (p1Wants || p2Wants) {
+      // Inicia fase de shopping
+      set({
+        phase: 'shopping',
+        storeState: {
+          confirmed: { player1: false, player2: false },
+          timerStartedAt: Date.now(),
+          timerDuration: DEFAULT_STORE_CONFIG.shoppingTime,
+          pendingBoosts: { player1: [], player2: [] },
+        },
+      })
+    } else {
+      // Ninguem quer ir a loja, proxima rodada direto
+      get().resetRound()
+    }
   },
 
   // ============ SELECTORS ============

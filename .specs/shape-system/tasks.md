@@ -258,7 +258,7 @@
 
 ### 4B.2 Estado e Actions da Store
 
-- [ ] TASK-SS-083: Implementar `checkAndStartShopping()` no gameStore
+- [x] TASK-SS-083: Implementar `checkAndStartShopping()` no gameStore
   - Verifica se alguem tem `wantsStore === true` E `pillCoins > 0`
   - Se sim: inicia phase = 'shopping'
   - Se nao: resetRound() direto
