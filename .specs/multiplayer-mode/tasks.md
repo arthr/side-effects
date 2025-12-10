@@ -115,18 +115,18 @@
 ---
 
 ### TASK-MP-009: Modificar actions para emitir eventos
-- [ ] Modificar `consumePill()` - emite `pill_consumed`
-- [ ] Modificar `executeItem()` - emite `item_used`
-- [ ] Modificar `selectItem()` - emite `item_selected`
-- [ ] Modificar `deselectItem()` - emite `item_deselected`
-- [ ] Modificar `confirmItemSelection()` - emite `selection_confirmed`
-- [ ] Modificar `toggleWantsStore()` - emite `wants_store_toggled`
-- [ ] Modificar `addToCart()` - emite `cart_updated` (add)
-- [ ] Modificar `removeFromCart()` - emite `cart_updated` (remove)
-- [ ] Modificar `confirmStorePurchases()` - emite `store_confirmed`
+- [x] Modificar `consumePill()` - emite `pill_consumed`
+- [x] Modificar `executeItem()` - emite `item_used`
+- [x] Modificar `selectItem()` - emite `item_selected`
+- [x] Modificar `deselectItem()` - emite `item_deselected`
+- [x] Modificar `confirmItemSelection()` - emite `selection_confirmed`
+- [x] Modificar `toggleWantsStore()` - emite `wants_store_toggled`
+- [x] Modificar `addToCart()` - emite `cart_updated` (add)
+- [x] Modificar `removeFromCart()` - emite `cart_updated` (remove)
+- [x] Modificar `confirmStorePurchases()` - emite `store_confirmed`
 
 **Arquivos:**
-- `src/stores/gameStore.ts`
+- `src/stores/gameStore.ts` (atualizado com emitMultiplayerEvent helper)
 
 ---
 

@@ -54,6 +54,38 @@ export function getIsSyncingFromRemote(): boolean {
 }
 
 /**
+ * Tipo de evento a emitir para multiplayer
+ */
+interface MultiplayerEventEmit {
+  type: string
+  payload?: Record<string, unknown>
+}
+
+/**
+ * Emite evento para multiplayer se aplicavel
+ * Verifica modo e flag de sync antes de emitir
+ * Usa import dinamico para evitar dependencia circular
+ */
+async function emitMultiplayerEvent(
+  mode: string,
+  event: MultiplayerEventEmit
+): Promise<void> {
+  // Nao emite se nao for multiplayer ou se estiver sincronizando de fonte remota
+  if (mode !== 'multiplayer' || isSyncingFromRemote) {
+    return
+  }
+
+  // Import dinamico para evitar dependencia circular
+  const { useMultiplayerStore } = await import('@/stores/multiplayerStore')
+  const multiplayerStore = useMultiplayerStore.getState()
+
+  multiplayerStore.sendEvent({
+    type: event.type as Parameters<typeof multiplayerStore.sendEvent>[0]['type'],
+    payload: event.payload,
+  })
+}
+
+/**
  * Interface do Store com estado e actions
  */
 interface GameStore extends GameState {
@@ -304,6 +336,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const pillIndex = state.pillPool.findIndex((p) => p.id === pillId)
     if (pillIndex === -1) return
+
+    // Emite evento multiplayer (antes de aplicar para garantir sincronia)
+    emitMultiplayerEvent(state.mode, {
+      type: 'pill_consumed',
+      payload: {
+        pillId,
+        forcedTarget: options?.forcedTarget,
+      },
+    })
 
     const pill = state.pillPool[pillIndex]
 
@@ -696,6 +737,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         },
       },
     })
+
+    // Emite evento multiplayer
+    emitMultiplayerEvent(state.mode, {
+      type: 'item_selected',
+      payload: { itemType },
+    })
   },
 
   /**
@@ -717,6 +764,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         },
       },
     })
+
+    // Emite evento multiplayer
+    emitMultiplayerEvent(state.mode, {
+      type: 'item_deselected',
+      payload: { itemId },
+    })
   },
 
   /**
@@ -728,6 +781,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Verifica se estamos na fase correta
     if (state.phase !== 'itemSelection') return
+
+    // Emite evento multiplayer (antes de aplicar)
+    emitMultiplayerEvent(state.mode, {
+      type: 'selection_confirmed',
+    })
 
     // Marca este jogador como confirmado
     const newConfirmed = {
@@ -847,6 +905,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const itemDef = ITEM_CATALOG[item.type]
     if (!itemDef) return
+
+    // Emite evento multiplayer (antes de aplicar)
+    emitMultiplayerEvent(state.mode, {
+      type: 'item_used',
+      payload: {
+        itemId,
+        targetId,
+      },
+    })
 
     // Registra acao no historico
     const useItemAction: GameAction = {
@@ -1299,19 +1366,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    const newWantsStore = !player.wantsStore
+
     // Toggle wantsStore
     set({
       players: {
         ...state.players,
         [playerId]: {
           ...player,
-          wantsStore: !player.wantsStore,
+          wantsStore: newWantsStore,
         },
       },
     })
 
+    // Emite evento multiplayer
+    emitMultiplayerEvent(state.mode, {
+      type: 'wants_store_toggled',
+      payload: { wantsStore: newWantsStore },
+    })
+
     // Toast de feedback
-    const newWantsStore = !player.wantsStore
     useToastStore.getState().show({
       type: 'quest',
       message: newWantsStore ? 'Loja agendada!' : 'Loja cancelada',
@@ -1442,6 +1516,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       },
     })
 
+    // Emite evento multiplayer
+    emitMultiplayerEvent(state.mode, {
+      type: 'cart_updated',
+      payload: {
+        action: 'add',
+        itemId,
+      },
+    })
+
     // Toast de feedback
     useToastStore.getState().show({
       type: 'quest',
@@ -1479,6 +1562,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ...storeState.cart,
           [playerId]: newCart,
         },
+      },
+    })
+
+    // Emite evento multiplayer
+    emitMultiplayerEvent(state.mode, {
+      type: 'cart_updated',
+      payload: {
+        action: 'remove',
+        itemId,
       },
     })
 
@@ -1601,6 +1693,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (storeState.confirmed[playerId]) {
       return
     }
+
+    // Emite evento multiplayer (antes de aplicar)
+    emitMultiplayerEvent(state.mode, {
+      type: 'store_confirmed',
+    })
 
     // Processa o carrinho antes de confirmar (debita coins e aplica itens)
     get().processCart(playerId)
