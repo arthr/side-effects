@@ -204,8 +204,9 @@ export function calculatePoolRisk(
 // ============================================
 
 /**
- * Seleciona uma pilula aleatoria do pool disponivel
- * @param pillPool Array de pilulas disponiveis (nao reveladas)
+ * Selecao aleatoria simples de pilula
+ * Usado pelo nivel Easy e como fallback para outros niveis
+ * @param pillPool Array de pilulas disponiveis
  * @returns ID da pilula selecionada ou null se pool vazio
  */
 export function selectRandomPill(pillPool: Pill[]): string | null {
