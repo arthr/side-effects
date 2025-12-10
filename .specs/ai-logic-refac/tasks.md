@@ -11,10 +11,10 @@
 | AI Logic - Itens | 4 | 4 | 0 |
 | AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
 | Store | 3 | 3 | 0 |
-| Hooks | 4 | 1 | 3 |
+| Hooks | 4 | 2 | 2 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **28** | **9** |
+| **TOTAL** | **37** | **29** | **8** |
 
 ---
 
@@ -193,7 +193,7 @@
   - Usar novo `shouldAIUseItem(ctx)`
   - Usar delay variavel por dificuldade
 
-- [ ] TASK-028: Refatorar `useAIItemSelection.ts`
+- [x] TASK-028: Refatorar `useAIItemSelection.ts`
   - Usar `selectAIInitialItems(difficulty, available)`
   - Obter dificuldade do store
 

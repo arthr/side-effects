@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 import { getAllItemsForInitialSelection } from '@/utils/itemCatalog'
-import type { ItemType } from '@/types'
+import { selectAIInitialItems } from '@/utils/aiLogic'
 
 /** Delay antes de comecar a selecionar itens (ms) */
 const AI_SELECTION_START_DELAY = 500
@@ -13,20 +13,8 @@ const AI_SELECTION_ITEM_DELAY = 200
 const AI_CONFIRM_DELAY = 800
 
 /**
- * Embaralha um array usando Fisher-Yates
- */
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array]
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-  }
-  return shuffled
-}
-
-/**
  * Hook que gerencia a selecao automatica de itens pela IA
- * Seleciona 5 itens aleatorios e confirma apos delay
+ * Usa selectAIInitialItems para selecao baseada na dificuldade
  */
 export function useAIItemSelection() {
   // Selectors granulares - retornam primitivos para evitar re-renders
@@ -51,7 +39,7 @@ export function useAIItemSelection() {
     if (hasStartedRef.current) return
 
     // Verifica se IA ja confirmou (via getState para evitar dependencia)
-    const { itemSelectionConfirmed } = useGameStore.getState()
+    const { itemSelectionConfirmed, difficulty } = useGameStore.getState()
     if (itemSelectionConfirmed.player2) return
 
     hasStartedRef.current = true
@@ -59,10 +47,9 @@ export function useAIItemSelection() {
     // Obtem actions via getState (referencias estaveis)
     const { selectItem, confirmItemSelection } = useGameStore.getState()
 
-    // Seleciona 5 itens aleatorios (apenas itens disponiveis na selecao inicial)
+    // Seleciona itens baseado na dificuldade
     const availableItems = getAllItemsForInitialSelection()
-    const shuffledItems = shuffleArray(availableItems)
-    const selectedItems = shuffledItems.slice(0, 5) as ItemType[]
+    const selectedItems = selectAIInitialItems(difficulty, availableItems)
 
     // Agenda selecao com delays
     let currentDelay = AI_SELECTION_START_DELAY
