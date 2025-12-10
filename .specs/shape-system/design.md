@@ -1,9 +1,15 @@
 # Design: Sistema de Formas (Shape System)
 
 > **ATUALIZADO:** Este documento foi originalmente escrito para 5 shapes. A implementacao
-> atual suporta **16 shapes** com imagens PNG. Exemplos de codigo neste documento podem
-> estar desatualizados - consulte os arquivos fonte para a implementacao atual:
-> - `src/utils/shapeProgression.ts` - Configuracao de progressao
+> atual suporta **16 shapes** com imagens PNG.
+> 
+> **SISTEMA DE SHAPES ATIVAS/SAZONAIS:**
+> - **Shapes ATIVAS:** round, flower, fruit, pumpkin, skull, bear (aparecem no jogo)
+> - **Shapes SAZONAIS:** capsule, triangle, oval, cross, heart, star, coin, gem, domino, pineapple
+>   (desabilitadas, serao ativadas em eventos especiais)
+>
+> Consulte os arquivos fonte para a implementacao atual:
+> - `src/utils/shapeProgression.ts` - Configuracao de progressao (SHAPE_PROGRESSION)
 > - `src/types/pill.ts` - Tipo PillShape com 16 shapes
 > - `src/utils/constants.ts` - SHAPE_IMAGES, SHAPE_CLASSES, SHAPE_LABELS
 
@@ -285,27 +291,36 @@ export interface ShapeProgressionConfig {
 /**
  * Configuracao padrao de progressao de shapes (16 shapes)
  * 
- * NOTAS DE DESIGN (ATUALIZADO):
- * - Rodada 1: capsule, round (formas basicas)
- * - Rodada 2: + triangle, oval
- * - Rodada 3: + cross, heart
- * - Rodada 4: + flower, star
- * - Rodada 5: + pumpkin, coin
- * - Rodada 6: + bear, gem
- * - Rodada 7: + skull, domino
- * - Rodada 8+: + pineapple, fruit (todas 16 disponiveis)
+ * SISTEMA DE SHAPES SAZONAIS:
+ * O jogo possui 16 shapes no total, mas nem todas estao ativas simultaneamente.
+ * Shapes podem ser ATIVAS (aparecem no jogo) ou SAZONAIS (desabilitadas, ativadas em eventos).
  * 
- * NOTA: Algumas shapes podem estar desabilitadas (pct: 0) para liberacao em fases futuras.
+ * SHAPES ATIVAS (configuracao padrao):
+ * - Rodada 1: round, flower, fruit
+ * - Rodada 3: + pumpkin, skull
+ * - Rodada 5: + bear
+ * 
+ * SHAPES SAZONAIS (desabilitadas, pct: 0):
+ * - capsule, triangle, oval, cross, heart, star, coin, gem, domino, pineapple
+ * - Podem ser ativadas em eventos especiais (Halloween, Natal, etc)
+ * 
+ * Para ativar uma shape sazonal, ajuste startPct/endPct em SHAPE_PROGRESSION.
  * Consulte src/utils/shapeProgression.ts para configuracao atual.
  */
 // Exemplo simplificado - implementacao real em src/utils/shapeProgression.ts
 export const SHAPE_PROGRESSION: ShapeProgressionConfig = {
   maxRound: 15,
   rules: {
-    // 16 shapes - ver implementacao completa em shapeProgression.ts
-    capsule:   { unlockRound: 1, startPct: X, endPct: Y },
-    round:     { unlockRound: 1, startPct: X, endPct: Y },
-    // ... demais 14 shapes
+    // Shapes ATIVAS
+    round:     { unlockRound: 1, startPct: 45, endPct: 4 },
+    flower:    { unlockRound: 1, startPct: 18, endPct: 8 },
+    fruit:     { unlockRound: 1, startPct: 50, endPct: 4 },
+    pumpkin:   { unlockRound: 3, startPct: 45, endPct: 7 },
+    skull:     { unlockRound: 3, startPct: 15, endPct: 20 },
+    bear:      { unlockRound: 5, startPct: 45, endPct: 9 },
+    // Shapes SAZONAIS (desabilitadas)
+    capsule:   { unlockRound: 1, startPct: 0, endPct: 0 },
+    // ... demais shapes sazonais com pct: 0
   },
 }
 
@@ -319,13 +334,8 @@ export function getShapeChances(
   const { maxRound, rules } = config
   const clampedRound = Math.max(1, Math.min(round, maxRound))
 
-  const rawWeights: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
+  // Inicializa contagem para todas as 16 shapes
+  const rawWeights = createEmptyShapeCounts() // Record<PillShape, number>
 
   let totalWeight = 0
 
@@ -389,13 +399,8 @@ export function distributeShapes(
 ): Record<PillShape, number> {
   const chances = getShapeChances(round, config)
 
-  const distribution: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
+  // Inicializa distribuicao para todas as 16 shapes
+  const distribution = createEmptyShapeCounts() // Record<PillShape, number>
 
   const idealAmounts: Array<{ shape: PillShape; ideal: number; floor: number; remainder: number }> = []
 
@@ -429,13 +434,8 @@ export function distributeShapes(
  * Conta quantidade de cada shape no pool
  */
 export function countPillShapes(pills: Pill[]): Record<PillShape, number> {
-  const counts: Record<PillShape, number> = {
-    round: 0,
-    capsule: 0,
-    oval: 0,
-    triangle: 0,
-    hexagon: 0,
-  }
+  // Inicializa contagem para todas as 16 shapes
+  const counts = createEmptyShapeCounts() // Record<PillShape, number>
   
   for (const pill of pills) {
     counts[pill.visuals.shape]++
@@ -926,47 +926,48 @@ applyPendingBoosts: () => {
 
 ## Renderizacao Visual de Shapes
 
+> **NOTA:** A implementacao atual usa imagens PNG para todas as 16 shapes.
+> As constantes abaixo servem como fallback e referencia.
+> Consulte `src/utils/constants.ts` para a implementacao completa.
+
 ### Constantes de Estilo (`src/utils/constants.ts`)
 
 ```typescript
 import type { PillShape } from '@/types'
 
 /**
- * Classes CSS para cada shape
- * Usadas pelo componente Pill.tsx
+ * SHAPE_IMAGES: Mapeamento de shapes para imagens PNG
+ * Usado para renderizar shapes visualmente (principal metodo)
+ * 
+ * Todas as 16 shapes possuem imagens em src/assets/shapes/shape_*.png
+ */
+export const SHAPE_IMAGES: Record<PillShape, string> = {
+  capsule: shapeCapsule,   // shape_1.png
+  round: shapeRound,       // shape_6.png
+  // ... todas as 16 shapes
+}
+
+/**
+ * SHAPE_CLASSES: Classes CSS para cada shape (fallback)
+ * Usadas quando imagem nao carrega
  */
 export const SHAPE_CLASSES: Record<PillShape, string> = {
   round: 'rounded-full aspect-square',
   capsule: 'rounded-full aspect-[1.6]',
   oval: 'rounded-full aspect-[1.3]',
-  triangle: '', // Usa clip-path inline
-  hexagon: '',  // Usa clip-path inline
+  triangle: 'aspect-square', // Usa clip-path
+  // ... todas as 16 shapes
 }
 
 /**
- * Clip-paths para shapes nao-circulares
- */
-export const SHAPE_CLIP_PATHS: Record<PillShape, string | null> = {
-  round: null,
-  capsule: null,
-  oval: null,
-  triangle: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-  hexagon: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-}
-
-/**
- * Labels de exibicao para cada shape
+ * SHAPE_LABELS: Labels de exibicao para UI e acessibilidade
  */
 export const SHAPE_LABELS: Record<PillShape, string> = {
-  round: 'Circulo',
+  round: 'Redonda',
   capsule: 'Capsula',
-  oval: 'Oval',
-  triangle: 'Triangulo',
-  hexagon: 'Hexagono',
+  flower: 'Flor',
+  // ... todas as 16 shapes
 }
-
-// DEPRECIAR ou REMOVER:
-// export const PILL_SHAPES: Record<PillType, string> = { ... }
 ```
 
 ### Componente Pill.tsx (Atualizacao)
@@ -1121,13 +1122,8 @@ export function ShapeQuestDisplay({ quest, className = '' }: ShapeQuestDisplayPr
 const initialState: GameState = {
   // ... existentes ...
   
-  shapeCounts: {
-    capsule: 0,
-    round: 0,
-    triangle: 0,
-    oval: 0,
-    hexagon: 0,
-  },
+  // Contagem de shapes - usa getInitialShapeCounts() para todas as 16 shapes
+  shapeCounts: getInitialShapeCounts(), // Record<PillShape, number> com zeros
   
   shapeQuests: {
     player1: null,
@@ -1459,64 +1455,43 @@ Recomendacao: **Abaixo do inventario** para MVP, mover se necessario.
 
 ### Clareza das Shapes
 
-- Triangle e Hexagon usam clip-path (pode ter bordas duras)
-- Considerar adicionar borda/sombra para melhor visibilidade
+- A implementacao atual usa imagens PNG para todas as shapes
+- Drop-shadow colorido indica o tipo da pilula
 - Testar em fundo escuro e claro
 
 ---
 
 ## Testes Sugeridos
 
+> **NOTA:** Os testes reais estao em `src/utils/__tests__/`.
+> Os exemplos abaixo refletem o sistema de shapes ATIVAS/SAZONAIS atual.
+
 ```typescript
 describe('questGenerator', () => {
-  // Pool de teste com shapes variadas
-  const mockShapeCounts = {
+  // Pool de teste com shapes ATIVAS (round, flower, fruit, pumpkin, skull, bear)
+  const mockShapeCounts = createShapeCounts({
     round: 3,
-    capsule: 2,
-    triangle: 1,
-    oval: 2,
-    hexagon: 1,
-  }
+    flower: 2,
+    fruit: 2,
+    skull: 1,
+  })
   
   describe('generateShapeQuest', () => {
-    it('gera sequencia com tamanho correto por rodada', () => {
-      const quest1 = generateShapeQuest(1, mockShapeCounts)
-      expect(quest1.sequence.length).toBe(2)
-      
-      // Rodada 5+: pode ser 2 ou 3
-      const quests = Array.from({ length: 20 }, () => 
-        generateShapeQuest(5, mockShapeCounts)
-      )
-      const lengths = quests.map(q => q.sequence.length)
-      expect(lengths).toContain(2)
-      expect(lengths).toContain(3)
-    })
-    
     it('gera sequencia apenas com shapes disponiveis no pool', () => {
-      const limitedPool = { round: 2, capsule: 1, triangle: 0, oval: 0, hexagon: 0 }
-      const quest = generateShapeQuest(1, limitedPool)
+      const quest = generateShapeQuest(1, mockShapeCounts)
       
-      // Sequencia so pode ter round ou capsule
+      // Sequencia so pode ter shapes presentes no pool
       for (const shape of quest.sequence) {
-        expect(['round', 'capsule']).toContain(shape)
+        expect(['round', 'flower', 'fruit', 'skull']).toContain(shape)
       }
     })
-    
-    it('limita tamanho da sequencia ao pool disponivel', () => {
-      const tinyPool = { round: 1, capsule: 1, triangle: 0, oval: 0, hexagon: 0 }
-      const quest = generateShapeQuest(5, tinyPool) // Rodada 5 pediria 2-3
-      
-      // Mas pool so tem 2 pilulas
-      expect(quest.sequence.length).toBeLessThanOrEqual(2)
-    })
-    
   })
   
   describe('checkQuestProgress', () => {
     it('avanca progresso com shape correta', () => {
       const quest: ShapeQuest = {
         id: '1',
-        sequence: ['round', 'triangle'],
+        sequence: ['round', 'flower'],
         progress: 0,
         completed: false,
       }
@@ -1525,19 +1500,7 @@ describe('questGenerator', () => {
       expect(updatedQuest.progress).toBe(1)
     })
     
-    it('reseta progresso com shape errada', () => {
-      const quest: ShapeQuest = {
-        id: '1',
-        sequence: ['round', 'triangle'],
-        progress: 1,
-        completed: false,
-      }
-      
-      const { updatedQuest } = checkQuestProgress(quest, 'capsule')
-      expect(updatedQuest.progress).toBe(0)
-    })
-    
-    it('completa quest ao terminar sequencia (justCompleted = true para dar Pill Coin)', () => {
+    it('completa quest ao terminar sequencia', () => {
       const quest: ShapeQuest = {
         id: '1',
         sequence: ['round'],
@@ -1554,13 +1517,15 @@ describe('questGenerator', () => {
 
 describe('shapeProgression', () => {
   describe('getShapeChances', () => {
-    it('retorna apenas shapes desbloqueadas na rodada 1', () => {
+    it('retorna apenas shapes ATIVAS na rodada 1', () => {
       const chances = getShapeChances(1)
+      // Shapes ATIVAS na rodada 1: round, flower, fruit
       expect(chances.round).toBeGreaterThan(0)
-      expect(chances.capsule).toBeGreaterThan(0)
-      expect(chances.oval).toBe(0)      // Desbloqueia rodada 2
-      expect(chances.triangle).toBe(0)  // Desbloqueia rodada 3
-      expect(chances.hexagon).toBe(0)   // Desbloqueia rodada 5
+      expect(chances.flower).toBeGreaterThan(0)
+      expect(chances.fruit).toBeGreaterThan(0)
+      // Shapes SAZONAIS: pct = 0
+      expect(chances.capsule).toBe(0)
+      expect(chances.triangle).toBe(0)
     })
     
     it('soma das probabilidades e 100', () => {
@@ -1571,27 +1536,14 @@ describe('shapeProgression', () => {
       }
     })
     
-    it('todas shapes disponiveis na rodada 5+', () => {
-      const chances = getShapeChances(5)
-      expect(chances.round).toBeGreaterThan(0)
-      expect(chances.capsule).toBeGreaterThan(0)
-      expect(chances.oval).toBeGreaterThan(0)
-      expect(chances.triangle).toBeGreaterThan(0)
-      expect(chances.hexagon).toBeGreaterThan(0)
-    })
-  })
-  
-  describe('distributeShapes', () => {
-    it('distribui apenas shapes desbloqueadas na rodada 1', () => {
-      const distribution = distributeShapes(6, 1)
-      expect(distribution.round).toBeGreaterThan(0)
-      expect(distribution.capsule).toBeGreaterThan(0)
-      expect(distribution.oval).toBe(0)
-      expect(distribution.triangle).toBe(0)
-      expect(distribution.hexagon).toBe(0)
+    it('novas shapes ATIVAS aparecem em rodadas posteriores', () => {
+      // pumpkin e skull desbloqueiam na rodada 3
+      expect(getShapeChances(2).pumpkin).toBe(0)
+      expect(getShapeChances(3).pumpkin).toBeGreaterThan(0)
       
-      const total = Object.values(distribution).reduce((a, b) => a + b, 0)
-      expect(total).toBe(6)
+      // bear desbloqueia na rodada 5
+      expect(getShapeChances(4).bear).toBe(0)
+      expect(getShapeChances(5).bear).toBeGreaterThan(0)
     })
   })
 })
@@ -1601,13 +1553,22 @@ describe('shapeProgression', () => {
 
 ## Extensibilidade Futura
 
+### Ativar Shape Sazonal
+
+Para ativar uma shape sazonal (ex: evento de Halloween):
+
+1. Editar `src/utils/shapeProgression.ts`
+2. Alterar regra da shape de `{ startPct: 0, endPct: 0 }` para valores > 0
+3. Exemplo: `pumpkin: { unlockRound: 1, startPct: 30, endPct: 15 }`
+
 ### Adicionar Nova Shape
 
 1. Adicionar ao tipo `PillShape` em `pill.ts`
-2. Adicionar regra de progressao em `SHAPE_PROGRESSION.rules` em `shapeProgression.ts`
-3. Adicionar CSS em `SHAPE_CLASSES` e `SHAPE_CLIP_PATHS`
-4. Adicionar label em `SHAPE_LABELS`
-5. Adicionar count inicial em `initialState.shapeCounts`
+2. Adicionar imagem PNG em `src/assets/shapes/`
+3. Adicionar entrada em `SHAPE_IMAGES` em `constants.ts`
+4. Adicionar regra de progressao em `SHAPE_PROGRESSION.rules` em `shapeProgression.ts`
+5. Adicionar CSS fallback em `SHAPE_CLASSES`
+6. Adicionar label em `SHAPE_LABELS`
 
 ### Novos Itens da Pill Store
 

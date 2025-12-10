@@ -59,47 +59,56 @@ shape: PILL_SHAPES[type]  // SAFE = 'round', DMG_LOW = 'capsule', etc.
 shape: rollShape(round)  // Usa distribuicao da rodada atual
 ```
 
-#### 1.1 Configuracao de Progressao de Shapes
+#### 1.1 Sistema de Shapes Ativas e Sazonais
+
+O jogo possui 16 shapes no total, divididas em:
+- **Shapes ATIVAS:** Aparecem normalmente no jogo
+- **Shapes SAZONAIS:** Desabilitadas (pct: 0), ativadas em eventos especiais
 
 ```typescript
 interface ShapeRule {
   unlockRound: number  // Rodada de desbloqueio
-  startPct: number     // % no desbloqueio
+  startPct: number     // % no desbloqueio (0 = sazonal/desabilitada)
   endPct: number       // % na rodada maxima
 }
 
+// IMPLEMENTACAO ATUAL (consulte src/utils/shapeProgression.ts)
 const SHAPE_PROGRESSION: Record<PillShape, ShapeRule> = {
-  round:    { unlockRound: 1, startPct: 50, endPct: 15 },  // Comum -> Raro
-  capsule:  { unlockRound: 1, startPct: 50, endPct: 20 },  // Comum -> Menos comum
-  oval:     { unlockRound: 2, startPct: 20, endPct: 20 },  // Intermediaria
-  triangle: { unlockRound: 3, startPct: 15, endPct: 25 },  // Angular, mais distinta
-  hexagon:  { unlockRound: 5, startPct: 10, endPct: 20 },  // Complexa, late game
+  // Shapes ATIVAS
+  round:    { unlockRound: 1, startPct: 45, endPct: 4 },
+  flower:   { unlockRound: 1, startPct: 18, endPct: 8 },
+  fruit:    { unlockRound: 1, startPct: 50, endPct: 4 },
+  pumpkin:  { unlockRound: 3, startPct: 45, endPct: 7 },
+  skull:    { unlockRound: 3, startPct: 15, endPct: 20 },
+  bear:     { unlockRound: 5, startPct: 45, endPct: 9 },
+  // Shapes SAZONAIS (desabilitadas)
+  capsule:  { unlockRound: 1, startPct: 0, endPct: 0 },
+  triangle: { unlockRound: 1, startPct: 0, endPct: 0 },
+  // ... demais shapes sazonais
 }
 ```
 
-#### 1.2 Tabela de Desbloqueio (16 Shapes)
+#### 1.2 Tabela de Desbloqueio (Shapes ATIVAS)
 
-| Rodada | Shapes Disponiveis | Total |
+| Rodada | Shapes Ativas | Total |
 | :--- | :--- | :--- |
-| 1 | capsule, round | 2 |
-| 2 | + triangle, oval | 4 |
-| 3 | + cross, heart | 6 |
-| 4 | + flower, star | 8 |
-| 5 | + pumpkin, coin | 10 |
-| 6 | + bear, gem | 12 |
-| 7 | + skull, domino | 14 |
-| 8+ | + pineapple, fruit | 16 (todas) |
+| 1 | round, flower, fruit | 3 |
+| 3 | + pumpkin, skull | 5 |
+| 5 | + bear | 6 |
 
-#### 1.3 Exemplo de Distribuicao por Rodada
+**Shapes Sazonais (desabilitadas):**
+capsule, triangle, oval, cross, heart, star, coin, gem, domino, pineapple
 
-| Rodada | capsule | round | triangle | oval | ... |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | 50% | 50% | 0% | 0% | ... |
-| 2 | 42% | 42% | 16% | 0% | 0% |
-| 3 | 35% | 36% | 17% | 12% | 0% |
-| 5 | 25% | 28% | 18% | 19% | 10% |
-| 10 | 18% | 23% | 19% | 23% | 17% |
-| 15 | 15% | 20% | 20% | 25% | 20% |
+> **Nota:** Shapes sazonais podem ser ativadas em eventos especiais (Halloween, Natal, etc)
+> ajustando startPct/endPct em SHAPE_PROGRESSION.
+
+#### 1.3 Exemplo de Distribuicao por Rodada (Shapes Ativas)
+
+| Rodada | round | flower | fruit | pumpkin | skull | bear |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | 40% | 16% | 44% | 0% | 0% | 0% |
+| 3 | 30% | 12% | 33% | 17% | 8% | 0% |
+| 5 | 25% | 10% | 28% | 15% | 12% | 10% |
 
 > **Nota:** Valores sao aproximados e normalizados para 100%.
 

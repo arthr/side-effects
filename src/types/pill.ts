@@ -6,25 +6,30 @@ export type PillType = 'SAFE' | 'DMG_LOW' | 'DMG_HIGH' | 'FATAL' | 'HEAL' | 'LIF
 
 /**
  * Formas visuais das pilulas (16 shapes com imagens PNG)
- * Desbloqueadas progressivamente conforme rodadas avancam
+ * 
+ * SISTEMA DE SHAPES:
+ * - Shapes ATIVAS: configuradas em SHAPE_PROGRESSION com startPct/endPct > 0
+ * - Shapes SAZONAIS: desabilitadas (pct: 0) e ativadas em eventos especiais
+ * 
+ * Consulte src/utils/shapeProgression.ts para configuracao atual de shapes ativas.
  */
 export type PillShape =
-  | 'capsule'    // shape_1 - Rodada 1
-  | 'round'      // shape_6 - Rodada 1
-  | 'triangle'   // shape_8 - Rodada 2
-  | 'oval'       // shape_11 - Rodada 2
-  | 'cross'      // shape_2 - Rodada 3
-  | 'heart'      // shape_9 - Rodada 3
-  | 'flower'     // shape_4 - Rodada 4
-  | 'star'       // shape_13 - Rodada 4
-  | 'pumpkin'    // shape_12 - Rodada 5
-  | 'coin'       // shape_14 - Rodada 5
-  | 'bear'       // shape_5 - Rodada 6
-  | 'gem'        // shape_15 - Rodada 6
-  | 'skull'      // shape_3 - Rodada 7
-  | 'domino'     // shape_16 - Rodada 7
-  | 'pineapple'  // shape_7 - Rodada 8
-  | 'fruit'      // shape_10 - Rodada 8
+  | 'capsule'    // shape_1 - Sazonal
+  | 'round'      // shape_6 - Ativa (base)
+  | 'triangle'   // shape_8 - Sazonal
+  | 'oval'       // shape_11 - Sazonal
+  | 'cross'      // shape_2 - Sazonal
+  | 'heart'      // shape_9 - Sazonal
+  | 'flower'     // shape_4 - Ativa (rodada 1)
+  | 'star'       // shape_13 - Sazonal
+  | 'pumpkin'    // shape_12 - Ativa (rodada 3)
+  | 'coin'       // shape_14 - Sazonal
+  | 'bear'       // shape_5 - Ativa (rodada 5)
+  | 'gem'        // shape_15 - Sazonal
+  | 'skull'      // shape_3 - Ativa (rodada 3)
+  | 'domino'     // shape_16 - Sazonal
+  | 'pineapple'  // shape_7 - Sazonal
+  | 'fruit'      // shape_10 - Ativa (rodada 1)
 
 /**
  * Estatisticas de efeito da pilula

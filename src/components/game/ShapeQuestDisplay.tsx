@@ -61,7 +61,7 @@ export function ShapeQuestDisplay({ quest, className = '', justReset = false }: 
           <Sparkles size={14} className="text-emerald-400 shrink-0" />
         </motion.div>
         <span className="text-[9px] text-emerald-300 font-normal relative z-10">
-          Quest conluida!
+          Quest concluida!
         </span>
         <motion.div
           initial={{ scale: 0 }}
