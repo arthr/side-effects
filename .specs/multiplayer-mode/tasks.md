@@ -233,14 +233,15 @@
 ---
 
 ### TASK-MP-019: Criar WaitingRoom
-- [ ] Criar `src/components/multiplayer/WaitingRoom.tsx`
-- [ ] Exibir codigo da sala
-- [ ] Botao para copiar codigo
-- [ ] Animacao de espera
-- [ ] Botao para cancelar
+- [x] Criar `src/components/multiplayer/WaitingRoom.tsx`
+- [x] Exibir codigo da sala
+- [x] Botao para copiar codigo
+- [x] Animacao de espera
+- [x] Botao para cancelar
 
 **Arquivos:**
-- `src/components/multiplayer/WaitingRoom.tsx` (novo)
+- `src/components/multiplayer/WaitingRoom.tsx` (criado)
+- `src/components/multiplayer/index.ts` (atualizado)
 
 ---
 
