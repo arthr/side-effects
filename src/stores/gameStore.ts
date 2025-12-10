@@ -140,10 +140,10 @@ interface GameStore extends GameState {
   checkAndStartShopping: () => void
   addToCart: (playerId: PlayerId, itemId: string) => void
   removeFromCart: (playerId: PlayerId, itemId: string) => void
-  processCart: (playerId: PlayerId) => void
+  processCart: (playerId: PlayerId, itemIds?: string[]) => string[]
   /** @deprecated Use addToCart/removeFromCart */
   purchaseStoreItem: (playerId: PlayerId, itemId: string) => void
-  confirmStorePurchases: (playerId: PlayerId) => void
+  confirmStorePurchases: (playerId: PlayerId, itemIds?: string[]) => void
   checkShoppingComplete: () => void
   applyPendingBoosts: () => void
 
@@ -1665,20 +1665,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
   /**
    * Processa o carrinho de compras - debita coins e aplica itens
    * Chamado internamente quando jogador confirma compras
+   * @param playerId - ID do jogador
+   * @param itemIds - IDs opcionais para power-ups (usado em multiplayer para sincronizar)
+   * @returns Array de IDs gerados para power-ups (usado para sincronizar com outro cliente)
    */
-  processCart: (playerId: PlayerId) => {
+  processCart: (playerId: PlayerId, itemIds?: string[]): string[] => {
     const state = get()
     const player = state.players[playerId]
     const storeState = state.storeState
 
-    if (!storeState) return
+    if (!storeState) return []
 
     const cart = storeState.cart[playerId]
-    if (cart.length === 0) return
+    if (cart.length === 0) return []
 
     let updatedPlayer = { ...player }
     let newStoreState = { ...storeState }
     let totalCost = 0
+    const generatedItemIds: string[] = []
+    let itemIdIndex = 0
 
     for (const cartItem of cart) {
       const item = getStoreItemById(cartItem.storeItemId)
@@ -1687,9 +1692,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       totalCost += item.cost
 
       if (item.type === 'power_up' && item.itemType) {
+        // Usa ID fornecido (evento remoto) ou gera novo (local)
+        const newItemId = itemIds?.[itemIdIndex] ?? uuidv4()
+        generatedItemIds.push(newItemId)
+        itemIdIndex++
+
         // Adiciona item ao inventario
         const newItem: InventoryItem = {
-          id: uuidv4(),
+          id: newItemId,
           type: item.itemType,
         }
         updatedPlayer = {
@@ -1744,6 +1754,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     //     duration: 2000,
     //   })
     // }
+
+    return generatedItemIds
   },
 
   /**
@@ -1758,8 +1770,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Jogador confirma que terminou de fazer compras
    * Processa o carrinho (debita coins e aplica itens) antes de confirmar
    * @param playerId - ID do jogador confirmando
+   * @param itemIds - IDs opcionais para power-ups (usado em multiplayer para sincronizar)
    */
-  confirmStorePurchases: (playerId: PlayerId) => {
+  confirmStorePurchases: (playerId: PlayerId, itemIds?: string[]) => {
     const state = get()
     const storeState = state.storeState
 
@@ -1773,13 +1786,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
-    // Emite evento multiplayer (antes de aplicar)
-    emitMultiplayerEvent(state.mode, {
-      type: 'store_confirmed',
-    })
-
     // Processa o carrinho antes de confirmar (debita coins e aplica itens)
-    get().processCart(playerId)
+    // Se itemIds fornecido (evento remoto), usa-os; senao gera novos
+    const generatedItemIds = get().processCart(playerId, itemIds)
+
+    // Emite evento multiplayer COM os IDs gerados (apenas se nao for evento remoto)
+    // Isso garante que o outro cliente use os mesmos IDs
+    if (!itemIds) {
+      emitMultiplayerEvent(state.mode, {
+        type: 'store_confirmed',
+        payload: { itemIds: generatedItemIds },
+      })
+    }
 
     // Re-obtem estado atualizado apos processCart
     const updatedState = get()
@@ -2166,7 +2184,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
           }
 
-          get().confirmStorePurchases(event.playerId)
+          // Extrai itemIds do payload para sincronizar IDs de power-ups
+          const storePayload = event.payload as { itemIds?: string[] } | undefined
+          get().confirmStorePurchases(event.playerId, storePayload?.itemIds)
           break
         }
 

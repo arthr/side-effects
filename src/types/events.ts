@@ -205,6 +205,10 @@ export interface CartUpdatedEvent extends GameEventBase {
  */
 export interface StoreConfirmedEvent extends GameEventBase {
   type: 'store_confirmed'
+  payload?: {
+    /** IDs dos power-ups comprados (para sincronizacao multiplayer) */
+    itemIds?: string[]
+  }
 }
 
 // ============================================

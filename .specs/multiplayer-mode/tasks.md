@@ -678,6 +678,29 @@ usava itens. Agora, toasts informativos sao exibidos com mensagem contextualizad
 
 ---
 
+### HOTFIX-MP-009: Sincronizar IDs de itens comprados na Pill Store
+- [x] Modificar `processCart` para aceitar `itemIds` opcional e retornar IDs gerados
+- [x] Modificar `confirmStorePurchases` para capturar IDs e incluir no evento
+- [x] Modificar `applyRemoteEvent` para passar `itemIds` ao processar `store_confirmed`
+- [x] Atualizar `StoreConfirmedEvent` em events.ts com campo `itemIds` no payload
+- [x] Atualizar interface `GameStore` com novos tipos de parametros/retorno
+
+**Problema resolvido:**
+Itens comprados na Pill Store (`shape_bomb`, `shape_scanner` e outros power-ups)
+geravam IDs diferentes em cada cliente. Quando Host usava um item comprado, o
+evento `item_used` falhava no Guest porque o ID nao correspondia.
+
+**Fluxo corrigido:**
+1. Host processa carrinho -> gera IDs -> emite `store_confirmed` com `itemIds`
+2. Guest recebe evento -> passa `itemIds` para `processCart` -> usa mesmos IDs
+3. Itens ficam sincronizados -> eventos `item_used` funcionam corretamente
+
+**Arquivos:**
+- `src/types/events.ts` (StoreConfirmedEvent.payload.itemIds)
+- `src/stores/gameStore.ts` (processCart, confirmStorePurchases, applyRemoteEvent)
+
+---
+
 ## Ordem de Execucao Recomendada
 
 1. **Infraestrutura:** TASK-MP-001, TASK-MP-002
