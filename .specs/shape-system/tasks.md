@@ -393,7 +393,7 @@
 
 - [x] TASK-SS-056: Testar `distributeShapes()` distribui proporcionalmente
 
-- [ ] TASK-SS-056B: Testar `generatePillPool()` usa shapes da rodada correta
+- [x] TASK-SS-056B: Testar `generatePillPool()` usa shapes da rodada correta
 
 ### 6.2 Testes Unitarios - Quests
 

@@ -9,6 +9,7 @@ import {
   getInitialShapeCounts,
   type ShapeProgressionConfig,
 } from '../shapeProgression'
+import { generatePillPool } from '../pillGenerator'
 import type { Pill, PillShape } from '@/types'
 
 // ============================================
@@ -383,6 +384,79 @@ describe('getInitialShapeCounts', () => {
     counts1.round = 5
 
     expect(counts2.round).toBe(0)
+  })
+})
+
+// ============================================
+// Testes de Integracao - generatePillPool com Shapes
+// ============================================
+
+describe('generatePillPool - Integracao com Shapes', () => {
+  it('gera pilulas com shapes validas', () => {
+    const pills = generatePillPool(1)
+
+    for (const pill of pills) {
+      expect(ALL_SHAPES).toContain(pill.visuals.shape)
+    }
+  })
+
+  it('pilulas na rodada 1 usam apenas shapes desbloqueadas', () => {
+    const pills = generatePillPool(1)
+
+    const blockedShapes = Object.entries(SHAPE_PROGRESSION.rules)
+      .filter(([_, rule]) => rule.unlockRound > 1)
+      .map(([shape]) => shape)
+
+    for (const pill of pills) {
+      expect(blockedShapes).not.toContain(pill.visuals.shape)
+    }
+  })
+
+  it('pilulas na rodada 5 podem incluir shapes novas (bear)', () => {
+    // bear desbloqueia na rodada 5
+    // Gera multiplos pools para ter chance estatistica de encontrar bear
+    let foundBear = false
+
+    for (let i = 0; i < 20; i++) {
+      const pills = generatePillPool(5)
+      const shapes = pills.map((p) => p.visuals.shape)
+
+      if (shapes.includes('bear')) {
+        foundBear = true
+        break
+      }
+    }
+
+    expect(foundBear).toBe(true)
+  })
+
+  it('distribuicao de shapes corresponde a rodada', () => {
+    const pills = generatePillPool(5)
+    const shapeCounts = countPillShapes(pills)
+
+    // Verifica que shapes bloqueadas tem count 0
+    // pineapple desbloqueia rodada 8
+    expect(shapeCounts.pineapple).toBe(0)
+  })
+
+  it('todas pilulas tem shape definida', () => {
+    const pills = generatePillPool(10)
+
+    for (const pill of pills) {
+      expect(pill.visuals.shape).toBeDefined()
+      expect(typeof pill.visuals.shape).toBe('string')
+      expect(pill.visuals.shape.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('soma de shapeCounts igual ao total de pilulas', () => {
+    for (let round = 1; round <= 10; round++) {
+      const pills = generatePillPool(round)
+      const shapeCounts = countPillShapes(pills)
+      const totalShapes = Object.values(shapeCounts).reduce((a, b) => a + b, 0)
+
+      expect(totalShapes).toBe(pills.length)
+    }
   })
 })
 
