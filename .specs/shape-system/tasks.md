@@ -378,20 +378,20 @@
 
 ### 6.1 Testes Unitarios - Progressao de Shapes
 
-- [ ] TASK-SS-053: Criar arquivo `src/utils/__tests__/shapeProgression.test.ts`
+- [x] TASK-SS-053: Criar arquivo `src/utils/__tests__/shapeProgression.test.ts`
 
-- [ ] TASK-SS-054: Testar `getShapeChances()` retorna apenas shapes desbloqueadas
+- [x] TASK-SS-054: Testar `getShapeChances()` retorna apenas shapes desbloqueadas
   - Rodada 1: apenas round e capsule (soma 100%)
   - Rodada 3: round, capsule, oval, triangle (soma 100%)
   - Rodada 8+: todas 16 shapes (conforme ativadas em SHAPE_PROGRESSION)
 
-- [ ] TASK-SS-054B: Testar `getShapeChances()` soma sempre 100%
+- [x] TASK-SS-054B: Testar `getShapeChances()` soma sempre 100%
 
-- [ ] TASK-SS-054C: Testar `rollShape()` nunca retorna shape nao desbloqueada
+- [x] TASK-SS-054C: Testar `rollShape()` nunca retorna shape nao desbloqueada
 
-- [ ] TASK-SS-055: Testar `countPillShapes()` contagem correta
+- [x] TASK-SS-055: Testar `countPillShapes()` contagem correta
 
-- [ ] TASK-SS-056: Testar `distributeShapes()` distribui proporcionalmente
+- [x] TASK-SS-056: Testar `distributeShapes()` distribui proporcionalmente
 
 - [ ] TASK-SS-056B: Testar `generatePillPool()` usa shapes da rodada correta
 
