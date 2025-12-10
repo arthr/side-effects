@@ -6,7 +6,6 @@ import type {
   Pill,
   PillShape,
   PillType,
-  Player,
   PoolRiskAnalysis,
   PoolRiskLevel,
 } from '@/types'
@@ -556,95 +555,24 @@ function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluati
 }
 
 /**
- * Seleciona qual item a IA deve usar com base em heuristicas
- * @param player Jogador IA
- * @param pillPool Pool de pilulas na mesa
- * @returns Item selecionado ou null
+ * Seleciona qual item a IA deve usar
+ * Usa evaluateItem para pontuar cada item no contexto atual
  */
-export function selectAIItem(
-  player: Player,
-  pillPool: Pill[]
-): InventoryItem | null {
-  const items = player.inventory.items
+export function selectAIItem(ctx: AIDecisionContext): InventoryItem | null {
+  const { aiPlayer } = ctx
+  const items = aiPlayer.inventory.items
 
   if (items.length === 0) return null
 
-  // Calcula scores para cada item baseado em contexto
-  const scoredItems = items.map((item) => ({
-    item,
-    score: calculateItemScore(item.type, player, pillPool),
-  }))
+  // Avalia cada item
+  const evaluations = items.map((item) => evaluateItem(item, ctx))
 
   // Ordena por score (maior primeiro)
-  scoredItems.sort((a, b) => b.score - a.score)
+  evaluations.sort((a, b) => b.score - a.score)
 
-  // Retorna item com maior score (se score > 0)
-  const best = scoredItems[0]
+  // Retorna melhor (se score > 0)
+  const best = evaluations[0]
   return best.score > 0 ? best.item : null
-}
-
-/**
- * Calcula score de um item baseado no contexto atual
- */
-function calculateItemScore(
-  itemType: ItemType,
-  player: Player,
-  pillPool: Pill[]
-): number {
-  const basePriority = ITEM_PRIORITY[itemType]
-  let contextBonus = 0
-
-  const resistancePercent = player.resistance / player.maxResistance
-  const isLowLife = player.lives <= 1
-  const isLowResistance = resistancePercent < 0.5
-  const hasManyPills = pillPool.length >= 4
-
-  switch (itemType) {
-    case 'shield':
-      // Shield e muito valioso se vida baixa
-      if (isLowLife) contextBonus = 20
-      break
-
-    case 'pocket_pill':
-      // Pocket Pill e util se resistencia baixa
-      if (isLowResistance) contextBonus = 15
-      break
-
-    case 'scanner':
-      // Scanner e mais util com muitas pilulas
-      if (hasManyPills) contextBonus = 10
-      break
-
-    case 'handcuffs':
-      // Handcuffs sempre e util
-      contextBonus = 5
-      break
-
-    case 'force_feed':
-      // Force Feed e bom se tem poucas pilulas (mais chance de FATAL)
-      if (pillPool.length <= 3) contextBonus = 8
-      break
-
-    case 'discard':
-      // Discard e util para remover pilula suspeita
-      contextBonus = 3
-      break
-
-    case 'shape_bomb':
-      // Shape Bomb e mais util com muitas pilulas da mesma shape
-      if (hasManyPills) contextBonus = 8
-      break
-
-    case 'shape_scanner':
-      // Shape Scanner e mais util com muitas pilulas
-      if (hasManyPills) contextBonus = 10
-      break
-
-    default:
-      contextBonus = 0
-  }
-
-  return basePriority + contextBonus
 }
 
 /**
