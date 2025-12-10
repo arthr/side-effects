@@ -289,7 +289,7 @@
 
 ### 4B.3 Hook de Timer
 
-- [ ] TASK-SS-089: Criar `src/hooks/useStoreTimer.ts`
+- [x] TASK-SS-089: Criar `src/hooks/useStoreTimer.ts`
   - Monitora storeState.timerStartedAt e timerDuration
   - Retorna remainingTime e formattedTime
   - Chama handleShoppingTimeout ao expirar (apenas shopping)
