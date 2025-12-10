@@ -257,13 +257,14 @@
 ---
 
 ### TASK-MP-021: Criar ConnectionStatus
-- [ ] Criar `src/components/multiplayer/ConnectionStatus.tsx`
-- [ ] Indicador visual de conexao (verde/amarelo/vermelho)
-- [ ] Tooltip com detalhes do status
-- [ ] Posicionamento discreto na UI
+- [x] Criar `src/components/multiplayer/ConnectionStatus.tsx`
+- [x] Indicador visual de conexao (verde/amarelo/vermelho)
+- [x] Tooltip com detalhes do status
+- [x] Posicionamento discreto na UI
 
 **Arquivos:**
-- `src/components/multiplayer/ConnectionStatus.tsx` (novo)
+- `src/components/multiplayer/ConnectionStatus.tsx` (criado)
+- `src/components/multiplayer/index.ts` (atualizado)
 
 ---
 
