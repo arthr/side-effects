@@ -1023,6 +1023,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         break
       }
+
+      case 'shape_scanner': {
+        // Shape Scanner: revela TODAS pilulas da mesma shape da pill selecionada
+        if (targetId) {
+          const targetPill = state.pillPool.find((p) => p.id === targetId)
+          if (!targetPill) break
+
+          const targetShape = targetPill.visuals.shape
+
+          // Encontra todas pills dessa shape e adiciona aos revelados
+          const pillsToReveal = state.pillPool
+            .filter((p) => p.visuals.shape === targetShape)
+            .map((p) => p.id)
+            .filter((id) => !state.revealedPills.includes(id)) // Evita duplicatas
+
+          const revealedCount = pillsToReveal.length
+          newState.revealedPills = [...state.revealedPills, ...pillsToReveal]
+
+          // Toast com feedback
+          const toastStore = useToastStore.getState()
+          toastStore.show({
+            message: `Shape Scanner! ${revealedCount} pilulas reveladas`,
+            type: 'item',
+            playerId: currentPlayerId,
+          })
+        }
+        break
+      }
     }
 
     set(newState)

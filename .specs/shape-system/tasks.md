@@ -351,7 +351,7 @@
   - Atualiza typeCounts e shapeCounts
   - Verifica se pool esvaziou (trigger fim de rodada)
 
-- [ ] TASK-SS-049: Implementar logica de `SHAPE_SCANNER` em `gameStore.executeItem()`
+- [x] TASK-SS-049: Implementar logica de `SHAPE_SCANNER` em `gameStore.executeItem()`
   - Jogador seleciona uma pill (sistema existente)
   - Extrai shape da pill selecionada
   - Encontra TODAS pilulas dessa shape
