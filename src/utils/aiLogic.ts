@@ -1,4 +1,12 @@
-import type { InventoryItem, ItemType, Pill, PillShape, Player } from '@/types'
+import type {
+  AIDecisionContext,
+  InventoryItem,
+  ItemType,
+  Pill,
+  PillShape,
+  PillType,
+  Player,
+} from '@/types'
 import { ITEM_CATALOG } from './itemCatalog'
 
 /**
@@ -25,6 +33,55 @@ const ITEM_PRIORITY: Record<ItemType, number> = {
   shape_bomb: 3,
   discard: 2,
   shuffle: 1,
+}
+
+// ============================================
+// Analise de Risco (usa typeCounts publico)
+// ============================================
+
+/**
+ * Calcula probabilidade de cada tipo nas pilulas NAO reveladas
+ * Usa typeCounts (publico) - tipos revelados = probabilidades reais
+ */
+export function calculateTypeOdds(ctx: AIDecisionContext): Record<PillType, number> {
+  const { typeCounts, revealedPills, pillPool } = ctx
+
+  // Conta tipos das pilulas reveladas
+  const revealedTypeCounts: Record<PillType, number> = {
+    SAFE: 0,
+    DMG_LOW: 0,
+    DMG_HIGH: 0,
+    FATAL: 0,
+    HEAL: 0,
+    LIFE: 0,
+  }
+
+  for (const pillId of revealedPills) {
+    const pill = pillPool.find((p) => p.id === pillId)
+    if (pill) {
+      revealedTypeCounts[pill.type]++
+    }
+  }
+
+  // Calcula tipos restantes no pool nao-revelado
+  const unrevealed = pillPool.length - revealedPills.length
+
+  // Converte para probabilidades
+  const odds: Record<PillType, number> = {
+    SAFE: 0,
+    DMG_LOW: 0,
+    DMG_HIGH: 0,
+    FATAL: 0,
+    HEAL: 0,
+    LIFE: 0,
+  }
+
+  for (const type of Object.keys(typeCounts) as PillType[]) {
+    const remaining = typeCounts[type] - revealedTypeCounts[type]
+    odds[type] = unrevealed > 0 ? remaining / unrevealed : 0
+  }
+
+  return odds
 }
 
 // ============================================

@@ -6,7 +6,7 @@
 | :--- | :---: | :---: | :---: |
 | Types | 5 | 5 | 0 |
 | Config | 3 | 3 | 0 |
-| AI Logic - Analise | 4 | 0 | 4 |
+| AI Logic - Analise | 4 | 1 | 3 |
 | AI Logic - Selecao | 4 | 0 | 4 |
 | AI Logic - Itens | 4 | 0 | 4 |
 | AI Logic - Pre-jogo/Loja | 4 | 0 | 4 |
@@ -14,7 +14,7 @@
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **8** | **29** |
+| **TOTAL** | **37** | **9** | **28** |
 
 ---
 
@@ -65,7 +65,7 @@
 
 ### Funcoes de Analise (NOVO - usa typeCounts)
 
-- [ ] TASK-008: Implementar `calculateTypeOdds(ctx)` em `aiLogic.ts`
+- [x] TASK-008: Implementar `calculateTypeOdds(ctx)` em `aiLogic.ts`
   - Usa `typeCounts` (publico) - tipos revelados = probabilidades reais
   - Retorna `Record<PillType, number>` com % de cada tipo no pool nao-revelado
   - Considera pilulas ja reveladas pelo Scanner
