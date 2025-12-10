@@ -133,12 +133,12 @@
 ## Fase 3: Condicionar IA
 
 ### TASK-MP-010: Condicionar useAIPlayer
-- [ ] Importar `useGameStore` para obter `mode`
-- [ ] Adicionar early return se `mode === 'multiplayer'`
-- [ ] Garantir que nenhum timer e criado em multiplayer
+- [x] Importar `useGameStore` para obter `mode`
+- [x] Adicionar early return se `mode === 'multiplayer'`
+- [x] Garantir que nenhum timer e criado em multiplayer
 
 **Arquivos:**
-- `src/hooks/useAIPlayer.ts`
+- `src/hooks/useAIPlayer.ts` (atualizado - recebe mode como prop)
 
 ---
 
