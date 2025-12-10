@@ -4,7 +4,7 @@
 
 | Area | Total | Concluidas | Pendentes |
 | :--- | :---: | :---: | :---: |
-| Types | 5 | 1 | 4 |
+| Types | 5 | 3 | 2 |
 | Config | 3 | 0 | 3 |
 | AI Logic - Analise | 4 | 0 | 4 |
 | AI Logic - Selecao | 4 | 0 | 4 |
@@ -14,7 +14,7 @@
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **1** | **36** |
+| **TOTAL** | **37** | **3** | **34** |
 
 ---
 
@@ -27,14 +27,14 @@
   export type DifficultyLevel = 'easy' | 'normal' | 'hard' | 'insane'
   ```
 
-- [ ] TASK-002: Criar arquivo `types/ai.ts` com interfaces da IA
+- [x] TASK-002: Criar arquivo `types/ai.ts` com interfaces da IA
   - `AIConfig` - parametros de comportamento (incluindo `usesTypeCounts`, `usesDeduction`)
   - `AIDecisionContext` - contexto para decisoes (incluindo `typeCounts`, `shapeCounts`)
   - `ItemEvaluation` - resultado de avaliacao
   - `PoolRiskLevel` - enum de niveis de risco
   - `PoolRiskAnalysis` - analise completa de risco
 
-- [ ] TASK-003: Atualizar `GameConfig` em `types/game.ts`
+- [x] TASK-003: Atualizar `GameConfig` em `types/game.ts`
   - Adicionar campo `difficulty: DifficultyLevel`
   - Adicionar `DIFFICULTY_LABELS` e `DIFFICULTY_DESCRIPTIONS`
 

@@ -125,6 +125,8 @@ export interface GameConfig {
   startingLives: number
   /** Resistencia inicial por jogador */
   startingResistance: number
+  /** Nivel de dificuldade da IA */
+  difficulty: DifficultyLevel
 }
 
 /**
