@@ -417,7 +417,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (newPillPool.length === 0) {
         set({ phase: 'roundEnding' })
         setTimeout(() => {
-          get().resetRound()
+          get().checkAndStartShopping()
         }, ROUND_TRANSITION_DELAY)
       }
       return
@@ -465,9 +465,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Muda para fase roundEnding
       set({ phase: 'roundEnding' })
 
-      // Apos delay, inicia nova rodada
+      // Apos delay, verifica se alguem quer ir a loja
       setTimeout(() => {
-        get().resetRound()
+        get().checkAndStartShopping()
       }, ROUND_TRANSITION_DELAY)
     }
   },
@@ -976,7 +976,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           if (newPillPool.length === 0) {
             newState.phase = 'roundEnding'
             setTimeout(() => {
-              get().resetRound()
+              get().checkAndStartShopping()
             }, ROUND_TRANSITION_DELAY)
           }
         }

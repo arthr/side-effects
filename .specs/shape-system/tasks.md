@@ -319,7 +319,7 @@
 
 ### 4B.5 Fluxo de Fim de Rodada
 
-- [ ] TASK-SS-094: Modificar `endRound()` ou logica equivalente
+- [x] TASK-SS-094: Modificar `endRound()` ou logica equivalente
   - Ao pool esvaziar: verificar se Game Over
   - Se nao Game Over: chamar `checkAndStartShopping()`
   - checkAndStartShopping verifica wantsStore e decide:
