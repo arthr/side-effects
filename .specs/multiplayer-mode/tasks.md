@@ -175,14 +175,14 @@
 ---
 
 ### TASK-MP-014: Criar useRoomConnection
-- [ ] Criar `src/hooks/useRoomConnection.ts`
-- [ ] Implementar reconexao automatica
-- [ ] Implementar countdown de timeout
-- [ ] Cleanup ao desmontar
+- [x] Criar `src/hooks/useRoomConnection.ts`
+- [x] Implementar reconexao automatica
+- [x] Implementar countdown de timeout (60s para W.O.)
+- [x] Cleanup ao desmontar
 
 **Arquivos:**
-- `src/hooks/useRoomConnection.ts` (novo)
-- `src/hooks/index.ts`
+- `src/hooks/useRoomConnection.ts` (criado)
+- `src/hooks/index.ts` (atualizado)
 
 ---
 
@@ -376,7 +376,7 @@
 ### TASK-MP-032: Implementar desconexao durante jogo
 - [ ] Detectar perda de conexao
 - [ ] Exibir overlay de reconexao
-- [ ] Timeout de 30s para W.O.
+- [ ] Timeout de 60s para W.O.
 - [ ] Cleanup correto de recursos
 
 **Arquivos:**

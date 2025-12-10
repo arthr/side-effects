@@ -62,3 +62,5 @@ export {
   useIsLocalTurn,
   useCanInteract,
 } from './useMultiplayer'
+
+export { useRoomConnection } from './useRoomConnection'
