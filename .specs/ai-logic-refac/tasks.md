@@ -9,12 +9,12 @@
 | AI Logic - Analise | 4 | 4 | 0 |
 | AI Logic - Selecao | 4 | 4 | 0 |
 | AI Logic - Itens | 4 | 4 | 0 |
-| AI Logic - Pre-jogo/Loja | 4 | 3 | 1 |
+| AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
 | Store | 3 | 0 | 3 |
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **23** | **14** |
+| **TOTAL** | **37** | **24** | **13** |
 
 ---
 
@@ -164,7 +164,7 @@
   - Usa `storeInterestThreshold` do config
   - Easy nunca quer, outros conforme threshold
 
-- [ ] TASK-023: Implementar `selectAIStoreItems(ctx, coins, items)`
+- [x] TASK-023: Implementar `selectAIStoreItems(ctx, coins, items)`
   - Logica de priorizacao de compras
   - Considera estado atual (vidas, inventario)
   - Usa analise de risco para priorizar itens defensivos

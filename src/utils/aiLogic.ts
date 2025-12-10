@@ -9,6 +9,7 @@ import type {
   PillType,
   PoolRiskAnalysis,
   PoolRiskLevel,
+  StoreItem,
 } from '@/types'
 import { getAIConfig } from './aiConfig'
 import { ITEM_CATALOG } from './itemCatalog'
@@ -875,5 +876,52 @@ export function selectAIInitialItems(
 export function shouldAIWantStore(difficulty: DifficultyLevel, pillCoins: number): boolean {
   const config = getAIConfig(difficulty)
   return pillCoins >= config.storeInterestThreshold
+}
+
+/**
+ * Seleciona itens para comprar na loja
+ */
+export function selectAIStoreItems(
+  ctx: AIDecisionContext,
+  availableCoins: number,
+  storeItems: StoreItem[]
+): StoreItem[] {
+  const { config, aiPlayer } = ctx
+
+  // Easy: nao compra nada
+  if (!config.usesStoreStrategically) {
+    return []
+  }
+
+  const cart: StoreItem[] = []
+  let remainingCoins = availableCoins
+
+  // Prioridade 1: 1-Up se vida = 1
+  if (aiPlayer.lives === 1) {
+    const oneUp = storeItems.find((i) => i.id === 'boost_life')
+    if (oneUp && oneUp.cost <= remainingCoins) {
+      cart.push(oneUp)
+      remainingCoins -= oneUp.cost
+    }
+  }
+
+  // Prioridade 2: Scanner-2X
+  const scanner2x = storeItems.find((i) => i.id === 'boost_scanner')
+  if (scanner2x && scanner2x.cost <= remainingCoins) {
+    cart.push(scanner2x)
+    remainingCoins -= scanner2x.cost
+  }
+
+  // Prioridade 3: Shield (se nao tem)
+  const hasShield = aiPlayer.inventory.items.some((i) => i.type === 'shield')
+  if (!hasShield) {
+    const shield = storeItems.find((i) => i.id === 'item_shield')
+    if (shield && shield.cost <= remainingCoins) {
+      cart.push(shield)
+      remainingCoins -= shield.cost
+    }
+  }
+
+  return cart
 }
 
