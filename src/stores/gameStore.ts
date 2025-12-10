@@ -24,6 +24,7 @@ import {
 import { countPillShapes } from '@/utils/shapeProgression'
 import { ITEM_CATALOG } from '@/utils/itemCatalog'
 import { POCKET_PILL_HEAL } from '@/utils/itemLogic'
+import { generateShapeQuest, checkQuestProgress } from '@/utils/questGenerator'
 
 /**
  * Interface do Store com estado e actions
@@ -203,6 +204,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const typeCounts = countPillTypes(pillPool)
     const shapeCounts = countPillShapes(pillPool)
 
+    // Gera quests para ambos jogadores baseados no pool
+    const shapeQuests = {
+      player1: generateShapeQuest(1, shapeCounts),
+      player2: generateShapeQuest(1, shapeCounts),
+    }
+
     const startAction: GameAction = {
       type: 'GAME_START',
       playerId: 'player1',
@@ -218,6 +225,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillPool,
       typeCounts,
       shapeCounts,
+      shapeQuests,
       round: 0,
       winner: null,
       actionHistory: [startAction],
@@ -225,6 +233,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       itemSelectionConfirmed: { player1: false, player2: false },
       targetSelection: initialState.targetSelection,
       revealedPills: [],
+      storeState: null,
     })
   },
 
@@ -265,6 +274,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newPillPool = state.pillPool.filter((p) => p.id !== pillId)
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
+
+    // Verifica progresso do quest do jogador que consumiu
+    const consumedShape = pill.visuals.shape
+    const currentQuest = state.shapeQuests[consumerId]
+    let newShapeQuests = { ...state.shapeQuests }
+    let earnedPillCoin = false
+
+    if (currentQuest && !currentQuest.completed) {
+      const { updatedQuest, justCompleted } = checkQuestProgress(currentQuest, consumedShape)
+      newShapeQuests[consumerId] = updatedQuest
+      earnedPillCoin = justCompleted
+    }
 
     // Registra acao
     const consumeAction: GameAction = {
@@ -308,14 +329,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
         timestamp: Date.now(),
       })
 
+      // Atualiza pillCoins se completou quest (mesmo sendo eliminado)
+      const eliminatedPlayer: Player = earnedPillCoin
+        ? { ...result.player, pillCoins: result.player.pillCoins + 1 }
+        : result.player
+
       set({
         players: {
           ...state.players,
-          [consumerId]: result.player,
+          [consumerId]: eliminatedPlayer,
         },
         pillPool: newPillPool,
         typeCounts: newTypeCounts,
         shapeCounts: newShapeCounts,
+        shapeQuests: newShapeQuests,
         phase: 'ended',
         winner: winnerId,
         actionHistory: [...state.actionHistory, ...actions],
@@ -323,8 +350,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
-    // Atualiza jogador que consumiu com efeitos decrementados
-    const updatedConsumer = decrementPlayerEffects(result.player)
+    // Atualiza jogador que consumiu com efeitos decrementados e pillCoins
+    let updatedConsumer = decrementPlayerEffects(result.player)
+    if (earnedPillCoin) {
+      updatedConsumer = { ...updatedConsumer, pillCoins: updatedConsumer.pillCoins + 1 }
+    }
 
     // Se foi forcado (Force Feed), NAO troca turno
     if (isForced) {
@@ -336,6 +366,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pillPool: newPillPool,
         typeCounts: newTypeCounts,
         shapeCounts: newShapeCounts,
+        shapeQuests: newShapeQuests,
         actionHistory: [...state.actionHistory, ...actions],
       })
 
@@ -380,6 +411,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillPool: newPillPool,
       typeCounts: newTypeCounts,
       shapeCounts: newShapeCounts,
+      shapeQuests: newShapeQuests,
       currentTurn: actualNextTurn,
       actionHistory: [...state.actionHistory, ...actions],
     })
@@ -449,26 +481,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
-    // Remove efeitos de Shield (duram apenas 1 rodada)
-    const player1WithoutShield: Player = {
+    // Remove efeitos de Shield (duram apenas 1 rodada) e reseta wantsStore
+    const player1Updated: Player = {
       ...player1,
       effects: player1.effects.filter((e) => e.type !== 'shield'),
+      wantsStore: false,
     }
-    const player2WithoutShield: Player = {
+    const player2Updated: Player = {
       ...player2,
       effects: player2.effects.filter((e) => e.type !== 'shield'),
+      wantsStore: false,
     }
 
     // Quantidade dinamica baseada na rodada (usa POOL_SCALING)
-    const newPillPool = generatePillPool(state.round + 1)
+    const newRound = state.round + 1
+    const newPillPool = generatePillPool(newRound)
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
+
+    // Gera novos quests para nova rodada baseados no novo pool
+    const newShapeQuests = {
+      player1: generateShapeQuest(newRound, newShapeCounts),
+      player2: generateShapeQuest(newRound, newShapeCounts),
+    }
 
     const roundAction: GameAction = {
       type: 'NEW_ROUND',
       playerId: state.currentTurn,
       timestamp: Date.now(),
-      payload: { round: state.round + 1 },
+      payload: { round: newRound },
     }
 
     set({
@@ -476,12 +517,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillPool: newPillPool,
       typeCounts: newTypeCounts,
       shapeCounts: newShapeCounts,
-      round: state.round + 1,
+      shapeQuests: newShapeQuests,
+      round: newRound,
       actionHistory: [...state.actionHistory, roundAction],
       revealedPills: [], // Limpa pilulas reveladas da rodada anterior
+      storeState: null, // Limpa estado da loja
       players: {
-        player1: player1WithoutShield,
-        player2: player2WithoutShield,
+        player1: player1Updated,
+        player2: player2Updated,
       },
     })
   },
@@ -600,6 +643,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const typeCounts = countPillTypes(pillPool)
     const shapeCounts = countPillShapes(pillPool)
 
+    // Gera quests para ambos jogadores baseados no pool
+    const shapeQuests = {
+      player1: generateShapeQuest(1, shapeCounts),
+      player2: generateShapeQuest(1, shapeCounts),
+    }
+
     const startAction: GameAction = {
       type: 'GAME_START',
       playerId,
@@ -611,6 +660,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillPool,
       typeCounts,
       shapeCounts,
+      shapeQuests,
       round: 1,
       itemSelectionConfirmed: newConfirmed,
       actionHistory: [...state.actionHistory, startAction],

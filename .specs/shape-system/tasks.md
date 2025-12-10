@@ -176,20 +176,20 @@
 
 ### 4.2 Integracao com GameStore
 
-- [ ] TASK-SS-031: Atualizar `initGame()` para gerar quests iniciais
+- [x] TASK-SS-031: Atualizar `initGame()` para gerar quests iniciais
   - Passar shapeCounts para generateShapeQuest()
   - Gerar quest para ambos jogadores
   - Inicializar pillCoins = 0 para ambos
 
-- [ ] TASK-SS-032: Atualizar `confirmItemSelection()` para gerar quests iniciais
+- [x] TASK-SS-032: Atualizar `confirmItemSelection()` para gerar quests iniciais
   - Passar shapeCounts para generateShapeQuest()
 
-- [ ] TASK-SS-033: Atualizar `resetRound()` para gerar novos quests
+- [x] TASK-SS-033: Atualizar `resetRound()` para gerar novos quests
   - Calcular novo shapeCounts do novo pool
   - Passar para generateShapeQuest() de ambos jogadores
   - Novo quest APENAS em nova rodada (nao ao completar)
 
-- [ ] TASK-SS-034: Atualizar `consumePill()` para:
+- [x] TASK-SS-034: Atualizar `consumePill()` para:
   - Chamar `checkQuestProgress()` com shape da pilula consumida
   - Atualizar `shapeQuests[playerId]` com quest atualizado
   - Se completou: +1 Pill Coin ao jogador
