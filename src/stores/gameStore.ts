@@ -310,6 +310,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Toast de feedback do quest (apos pequeno delay para nao sobrepor toast da pilula)
     // Nota: desativado temporariamente para nao sobrepor toast da pilula
+    // Já existe animação de shake quando o quest é resetado + feedback com texto `Reset`
     // if (questWasReset) {
     //   setTimeout(() => {
     //     useToastStore.getState().show({
@@ -322,16 +323,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // }
 
     // Toast de celebracao quando completar quest
-    if (earnedPillCoin) {
-      setTimeout(() => {
-        useToastStore.getState().show({
-          type: 'quest',
-          message: '+1 Pill Coin!',
-          playerId: consumerId,
-          duration: 2000,
-        })
-      }, 800)
-    }
+    // Nota: desativado temporariamente para nao sobrepor toast da pilula
+    // TODO: Implementar uma animação mais polida para representar o ganho de Pill Coin
+    // if (earnedPillCoin) {
+    //   setTimeout(() => {
+    //     useToastStore.getState().show({
+    //       type: 'quest',
+    //       message: '+1 Pill Coin!',
+    //       playerId: consumerId,
+    //       duration: 2000,
+    //     })
+    //   }, 800)
+    // }
 
     // Registra acao
     const consumeAction: GameAction = {
