@@ -10,11 +10,11 @@
 | AI Logic - Selecao | 4 | 4 | 0 |
 | AI Logic - Itens | 4 | 4 | 0 |
 | AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
-| Store | 3 | 1 | 2 |
+| Store | 3 | 3 | 0 |
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **25** | **12** |
+| **TOTAL** | **37** | **27** | **10** |
 
 ---
 
@@ -176,11 +176,11 @@
 - [x] TASK-024: Adicionar campo `difficulty` ao estado inicial do gameStore
   - Valor padrao: 'normal'
 
-- [ ] TASK-025: Atualizar action `initGame()` no gameStore
+- [x] TASK-025: Atualizar action `initGame()` no gameStore
   - Aceitar parametro `difficulty?: DifficultyLevel`
   - Salvar no estado
 
-- [ ] TASK-026: Criar selector `useDifficulty()` no gameStore
+- [x] TASK-026: Criar selector `useDifficulty()` no gameStore
   - Exportar hook para acessar dificuldade atual
 
 ---

@@ -242,6 +242,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       phase: 'itemSelection',
       turnPhase: 'consume',
       currentTurn: 'player1',
+      difficulty: finalConfig.difficulty,
       players: { player1, player2 },
       pillPool,
       typeCounts,
@@ -1821,4 +1822,9 @@ export const usePillPool = () => useGameStore((state) => state.pillPool)
  * Hook para selecionar contagem de tipos
  */
 export const useTypeCounts = () => useGameStore((state) => state.typeCounts)
+
+/**
+ * Hook para selecionar dificuldade atual
+ */
+export const useDifficulty = () => useGameStore((state) => state.difficulty)
 
