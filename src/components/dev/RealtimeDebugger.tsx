@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/8bit/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/8bit/input'
 import { Badge } from '@/components/ui/badge'
-import { realtimeService, type ConnectionStatus } from '@/services/realtimeService'
+import { realtimeService } from '@/services/realtimeService'
+import type { ConnectionStatus } from '@/types'
 
 interface LogEntry {
   id: number
@@ -17,6 +18,7 @@ const STATUS_COLORS: Record<ConnectionStatus, string> = {
   disconnected: 'bg-muted text-muted-foreground',
   connecting: 'bg-yellow-500/20 text-yellow-500',
   connected: 'bg-green-500/20 text-green-500',
+  reconnecting: 'bg-yellow-500/20 text-yellow-500',
   error: 'bg-red-500/20 text-red-500',
   not_configured: 'bg-orange-500/20 text-orange-500',
 }
@@ -25,6 +27,7 @@ const STATUS_LABELS: Record<ConnectionStatus, string> = {
   disconnected: 'Desconectado',
   connecting: 'Conectando...',
   connected: 'Conectado',
+  reconnecting: 'Reconectando...',
   error: 'Erro',
   not_configured: 'Nao Configurado',
 }

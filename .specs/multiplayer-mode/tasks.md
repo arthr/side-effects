@@ -269,14 +269,15 @@
 ---
 
 ### TASK-MP-022: Criar DisconnectedOverlay
-- [ ] Criar `src/components/multiplayer/DisconnectedOverlay.tsx`
-- [ ] Overlay fullscreen com fundo escuro
-- [ ] Mensagem de aguardando reconexao
-- [ ] Countdown de timeout
-- [ ] Botao para encerrar partida
+- [x] Criar `src/components/multiplayer/DisconnectedOverlay.tsx`
+- [x] Overlay fullscreen com fundo escuro
+- [x] Mensagem de aguardando reconexao
+- [x] Countdown de timeout
+- [x] Botao para encerrar partida
 
 **Arquivos:**
-- `src/components/multiplayer/DisconnectedOverlay.tsx` (novo)
+- `src/components/multiplayer/DisconnectedOverlay.tsx` (criado)
+- `src/components/multiplayer/index.ts` (atualizado)
 
 ---
 

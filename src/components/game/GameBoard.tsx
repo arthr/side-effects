@@ -171,12 +171,16 @@ export function GameBoard() {
     }
   }, [isHumanTurn, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect, toast])
 
+  // Modo de jogo
+  const mode = useGameStore((s) => s.mode)
+
   // Hook da IA - joga automaticamente quando e turno dela
   useAIPlayer({
     currentPlayer,
     pillPool,
     phase,
     gamePhase,
+    mode,
     startConsumption,
     executeItem: executeItemForAI,
     opponentId,
