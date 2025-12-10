@@ -870,58 +870,115 @@ export function selectAIInitialItems(
 // Comportamento na Loja
 // ============================================
 
+/** Itens da loja com custos (referencia rapida) */
+const STORE_COSTS = {
+  life_up: 3,           // +1 vida
+  full_resistance: 2,   // Resistencia MAX
+  reveal_start: 2,      // 2 pills reveladas no inicio
+  power_scanner: 2,     // Adiciona Scanner
+  power_shield: 2,      // Adiciona Shield
+  power_pocket_pill: 2, // Adiciona Pocket Pill
+  power_discard: 2,     // Adiciona Discard
+  power_shape_bomb: 3,  // Adiciona Shape Bomb
+  power_shape_scanner: 3, // Adiciona Shape Scanner
+}
+
+/**
+ * Avalia se a IA precisa de algum item da loja E pode pagar
+ * Retorna lista de itens que a IA precisa e pode comprar
+ */
+function evaluateStoreNeeds(ctx: AIDecisionContext): { itemId: string; priority: number }[] {
+  const { aiPlayer, config } = ctx
+  const coins = aiPlayer.pillCoins
+  const needs: { itemId: string; priority: number }[] = []
+
+  const resistPct = aiPlayer.resistance / aiPlayer.maxResistance
+  const hasShield = aiPlayer.inventory.items.some((i) => i.type === 'shield')
+  const hasPocketPill = aiPlayer.inventory.items.some((i) => i.type === 'pocket_pill')
+  const hasScanner = aiPlayer.inventory.items.some((i) => i.type === 'scanner')
+  const inventoryFull = aiPlayer.inventory.items.length >= 5
+
+  // Prioridade 1: 1-Up se vida critica (vida = 1)
+  if (aiPlayer.lives === 1 && coins >= STORE_COSTS.life_up) {
+    needs.push({ itemId: 'life_up', priority: 100 })
+  }
+
+  // Prioridade 2: Reboot se resistencia muito baixa (< 30%)
+  if (resistPct < 0.3 && coins >= STORE_COSTS.full_resistance) {
+    needs.push({ itemId: 'full_resistance', priority: 80 })
+  }
+
+  // Prioridade 3: Shield se nao tem e inventario tem espaco
+  if (!hasShield && !inventoryFull && coins >= STORE_COSTS.power_shield) {
+    needs.push({ itemId: 'power_shield', priority: 70 })
+  }
+
+  // Prioridade 4: Pocket Pill se resistencia baixa e nao tem
+  if (resistPct < 0.5 && !hasPocketPill && !inventoryFull && coins >= STORE_COSTS.power_pocket_pill) {
+    needs.push({ itemId: 'power_pocket_pill', priority: 60 })
+  }
+
+  // Prioridade 5 (Hard/Insane): Scanner-2X para informacao
+  if (config.usesTypeCounts && coins >= STORE_COSTS.reveal_start) {
+    needs.push({ itemId: 'reveal_start', priority: 50 })
+  }
+
+  // Prioridade 6 (Hard/Insane): Scanner se nao tem
+  if (config.usesRevealedPills && !hasScanner && !inventoryFull && coins >= STORE_COSTS.power_scanner) {
+    needs.push({ itemId: 'power_scanner', priority: 40 })
+  }
+
+  return needs.sort((a, b) => b.priority - a.priority)
+}
+
 /**
  * Decide se IA deve sinalizar interesse na loja
+ * Criterios: 1) Precisa de algum item 2) Pode pagar por ele
  */
-export function shouldAIWantStore(difficulty: DifficultyLevel, pillCoins: number): boolean {
-  const config = getAIConfig(difficulty)
-  return pillCoins >= config.storeInterestThreshold
+export function shouldAIWantStore(ctx: AIDecisionContext): boolean {
+  const { config } = ctx
+
+  // Easy nunca quer loja
+  if (!config.usesStoreStrategically) {
+    return false
+  }
+
+  // Avalia se precisa de algo
+  const needs = evaluateStoreNeeds(ctx)
+  return needs.length > 0
 }
 
 /**
  * Seleciona itens para comprar na loja
+ * Usa a mesma logica de avaliacao de necessidades
  */
 export function selectAIStoreItems(
   ctx: AIDecisionContext,
-  availableCoins: number,
   storeItems: StoreItem[]
 ): StoreItem[] {
-  const { config, aiPlayer } = ctx
+  const { config } = ctx
 
   // Easy: nao compra nada
   if (!config.usesStoreStrategically) {
     return []
   }
 
+  // Avalia necessidades priorizadas
+  const needs = evaluateStoreNeeds(ctx)
+
   const cart: StoreItem[] = []
-  let remainingCoins = availableCoins
+  let remainingCoins = ctx.aiPlayer.pillCoins
 
-  // Prioridade 1: 1-Up se vida = 1
-  if (aiPlayer.lives === 1) {
-    const oneUp = storeItems.find((i) => i.id === 'boost_life')
-    if (oneUp && oneUp.cost <= remainingCoins) {
-      cart.push(oneUp)
-      remainingCoins -= oneUp.cost
-    }
-  }
-
-  // Prioridade 2: Scanner-2X
-  const scanner2x = storeItems.find((i) => i.id === 'boost_scanner')
-  if (scanner2x && scanner2x.cost <= remainingCoins) {
-    cart.push(scanner2x)
-    remainingCoins -= scanner2x.cost
-  }
-
-  // Prioridade 3: Shield (se nao tem)
-  const hasShield = aiPlayer.inventory.items.some((i) => i.type === 'shield')
-  if (!hasShield) {
-    const shield = storeItems.find((i) => i.id === 'item_shield')
-    if (shield && shield.cost <= remainingCoins) {
-      cart.push(shield)
-      remainingCoins -= shield.cost
+  // Compra itens em ordem de prioridade
+  for (const need of needs) {
+    const storeItem = storeItems.find((i) => i.id === need.itemId)
+    if (storeItem && storeItem.cost <= remainingCoins) {
+      cart.push(storeItem)
+      remainingCoins -= storeItem.cost
     }
   }
 
   return cart
 }
+
 

@@ -40,15 +40,16 @@ function buildAIStoreContext(): AIDecisionContext {
 
 /**
  * Hook que gerencia comportamento da IA na loja
- * - Auto-toggle wantsStore baseado em coins e dificuldade
+ * - Auto-toggle wantsStore quando IA precisa de algo e pode pagar
  * - Auto-compra na fase shopping
  */
 export function useAIStore() {
   const phase = useGameStore((state) => state.phase)
   const isPlayer2AI = useGameStore((state) => state.players.player2.isAI)
   const player2Coins = useGameStore((state) => state.players.player2.pillCoins)
+  const player2Lives = useGameStore((state) => state.players.player2.lives)
+  const player2Resistance = useGameStore((state) => state.players.player2.resistance)
   const player2WantsStore = useGameStore((state) => state.players.player2.wantsStore)
-  const difficulty = useGameStore((state) => state.difficulty)
 
   // Refs para controle
   const hasToggledRef = useRef(false)
@@ -69,15 +70,15 @@ export function useAIStore() {
     if (hasToggledRef.current) return
     if (player2WantsStore) return // Ja quer ir
 
-    // Verifica se deve querer ir a loja
-    const shouldWant = shouldAIWantStore(difficulty, player2Coins)
+    // Constroi contexto e verifica se deve querer ir a loja
+    const ctx = buildAIStoreContext()
+    const shouldWant = shouldAIWantStore(ctx)
 
     if (shouldWant) {
       hasToggledRef.current = true
-      // Toggle wantsStore
       useGameStore.getState().toggleWantsStore('player2')
     }
-  }, [phase, isPlayer2AI, player2Coins, player2WantsStore, difficulty])
+  }, [phase, isPlayer2AI, player2Coins, player2Lives, player2Resistance, player2WantsStore])
 
   // Auto-compra durante fase shopping
   useEffect(() => {
@@ -103,7 +104,7 @@ export function useAIStore() {
     const ctx = buildAIStoreContext()
     const storeItems = Object.values(STORE_ITEMS)
 
-    const itemsToBuy = selectAIStoreItems(ctx, ctx.aiPlayer.pillCoins, storeItems)
+    const itemsToBuy = selectAIStoreItems(ctx, storeItems)
 
     // Agenda adicao ao carrinho com delays
     let currentDelay = AI_SHOPPING_DELAY
