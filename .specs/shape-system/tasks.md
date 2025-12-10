@@ -342,7 +342,7 @@
 
 ### 5.2 Componente ShapeSelector
 
-- [ ] TASK-SS-045: Criar componente `ShapeSelector.tsx` em `src/components/game/`
+- [x] TASK-SS-045: Criar componente `ShapeSelector.tsx` em `src/components/game/`
   - Lista shapes disponiveis no pool (count > 0)
   - Mostra contagem de cada shape
   - Callback onSelect e onCancel
