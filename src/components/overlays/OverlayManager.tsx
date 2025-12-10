@@ -1,12 +1,14 @@
 import { AnimatePresence } from 'framer-motion'
 import { useOverlayStore } from '@/stores/overlayStore'
 import { useGameStore } from '@/stores/gameStore'
+import { useMultiplayer } from '@/hooks'
 import { PillReveal } from './PillReveal'
 import { GameOverDialog } from './GameOverDialog'
 import { NewRoundOverlay } from './NewRoundOverlay'
 import { ItemEffectOverlay } from './ItemEffectOverlay'
 import { PillStore } from '../game/PillStore'
 import { WaitingForOpponent } from '../game/WaitingForOpponent'
+import type { PlayerId } from '@/types'
 
 /**
  * Gerenciador de Overlays
@@ -29,10 +31,16 @@ export function OverlayManager() {
   // Actions do game store para restart
   const resetGame = useGameStore((s) => s.resetGame)
 
-  // Determina qual jogador humano esta na fase shopping
-  // Para simplificar, assumimos player1 como humano
-  const humanPlayerId = players.player1.isAI ? 'player2' : 'player1'
-  const humanPlayer = players[humanPlayerId]
+  // Contexto multiplayer
+  const { isMultiplayer, localPlayerId } = useMultiplayer()
+
+  // Determina qual jogador local esta na fase shopping
+  // Em multiplayer: usa localPlayerId
+  // Em single player: determina pelo isAI flag
+  const localPlayer: PlayerId = isMultiplayer
+    ? (localPlayerId ?? 'player1')
+    : (players.player1.isAI ? 'player2' : 'player1')
+  const localPlayerData = players[localPlayer]
   const isShoppingPhase = gamePhase === 'shopping'
 
   // Handler para restart que fecha o overlay e reinicia o jogo
@@ -81,15 +89,15 @@ export function OverlayManager() {
       )}
 
       {/* Pill Store - fase shopping */}
-      {isShoppingPhase && humanPlayer.wantsStore && (
+      {isShoppingPhase && localPlayerData.wantsStore && (
         <PillStore
           key="pillStore"
-          playerId={humanPlayerId}
+          playerId={localPlayer}
         />
       )}
 
       {/* Waiting for Opponent - fase shopping quando jogador nao quer loja */}
-      {isShoppingPhase && !humanPlayer.wantsStore && (
+      {isShoppingPhase && !localPlayerData.wantsStore && (
         <WaitingForOpponent key="waitingForOpponent" />
       )}
     </AnimatePresence>

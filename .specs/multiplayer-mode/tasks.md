@@ -359,11 +359,13 @@
 ---
 
 ### TASK-MP-030: Atualizar PillStore
-- [ ] Usar `useMultiplayer` para permissoes
-- [ ] Sincronizar carrinhos via eventos
+- [x] Usar `useMultiplayer` para permissoes (via OverlayManager)
+- [x] Sincronizar carrinhos via eventos (ja implementado em gameStore)
+- [x] Usar `localPlayerId` dinamicamente em vez de logica hardcoded
 
 **Arquivos:**
-- `src/components/game/PillStore.tsx`
+- `src/components/overlays/OverlayManager.tsx` (atualizado - usa localPlayerId)
+- `src/components/game/PillStore.tsx` (sem alteracoes - ja recebia playerId como prop)
 
 ---
 
