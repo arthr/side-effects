@@ -626,18 +626,14 @@ function findPillOfMostCommonShape(
 
 /**
  * Seleciona alvo automatico para o item da IA
- * @param itemType Tipo do item
- * @param pillPool Pool de pilulas
- * @param opponentId ID do oponente
- * @param revealedPills Lista de IDs de pills reveladas (para shape_scanner)
- * @returns ID do alvo ou undefined se nao precisa de alvo
+ * Usa contexto para selecao inteligente em niveis Hard/Insane
  */
 export function selectAIItemTarget(
   itemType: ItemType,
-  pillPool: Pill[],
-  opponentId: string,
-  revealedPills: string[] = []
+  ctx: AIDecisionContext,
+  opponentId: string
 ): string | undefined {
+  const { pillPool, revealedPills, config } = ctx
   const itemDef = ITEM_CATALOG[itemType]
 
   // Casos especiais para itens de shape
@@ -648,7 +644,59 @@ export function selectAIItemTarget(
 
     case 'shape_scanner':
       // Seleciona pill da shape com mais pilulas NAO reveladas (maximiza info)
-      return findPillOfMostCommonShape(pillPool, true, revealedPills) ?? selectRandomPill(pillPool) ?? undefined
+      return (
+        findPillOfMostCommonShape(pillPool, true, revealedPills) ??
+        selectRandomPill(pillPool) ??
+        undefined
+      )
+
+    case 'force_feed':
+      // Hard/Insane: prioriza pilulas perigosas reveladas
+      if (config.usesRevealedPills) {
+        const dangerousPill = pillPool.find(
+          (p) =>
+            revealedPills.includes(p.id) &&
+            (p.type === 'FATAL' || p.type === 'DMG_HIGH' || p.type === 'DMG_LOW')
+        )
+        if (dangerousPill) return dangerousPill.id
+      }
+      // Insane: usar deducao para encontrar pilula provavelmente perigosa
+      if (config.usesDeduction) {
+        const deductions = deduceNonRevealedTypes(ctx)
+        for (const pill of pillPool) {
+          if (revealedPills.includes(pill.id)) continue
+          const possibleTypes = deductions.get(pill.id)
+          // Se so pode ser tipos perigosos, e uma boa escolha
+          if (
+            possibleTypes &&
+            possibleTypes.every((t) => t === 'FATAL' || t === 'DMG_HIGH' || t === 'DMG_LOW')
+          ) {
+            return pill.id
+          }
+        }
+      }
+      return selectRandomPill(pillPool) ?? undefined
+
+    case 'inverter':
+      // Insane: inverter pilula HEAL revelada (transforma em dano)
+      if (config.usesRevealedPills) {
+        const healPill = pillPool.find((p) => revealedPills.includes(p.id) && p.type === 'HEAL')
+        if (healPill) return healPill.id
+      }
+      return selectRandomPill(pillPool) ?? undefined
+
+    case 'double':
+      // Insane: dobrar FATAL revelada (combo com force_feed)
+      if (config.usesRevealedPills) {
+        const fatalPill = pillPool.find((p) => revealedPills.includes(p.id) && p.type === 'FATAL')
+        if (fatalPill) return fatalPill.id
+        // Ou dobrar DMG_HIGH
+        const dmgHighPill = pillPool.find(
+          (p) => revealedPills.includes(p.id) && p.type === 'DMG_HIGH'
+        )
+        if (dmgHighPill) return dmgHighPill.id
+      }
+      return selectRandomPill(pillPool) ?? undefined
   }
 
   // Logica padrao por targetType

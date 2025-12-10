@@ -8,13 +8,13 @@
 | Config | 3 | 3 | 0 |
 | AI Logic - Analise | 4 | 4 | 0 |
 | AI Logic - Selecao | 4 | 4 | 0 |
-| AI Logic - Itens | 4 | 3 | 1 |
+| AI Logic - Itens | 4 | 4 | 0 |
 | AI Logic - Pre-jogo/Loja | 4 | 0 | 4 |
 | Store | 3 | 0 | 3 |
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **19** | **18** |
+| **TOTAL** | **37** | **20** | **17** |
 
 ---
 
@@ -136,7 +136,7 @@
   - Chama `evaluateItem()` para cada item
   - Ordena por score, retorna melhor
 
-- [ ] TASK-019: Implementar `selectAIItemTarget()` atualizado
+- [x] TASK-019: Implementar `selectAIItemTarget()` atualizado
   - Recebe contexto completo
   - Logica mais inteligente: prioriza pilulas deduzidas perigosas para Force Feed
   - Usa deducao para Inverter/Double em nivel Insane
