@@ -6,6 +6,8 @@ import type {
   PillShape,
   PillType,
   Player,
+  PoolRiskAnalysis,
+  PoolRiskLevel,
 } from '@/types'
 import { ITEM_CATALOG } from './itemCatalog'
 
@@ -82,6 +84,44 @@ export function calculateTypeOdds(ctx: AIDecisionContext): Record<PillType, numb
   }
 
   return odds
+}
+
+/**
+ * Analisa nivel de risco do pool atual
+ */
+export function analyzePoolRisk(ctx: AIDecisionContext): PoolRiskAnalysis {
+  const odds = calculateTypeOdds(ctx)
+  const poolSize = ctx.pillPool.length - ctx.revealedPills.length
+
+  const damageOdds = odds.DMG_LOW + odds.DMG_HIGH + odds.FATAL
+  const safeOdds = odds.SAFE + odds.HEAL + odds.LIFE
+
+  // Determina nivel de risco
+  let level: PoolRiskLevel
+  let recommendation: 'attack' | 'defend' | 'neutral'
+
+  // CRITICO: FATAL presente em pool pequeno
+  if (odds.FATAL > 0 && poolSize <= 3) {
+    level = 'critical'
+    recommendation = 'defend'
+  }
+  // ALTO: Maioria e dano
+  else if (damageOdds > 0.5) {
+    level = 'high'
+    recommendation = 'defend'
+  }
+  // BAIXO: Maioria e seguro
+  else if (safeOdds > 0.5) {
+    level = 'low'
+    recommendation = 'attack'
+  }
+  // MEDIO: Equilibrado
+  else {
+    level = 'medium'
+    recommendation = 'neutral'
+  }
+
+  return { level, typeOdds: odds, damageOdds, safeOdds, recommendation }
 }
 
 // ============================================

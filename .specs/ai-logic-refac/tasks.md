@@ -6,7 +6,7 @@
 | :--- | :---: | :---: | :---: |
 | Types | 5 | 5 | 0 |
 | Config | 3 | 3 | 0 |
-| AI Logic - Analise | 4 | 1 | 3 |
+| AI Logic - Analise | 4 | 2 | 2 |
 | AI Logic - Selecao | 4 | 0 | 4 |
 | AI Logic - Itens | 4 | 0 | 4 |
 | AI Logic - Pre-jogo/Loja | 4 | 0 | 4 |
@@ -14,7 +14,7 @@
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **9** | **28** |
+| **TOTAL** | **37** | **10** | **27** |
 
 ---
 
@@ -70,7 +70,7 @@
   - Retorna `Record<PillType, number>` com % de cada tipo no pool nao-revelado
   - Considera pilulas ja reveladas pelo Scanner
 
-- [ ] TASK-009: Implementar `analyzePoolRisk(ctx)` em `aiLogic.ts`
+- [x] TASK-009: Implementar `analyzePoolRisk(ctx)` em `aiLogic.ts`
   - Calcula nivel de risco (CRITICO, ALTO, MEDIO, BAIXO)
   - Usa `calculateTypeOdds()` internamente
   - Retorna `PoolRiskAnalysis` com odds, damageOdds, safeOdds, recomendacao
