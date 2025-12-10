@@ -263,7 +263,7 @@
   - Se sim: inicia phase = 'shopping'
   - Se nao: resetRound() direto
 
-- [ ] TASK-SS-084: Implementar `purchaseStoreItem(playerId, itemId)` no gameStore
+- [x] TASK-SS-084: Implementar `purchaseStoreItem(playerId, itemId)` no gameStore
   - Valida coins e disponibilidade
   - Deduz pillCoins
   - Se power_up: adiciona ao inventario

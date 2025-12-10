@@ -25,7 +25,7 @@ import { countPillShapes } from '@/utils/shapeProgression'
 import { ITEM_CATALOG } from '@/utils/itemCatalog'
 import { POCKET_PILL_HEAL } from '@/utils/itemLogic'
 import { generateShapeQuest, checkQuestProgress } from '@/utils/questGenerator'
-import { DEFAULT_STORE_CONFIG } from '@/utils/storeConfig'
+import { DEFAULT_STORE_CONFIG, getStoreItemById } from '@/utils/storeConfig'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -71,6 +71,7 @@ interface GameStore extends GameState {
   // Actions - Pill Store
   toggleWantsStore: (playerId: PlayerId) => void
   checkAndStartShopping: () => void
+  purchaseStoreItem: (playerId: PlayerId, itemId: string) => void
 
   // Selectors (computed)
   getCurrentPlayer: () => Player
@@ -1211,6 +1212,106 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Ninguem quer ir a loja, proxima rodada direto
       get().resetRound()
     }
+  },
+
+  /**
+   * Compra um item da Pill Store
+   * @param playerId - ID do jogador comprando
+   * @param itemId - ID do item na loja
+   */
+  purchaseStoreItem: (playerId: PlayerId, itemId: string) => {
+    const state = get()
+    const player = state.players[playerId]
+    const storeState = state.storeState
+
+    // Validacao: precisa estar na fase shopping
+    if (state.phase !== 'shopping' || !storeState) {
+      return
+    }
+
+    // Busca item no catalogo
+    const item = getStoreItemById(itemId)
+    if (!item) {
+      useToastStore.getState().show({
+        type: 'quest',
+        message: 'Item nao encontrado!',
+        playerId,
+        duration: 1500,
+      })
+      return
+    }
+
+    // Validacao: coins suficientes
+    if (player.pillCoins < item.cost) {
+      useToastStore.getState().show({
+        type: 'quest',
+        message: 'Pill Coins insuficientes!',
+        playerId,
+        duration: 1500,
+      })
+      return
+    }
+
+    // Validacao: item disponivel para o jogador
+    if (item.isAvailable && !item.isAvailable(player)) {
+      useToastStore.getState().show({
+        type: 'quest',
+        message: 'Item indisponivel!',
+        playerId,
+        duration: 1500,
+      })
+      return
+    }
+
+    // Deduz coins
+    let updatedPlayer = {
+      ...player,
+      pillCoins: player.pillCoins - item.cost,
+    }
+
+    // Aplica efeito conforme tipo
+    let newStoreState = { ...storeState }
+
+    if (item.type === 'power_up' && item.itemType) {
+      // Adiciona item ao inventario
+      const newItem: InventoryItem = {
+        id: uuidv4(),
+        type: item.itemType,
+      }
+      updatedPlayer = {
+        ...updatedPlayer,
+        inventory: {
+          ...updatedPlayer.inventory,
+          items: [...updatedPlayer.inventory.items, newItem],
+        },
+      }
+    } else if (item.type === 'boost' && item.boostType) {
+      // Adiciona boost aos pendentes
+      newStoreState = {
+        ...newStoreState,
+        pendingBoosts: {
+          ...newStoreState.pendingBoosts,
+          [playerId]: [...newStoreState.pendingBoosts[playerId], item.boostType],
+        },
+      }
+    }
+
+    // Atualiza estado
+    set({
+      players: {
+        ...state.players,
+        [playerId]: updatedPlayer,
+      },
+      storeState: newStoreState,
+    })
+
+    // Toast de confirmacao
+    useToastStore.getState().show({
+      type: 'quest',
+      message: `${item.name} comprado!`,
+      playerId,
+      duration: 1500,
+    })
   },
 
   // ============ SELECTORS ============
