@@ -13,6 +13,7 @@ export type {
 
 // Game types
 export type {
+  DifficultyLevel,
   GameAction,
   GameActionType,
   GameConfig,
@@ -21,6 +22,17 @@ export type {
   GameStats,
   TurnPhase,
 } from './game'
+
+export { DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS } from './game'
+
+// AI types
+export type {
+  AIConfig,
+  AIDecisionContext,
+  ItemEvaluation,
+  PoolRiskAnalysis,
+  PoolRiskLevel,
+} from './ai'
 
 // Item types
 export type {

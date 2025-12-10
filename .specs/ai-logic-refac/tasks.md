@@ -4,7 +4,7 @@
 
 | Area | Total | Concluidas | Pendentes |
 | :--- | :---: | :---: | :---: |
-| Types | 5 | 3 | 2 |
+| Types | 5 | 4 | 1 |
 | Config | 3 | 0 | 3 |
 | AI Logic - Analise | 4 | 0 | 4 |
 | AI Logic - Selecao | 4 | 0 | 4 |
@@ -14,7 +14,7 @@
 | Hooks | 4 | 0 | 4 |
 | Components | 3 | 0 | 3 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **3** | **34** |
+| **TOTAL** | **37** | **4** | **33** |
 
 ---
 
@@ -38,7 +38,7 @@
   - Adicionar campo `difficulty: DifficultyLevel`
   - Adicionar `DIFFICULTY_LABELS` e `DIFFICULTY_DESCRIPTIONS`
 
-- [ ] TASK-004: Atualizar barrel export em `types/index.ts`
+- [x] TASK-004: Atualizar barrel export em `types/index.ts`
   - Exportar novos types de `ai.ts`
   - Exportar `DifficultyLevel` e constantes
 
