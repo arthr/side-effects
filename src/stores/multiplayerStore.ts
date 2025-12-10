@@ -211,8 +211,11 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     // Desconecta do realtimeService
     await realtimeService.leave()
 
-    // Reset state
+    // Reset multiplayer state
     get().reset()
+
+    // Reset game state (volta para tela inicial)
+    useGameStore.getState().resetGame()
   },
 
   /**
