@@ -1,4 +1,5 @@
 import type { TargetSelectionState } from './item'
+import type { GameMode } from './multiplayer'
 import type { Pill, PillShape, PillType } from './pill'
 import type { Player, PlayerId } from './player'
 import type { ShapeQuest } from './quest'
@@ -51,6 +52,10 @@ export interface GameState {
   currentTurn: PlayerId
   /** Nivel de dificuldade da IA */
   difficulty: DifficultyLevel
+  /** Modo de jogo atual */
+  mode: GameMode
+  /** ID da sala multiplayer (null se single player) */
+  roomId: string | null
   /** Estado dos jogadores */
   players: Record<PlayerId, Player>
   /** Pilulas disponiveis na mesa */
@@ -129,6 +134,10 @@ export interface GameConfig {
   startingResistance: number
   /** Nivel de dificuldade da IA */
   difficulty: DifficultyLevel
+  /** Modo de jogo */
+  mode: GameMode
+  /** ID da sala multiplayer (apenas multiplayer) */
+  roomId?: string
 }
 
 /**

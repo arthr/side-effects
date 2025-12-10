@@ -63,15 +63,15 @@
 ---
 
 ### TASK-MP-005: Atualizar GameConfig e GameState
-- [ ] Adicionar `mode: GameMode` em `GameConfig`
-- [ ] Adicionar `roomId?: string` em `GameConfig`
-- [ ] Adicionar `mode: GameMode` em `GameState`
-- [ ] Adicionar `roomId: string | null` em `GameState`
-- [ ] Atualizar `DEFAULT_GAME_CONFIG` em constants.ts
+- [x] Adicionar `mode: GameMode` em `GameConfig`
+- [x] Adicionar `roomId?: string` em `GameConfig`
+- [x] Adicionar `mode: GameMode` em `GameState`
+- [x] Adicionar `roomId: string | null` em `GameState`
+- [x] Atualizar `DEFAULT_GAME_CONFIG` em constants.ts
 
 **Arquivos:**
-- `src/types/game.ts`
-- `src/utils/constants.ts`
+- `src/types/game.ts` (atualizado)
+- `src/utils/constants.ts` (atualizado)
 
 ---
 
