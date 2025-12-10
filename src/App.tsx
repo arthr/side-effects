@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/8bit/tooltip'
 import { Button } from '@/components/ui/8bit/button'
@@ -6,11 +7,12 @@ import { useGameActions, useGamePhase, useGameStats, useWinner, usePlayers } fro
 import { InfoPanel } from '@/components/game/InfoPanel'
 import { GameBoard } from '@/components/game/GameBoard'
 import { ItemSelectionScreen } from '@/components/game/ItemSelectionScreen'
+import { DifficultySelect } from '@/components/game/DifficultySelect'
 import { OverlayManager } from '@/components/overlays'
 import { ToastManager } from '@/components/toasts'
 import { useOverlayStore } from '@/stores/overlayStore'
 import { DevPage } from '@/components/dev'
-import { useEffect } from 'react'
+import type { DifficultyLevel } from '@/types'
 
 function GameContent() {
   // State
@@ -18,6 +20,9 @@ function GameContent() {
   const winner = useWinner()
   const stats = useGameStats()
   const { player1, player2 } = usePlayers()
+
+  // Estado local para dificuldade selecionada
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('normal')
 
   // Actions
   const { startGame } = useGameActions()
@@ -41,11 +46,21 @@ function GameContent() {
             Bem-vindo ao Dosed!
           </h2>
           <p className="text-muted-foreground">
-            Escolha uma pílula. Sobreviva. Seja o último!
+            Escolha uma pilula. Sobreviva. Seja o ultimo!
           </p>
         </div>
 
-        <Button size="lg" onClick={() => startGame()} className="px-8">
+        {/* Seletor de dificuldade */}
+        <DifficultySelect
+          value={selectedDifficulty}
+          onChange={setSelectedDifficulty}
+        />
+
+        <Button
+          size="lg"
+          onClick={() => startGame({ difficulty: selectedDifficulty })}
+          className="px-8"
+        >
           Iniciar Partida
         </Button>
 

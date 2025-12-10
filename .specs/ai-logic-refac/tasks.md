@@ -12,9 +12,9 @@
 | AI Logic - Pre-jogo/Loja | 4 | 4 | 0 |
 | Store | 3 | 3 | 0 |
 | Hooks | 4 | 4 | 0 |
-| Components | 3 | 0 | 3 |
+| Components | 3 | 2 | 1 |
 | Integration | 3 | 0 | 3 |
-| **TOTAL** | **37** | **31** | **6** |
+| **TOTAL** | **37** | **33** | **4** |
 
 ---
 
@@ -211,12 +211,12 @@
 
 ## Fase 8: Componentes de UI
 
-- [ ] TASK-031: Criar componente `DifficultySelect.tsx`
+- [x] TASK-031: Criar componente `DifficultySelect.tsx`
   - Select com 4 opcoes
   - Tooltips com descricoes
   - Estilo 8bit consistente
 
-- [ ] TASK-032: Atualizar `App.tsx` - Tela Setup
+- [x] TASK-032: Atualizar `App.tsx` - Tela Setup
   - Adicionar estado local para dificuldade selecionada
   - Renderizar `DifficultySelect` acima do botao
   - Passar dificuldade para `startGame()`
