@@ -246,13 +246,13 @@
 ---
 
 ### TASK-MP-020: Criar RoomCodeDisplay
-- [ ] Criar `src/components/multiplayer/RoomCodeDisplay.tsx`
-- [ ] Exibir codigo formatado (separado em grupos)
-- [ ] Botao de copiar com feedback
-- [ ] Estilo visual destacado
+- [x] ~~Criar `src/components/multiplayer/RoomCodeDisplay.tsx`~~ (incorporado em WaitingRoom)
+- [x] Exibir codigo formatado (separado em grupos)
+- [x] Botao de copiar com feedback
+- [x] Estilo visual destacado
 
 **Arquivos:**
-- `src/components/multiplayer/RoomCodeDisplay.tsx` (novo)
+- Incorporado em `src/components/multiplayer/WaitingRoom.tsx` (TASK-MP-019)
 
 ---
 
