@@ -409,14 +409,15 @@
 ---
 
 ### TASK-MP-034: Tratar saida voluntaria
-- [ ] Botao de sair durante partida
-- [ ] Confirmacao antes de sair
-- [ ] Notificar oponente
-- [ ] Declarar W.O.
+- [x] Botao de sair durante partida (icone discreto no canto)
+- [x] Confirmacao antes de sair (ForfeitDialog)
+- [x] Notificar oponente (via leaveRoom que emite player_left)
+- [x] Declarar W.O. (oponente recebe evento e processa)
 
 **Arquivos:**
-- `src/components/game/GameBoard.tsx`
-- `src/stores/multiplayerStore.ts`
+- `src/components/multiplayer/ForfeitDialog.tsx` (criado)
+- `src/components/multiplayer/index.ts` (atualizado)
+- `src/components/game/GameBoard.tsx` (atualizado - botao + dialog)
 
 ---
 

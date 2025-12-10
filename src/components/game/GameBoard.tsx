@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import { LogOut } from 'lucide-react'
 import { useGameStore } from '@/stores/gameStore'
 import { useOverlayStore } from '@/stores/overlayStore'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
@@ -9,6 +10,8 @@ import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
 import { ItemTargetSelector } from './ItemTargetSelector'
+import { ForfeitDialog } from '@/components/multiplayer'
+import { Button } from '@/components/ui/8bit/button'
 import { ITEM_CATALOG } from '@/utils/itemCatalog'
 import type { ItemType, PlayerId } from '@/types'
 
@@ -57,6 +60,9 @@ export function GameBoard() {
 
   // Multiplayer - verifica se pode interagir
   const { isMultiplayer, isLocalTurn, canInteract } = useMultiplayer()
+
+  // Estado do dialog de saida
+  const [showForfeitDialog, setShowForfeitDialog] = useState(false)
 
   // Em multiplayer, so pode interagir se for turno local
   // Em single player, pode interagir se for turno humano
@@ -247,7 +253,20 @@ export function GameBoard() {
   if (!player1 || !player2) return null
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
+    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto relative">
+      {/* Botao de sair (apenas multiplayer) */}
+      {isMultiplayer && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-0 right-0 text-muted-foreground hover:text-destructive"
+          onClick={() => setShowForfeitDialog(true)}
+          title="Sair da partida"
+        >
+          <LogOut className="size-4" />
+        </Button>
+      )}
+
       {/* Turn Indicator no topo */}
       <TurnIndicator
         currentPlayer={currentPlayer}
@@ -309,6 +328,12 @@ export function GameBoard() {
 
       {/* Overlay de selecao de alvo para itens */}
       <ItemTargetSelector />
+
+      {/* Dialog de confirmacao para sair (multiplayer) */}
+      <ForfeitDialog
+        open={showForfeitDialog}
+        onClose={() => setShowForfeitDialog(false)}
+      />
     </div>
   )
 }

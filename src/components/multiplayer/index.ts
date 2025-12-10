@@ -7,4 +7,5 @@ export { JoinRoomForm } from './JoinRoomForm'
 export { WaitingRoom } from './WaitingRoom'
 export { ConnectionStatus } from './ConnectionStatus'
 export { DisconnectedOverlay } from './DisconnectedOverlay'
+export { ForfeitDialog } from './ForfeitDialog'
 
