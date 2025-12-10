@@ -47,7 +47,9 @@ function buildAIContext(aiPlayerId: PlayerId): AIDecisionContext {
     typeCounts: state.typeCounts,
     shapeCounts: state.shapeCounts,
     aiQuest: state.shapeQuests[aiPlayerId],
+    opponentQuest: state.shapeQuests[opponentId],
     round: state.round,
+    revealAtStart: state.revealAtStart[aiPlayerId],
     config,
   }
 }

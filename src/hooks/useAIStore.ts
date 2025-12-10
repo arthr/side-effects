@@ -16,12 +16,18 @@ const AI_CONFIRM_DELAY = 500
 
 /**
  * Constroi contexto de decisao da IA para a loja
+ *
+ * @limitation Atualmente assume que IA e sempre player2.
+ * Para suporte a multiplayer ou IA flexivel, este hook precisara
+ * receber playerId como parametro.
+ * @see .specs/future/multiplayer-ai.md
  */
 function buildAIStoreContext(): AIDecisionContext {
   const state = useGameStore.getState()
   const difficulty = state.difficulty
   const config = getAIConfig(difficulty)
 
+  // NOTA: Hardcoded player2 como IA - ver @limitation acima
   const aiPlayer = state.players.player2
   const opponent = state.players.player1
 
@@ -33,7 +39,9 @@ function buildAIStoreContext(): AIDecisionContext {
     typeCounts: state.typeCounts,
     shapeCounts: state.shapeCounts,
     aiQuest: state.shapeQuests.player2,
+    opponentQuest: state.shapeQuests.player1,
     round: state.round,
+    revealAtStart: state.revealAtStart.player2,
     config,
   }
 }

@@ -63,8 +63,12 @@ export interface AIDecisionContext {
   shapeCounts: Record<PillShape, number>
   /** Quest atual da IA (se houver) */
   aiQuest: ShapeQuest | null
+  /** Quest do oponente (para decisoes de Shape Bomb) */
+  opponentQuest: ShapeQuest | null
   /** Rodada atual */
   round: number
+  /** Quantidade de pills a revelar no inicio da proxima rodada (Scanner-2X) */
+  revealAtStart: number
   /** Configuracao da IA */
   config: AIConfig
 }

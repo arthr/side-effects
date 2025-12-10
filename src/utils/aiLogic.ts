@@ -276,10 +276,40 @@ function selectSmartPill(ctx: AIDecisionContext): string | null {
   const riskAnalysis = analyzePoolRisk(ctx)
   const deductions = config.usesDeduction ? deduceNonRevealedTypes(ctx) : null
 
-  // Prioridade 1: Shape Quest (Insane only)
-  if (config.prioritizesShapeQuest && aiQuest) {
-    const questPill = findQuestPill(pillPool, aiQuest, revealedPills)
-    if (questPill) return questPill
+  // Prioridade 1: Shape Quest (Hard/Insane) - EVITA PERIGO FATAL
+  if (config.prioritizesShapeQuest && aiQuest && !aiQuest.completed) {
+    const questPillId = findQuestPill(pillPool, aiQuest, revealedPills)
+    if (questPillId) {
+      const pillInfo = pillPool.find((p) => p.id === questPillId)
+
+      // Verifica se e pilula revelada perigosa
+      if (pillInfo && revealedPills.includes(questPillId)) {
+        const isDangerous = pillInfo.type === 'FATAL' || pillInfo.type === 'DMG_HIGH'
+
+        if (isDangerous) {
+          // Verifica se tem Inverter para mitigar (so funciona para DMG, nao FATAL)
+          const hasInverter = ctx.aiPlayer.inventory.items.some((i) => i.type === 'inverter')
+
+          // FATAL sempre causa GameOver potencial - nunca arriscar pelo quest
+          // DMG_HIGH pode causar GameOver se resistencia/vida baixa
+          const wouldCauseGameOver =
+            pillInfo.type === 'FATAL' ||
+            (pillInfo.type === 'DMG_HIGH' &&
+              ctx.aiPlayer.resistance <= 4 &&
+              ctx.aiPlayer.lives <= 1)
+
+          // Se causa GameOver OU nao tem Inverter para mitigar, pula esta pilula
+          if (!wouldCauseGameOver && hasInverter) {
+            return questPillId // Tem Inverter E DMG_HIGH nao mata, pode arriscar
+          }
+          // Else: cai para proxima prioridade
+        } else {
+          return questPillId // Pilula revelada nao-perigosa
+        }
+      } else {
+        return questPillId // Pilula nao revelada - risco aceitavel para quest
+      }
+    }
   }
 
   // Prioridade 2: Pilulas seguras reveladas
@@ -346,11 +376,16 @@ export function selectAIPill(ctx: AIDecisionContext): string | null {
 /**
  * Selecao aleatoria simples de pilula
  * Usado pelo nivel Easy e como fallback para outros niveis
+ *
+ * NOTA: Filtra por pill.isRevealed (pilula consumida), NAO por revealedPills (scanner).
+ * - pill.isRevealed = pilula ja foi consumida e saiu do pool
+ * - revealedPills = pilula teve seu tipo revelado pelo Scanner (ainda no pool)
+ *
  * @param pillPool Array de pilulas disponiveis
  * @returns ID da pilula selecionada ou null se pool vazio
  */
 export function selectRandomPill(pillPool: Pill[]): string | null {
-  // Filtra apenas pilulas nao reveladas
+  // Filtra pilulas ainda nao consumidas (isRevealed indica consumo, nao scanner)
   const availablePills = pillPool.filter((pill) => !pill.isRevealed)
 
   if (availablePills.length === 0) {
@@ -444,7 +479,22 @@ function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluati
   const hasManyPills = pillPool.length >= 4
 
   switch (item.type) {
-    case 'shield':
+    case 'shield': {
+      // Shield protege por uma RODADA inteira - muito valioso
+      // Calcula se dano potencial pode causar morte
+      const potentialFatalDamage =
+        (riskAnalysis?.typeOdds.FATAL ?? 0) > 0 ||
+        (riskAnalysis?.typeOdds.DMG_HIGH ?? 0) > 0.3
+
+      const wouldDieFromDamage = aiPlayer.lives <= 1 && aiPlayer.resistance <= 4
+
+      // Shield MUITO valioso se pode evitar morte
+      if (potentialFatalDamage && wouldDieFromDamage) {
+        contextBonus = 40
+        reason = 'evitar morte potencial - shield critico'
+        break
+      }
+
       // Prioridade MAXIMA se risco critico/alto
       if (riskAnalysis?.level === 'critical') {
         contextBonus = 35
@@ -455,8 +505,13 @@ function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluati
       } else if (isAILowLife) {
         contextBonus = 25
         reason = 'vida critica - protecao maxima'
+      } else if (riskAnalysis?.level === 'low') {
+        // Apenas penaliza levemente se risco REALMENTE baixo
+        contextBonus = -5
+        reason = 'risco baixo - shield menos urgente'
       }
       break
+    }
 
     case 'pocket_pill':
       // Inutil se resistencia cheia - penalidade maxima
@@ -480,16 +535,32 @@ function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluati
       break
 
     case 'scanner':
-    case 'shape_scanner':
-      // Menos valioso se maioria e segura (typeCounts mostra)
-      if (riskAnalysis?.safeOdds && riskAnalysis.safeOdds > 0.6) {
-        contextBonus = 5
-        reason = 'maioria segura - info menos valiosa'
-      } else if (hasManyPills) {
+    case 'shape_scanner': {
+      // Scanner so e util se HA tipos de risco para descobrir
+      const hasRiskyTypes = riskAnalysis && riskAnalysis.damageOdds > 0
+      if (!hasRiskyTypes) {
+        contextBonus = -50
+        reason = 'sem risco no pool - scanner inutil'
+        break
+      }
+
+      // Inutil se pool muito pequeno (pouca info a ganhar)
+      if (pillPool.length <= 2) {
+        contextBonus = -30
+        reason = 'pool muito pequeno - pouca info'
+        break
+      }
+
+      // Valioso se ha risco E muitas pilulas
+      if (hasManyPills) {
         contextBonus = 15
-        reason = 'muitas pilulas - informacao valiosa'
+        reason = 'muitas pilulas com risco - info valiosa'
+      } else {
+        contextBonus = 8
+        reason = 'risco presente - info util'
       }
       break
+    }
 
     case 'force_feed':
       // MUITO valioso se FATAL presente e pool pequeno
@@ -513,20 +584,65 @@ function evaluateItem(item: InventoryItem, ctx: AIDecisionContext): ItemEvaluati
       }
       break
 
-    case 'discard':
+    case 'discard': {
+      // Se so resta 1 pilula, so permite se ha tipos de risco
+      if (pillPool.length <= 1) {
+        const hasRiskRemaining = riskAnalysis && riskAnalysis.damageOdds > 0
+        if (!hasRiskRemaining) {
+          contextBonus = -100
+          reason = 'unica pilula nao e risco - nao descartar'
+          break
+        }
+        // Se ha risco, pode valer a pena remover
+        contextBonus = 15
+        reason = 'remover ultima pilula perigosa'
+        break
+      }
+
       // Valioso se FATAL presente (pode remover ela)
       if (riskAnalysis?.typeOdds.FATAL && riskAnalysis.typeOdds.FATAL > 0) {
         contextBonus = 18
         reason = 'pode remover FATAL do pool'
       }
       break
+    }
 
     case 'shape_bomb': {
       const shapeWithMost = findShapeWithMostPills(pillPool)
-      if (shapeWithMost && shapeWithMost.count >= 3) {
-        contextBonus = 18
-        reason = `eliminar ${shapeWithMost.count} pilulas de uma vez`
+      if (!shapeWithMost) {
+        contextBonus = -100
+        reason = 'nenhuma shape valida'
+        break
       }
+
+      // Minimo 3 pills para usar Shape Bomb (eficiencia)
+      if (shapeWithMost.count < 3) {
+        contextBonus = -20
+        reason = 'poucas pills da shape - ineficiente'
+        break
+      }
+
+      // Verifica se zeraria o pool
+      if (shapeWithMost.count >= pillPool.length) {
+        // Verifica se prejudicaria quest do oponente (bonus!)
+        const { opponentQuest } = ctx
+        if (opponentQuest && !opponentQuest.completed) {
+          const nextQuestShape = opponentQuest.sequence[opponentQuest.progress]
+          if (nextQuestShape === shapeWithMost.shape) {
+            contextBonus = 25
+            reason = 'zerar pool prejudica quest do oponente'
+            break
+          }
+        }
+        // Se nao prejudica quest, evitar zerar pool
+        contextBonus = -100
+        reason = 'zeraria pool sem beneficio'
+        break
+      }
+
+      // Caso normal: bonus por eliminar muitas
+      contextBonus = 18
+      reason = `eliminar ${shapeWithMost.count} pilulas de uma vez`
       break
     }
 
@@ -664,14 +780,25 @@ export function selectAIItemTarget(
       )
 
     case 'force_feed':
-      // Hard/Insane: prioriza pilulas perigosas reveladas
+      // Hard/Insane: prioriza pilulas perigosas reveladas (FATAL > DMG_HIGH > DMG_LOW)
       if (config.usesRevealedPills) {
-        const dangerousPill = pillPool.find(
-          (p) =>
-            revealedPills.includes(p.id) &&
-            (p.type === 'FATAL' || p.type === 'DMG_HIGH' || p.type === 'DMG_LOW')
+        // Prioriza FATAL (morte garantida)
+        const fatalPill = pillPool.find(
+          (p) => revealedPills.includes(p.id) && p.type === 'FATAL'
         )
-        if (dangerousPill) return dangerousPill.id
+        if (fatalPill) return fatalPill.id
+
+        // Depois DMG_HIGH (dano alto)
+        const dmgHighPill = pillPool.find(
+          (p) => revealedPills.includes(p.id) && p.type === 'DMG_HIGH'
+        )
+        if (dmgHighPill) return dmgHighPill.id
+
+        // Por ultimo DMG_LOW (dano baixo)
+        const dmgLowPill = pillPool.find(
+          (p) => revealedPills.includes(p.id) && p.type === 'DMG_LOW'
+        )
+        if (dmgLowPill) return dmgLowPill.id
       }
       // Insane: usar deducao para encontrar pilula provavelmente perigosa
       if (config.usesDeduction) {
@@ -928,9 +1055,17 @@ function evaluateStoreNeeds(ctx: AIDecisionContext): { itemId: string; priority:
     needs.push({ itemId: 'power_pocket_pill', priority: 60 })
   }
 
-  // Prioridade 5 (Hard/Insane): Scanner-2X para informacao
-  if (config.usesTypeCounts && coins >= STORE_COSTS.reveal_start) {
-    needs.push({ itemId: 'reveal_start', priority: 50 })
+  // Scanner-2X: util em rodadas avancadas (mais pilulas perigosas)
+  // Baixa prioridade - resultado imprevisivel, beneficio visto apos uso
+  // Nao compra se ja tem boost pendente para proxima rodada
+  const isAdvancedRound = ctx.round >= 4
+  if (
+    config.usesTypeCounts &&
+    coins >= STORE_COSTS.reveal_start &&
+    isAdvancedRound &&
+    ctx.revealAtStart === 0
+  ) {
+    needs.push({ itemId: 'reveal_start', priority: 30 }) // Baixa prioridade
   }
 
   // Prioridade 6 (Hard/Insane): Scanner se nao tem
