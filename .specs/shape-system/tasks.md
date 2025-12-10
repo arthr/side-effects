@@ -312,7 +312,7 @@
   - "Aguardando oponente fazer compras..."
   - Timer visual
 
-- [ ] TASK-SS-093: Integrar overlays no `Game.tsx` ou `GameBoard.tsx`
+- [x] TASK-SS-093: Integrar overlays no `Game.tsx` ou `GameBoard.tsx`
   - Renderizar PillStore ou WaitingForOpponent em phase 'shopping'
   - PillStore para quem tem `wantsStore === true`
   - WaitingForOpponent para quem tem `wantsStore === false`
