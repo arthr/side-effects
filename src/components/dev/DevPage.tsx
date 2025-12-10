@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/8bit/button'
 import { DistributionSimulator } from './DistributionSimulator'
 import { ShapeDistributionSimulator } from './ShapeDistributionSimulator'
+import { RealtimeDebugger } from './RealtimeDebugger'
 
-type DevTool = 'pills' | 'shapes'
+type DevTool = 'pills' | 'shapes' | 'realtime'
 
 interface NavItem {
   id: DevTool
@@ -22,6 +23,11 @@ const NAV_ITEMS: NavItem[] = [
     id: 'shapes',
     label: 'Shapes Distribution',
     description: 'Simulador de distribuicao de shapes por rodada',
+  },
+  {
+    id: 'realtime',
+    label: 'Realtime Debug',
+    description: 'Debugger para testar conexao multiplayer',
   },
 ]
 
@@ -82,6 +88,7 @@ export function DevPage() {
       <main className="max-w-[1800px] mx-auto p-6">
         {activeTool === 'pills' && <DistributionSimulator />}
         {activeTool === 'shapes' && <ShapeDistributionSimulator />}
+        {activeTool === 'realtime' && <RealtimeDebugger />}
       </main>
     </div>
   )

@@ -1,11 +1,7 @@
 {
   "mcpServers": {
-    "paceui": {
-            "command": "npx",
-            "args": ["-y", "shadcn@canary", "registry:mcp"],
-            "env": {
-                "REGISTRY_URL": "https://ui.paceui.com/r/mcp.json"
-            }
-        }
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp?project_ref=wlylirtsenqcmnuxovbo"
+    }
   }
 }
