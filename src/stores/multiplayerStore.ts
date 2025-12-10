@@ -432,8 +432,69 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       }
 
       case 'player_reconnected': {
-        // Oponente reconectou
+        // Oponente reconectou - reseta flag e envia estado atual para sincronizar
         set({ opponentDisconnected: false })
+
+        // Se somos o host, enviamos estado atual para o guest que reconectou
+        if (state.localRole === 'host') {
+          const gameStore = useGameStore.getState()
+          get().sendEvent({
+            type: 'state_sync',
+            payload: {
+              currentTurn: gameStore.currentTurn,
+              phase: gameStore.phase,
+              pillPool: gameStore.pillPool,
+              players: gameStore.players,
+              round: gameStore.round,
+              revealedPills: gameStore.revealedPills,
+              shapeQuests: gameStore.shapeQuests,
+              typeCounts: gameStore.typeCounts,
+              shapeCounts: gameStore.shapeCounts,
+              storeState: gameStore.storeState,
+            },
+          })
+          console.log('[MultiplayerStore] Host enviou state_sync para guest reconectado')
+        }
+        break
+      }
+
+      case 'state_sync': {
+        // Recebemos estado sincronizado do host - aplicar localmente
+        if (state.localRole === 'guest') {
+          const syncPayload = payload.payload as {
+            currentTurn?: import('@/types').PlayerId
+            phase?: import('@/types').GamePhase
+            pillPool?: import('@/types').Pill[]
+            players?: Record<import('@/types').PlayerId, import('@/types').Player>
+            round?: number
+            revealedPills?: string[]
+            shapeQuests?: Record<import('@/types').PlayerId, import('@/types').ShapeQuest | null>
+            typeCounts?: Record<import('@/types').PillType, number>
+            shapeCounts?: Record<import('@/types').PillShape, number>
+            storeState?: import('@/types').StoreState | null
+          }
+
+          if (syncPayload) {
+            // Aplica estado sincronizado diretamente no gameStore
+            useGameStore.setState({
+              currentTurn: syncPayload.currentTurn,
+              phase: syncPayload.phase,
+              pillPool: syncPayload.pillPool,
+              players: syncPayload.players,
+              round: syncPayload.round,
+              revealedPills: syncPayload.revealedPills,
+              shapeQuests: syncPayload.shapeQuests,
+              typeCounts: syncPayload.typeCounts,
+              shapeCounts: syncPayload.shapeCounts,
+              storeState: syncPayload.storeState,
+            })
+            console.log('[MultiplayerStore] Guest aplicou state_sync do host', {
+              currentTurn: syncPayload.currentTurn,
+              phase: syncPayload.phase,
+              round: syncPayload.round,
+            })
+          }
+        }
         break
       }
 

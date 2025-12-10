@@ -701,6 +701,31 @@ evento `item_used` falhava no Guest porque o ID nao correspondia.
 
 ---
 
+### HOTFIX-MP-010: Sincronizar estado apos reconexao do oponente
+- [x] Adicionar evento `state_sync` ao `GameEventType` em events.ts
+- [x] Criar interface `StateSyncEvent` com payload de estado completo
+- [x] Atualizar union `GameEvent` com novo tipo
+- [x] Modificar handler `player_reconnected` para enviar estado se for host
+- [x] Adicionar handler `state_sync` para guest aplicar estado sincronizado
+
+**Problema resolvido:**
+Apos reconexao do guest, ambos jogadores viam "aguardando oponente" mesmo quando
+era turno de alguem. Isso acontecia porque o guest perdia eventos enquanto estava
+desconectado e o estado de turno ficava dessincronizado.
+
+**Fluxo corrigido:**
+1. Guest desconecta temporariamente
+2. Guest reconecta -> emite `player_reconnected`
+3. Host recebe `player_reconnected` -> envia `state_sync` com estado atual
+4. Guest recebe `state_sync` -> aplica estado (currentTurn, phase, pillPool, etc)
+5. Ambos clientes ficam sincronizados novamente
+
+**Arquivos:**
+- `src/types/events.ts` (state_sync, StateSyncEvent, GameEvent union)
+- `src/stores/multiplayerStore.ts` (handlers player_reconnected, state_sync)
+
+---
+
 ## Ordem de Execucao Recomendada
 
 1. **Infraestrutura:** TASK-MP-001, TASK-MP-002

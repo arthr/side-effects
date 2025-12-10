@@ -22,6 +22,7 @@ export type GameEventType =
   | 'game_ended'
   | 'player_disconnected'
   | 'player_reconnected'
+  | 'state_sync'
 
 /**
  * Evento base com metadados comuns
@@ -256,6 +257,25 @@ export interface PlayerReconnectedEvent extends GameEventBase {
   type: 'player_reconnected'
 }
 
+/**
+ * Evento: sincronizacao de estado (enviado pelo host apos reconexao)
+ */
+export interface StateSyncEvent extends GameEventBase {
+  type: 'state_sync'
+  payload: {
+    currentTurn: import('./player').PlayerId
+    phase: import('./game').GamePhase
+    pillPool: import('./pill').Pill[]
+    players: Record<import('./player').PlayerId, import('./player').Player>
+    round: number
+    revealedPills: string[]
+    shapeQuests: Record<import('./player').PlayerId, import('./quest').ShapeQuest | null>
+    typeCounts: Record<import('./pill').PillType, number>
+    shapeCounts: Record<import('./pill').PillShape, number>
+    storeState: import('./store').StoreState | null
+  }
+}
+
 // ============================================
 // Union de Todos os Eventos
 // ============================================
@@ -281,4 +301,5 @@ export type GameEvent =
   | GameEndedEvent
   | PlayerDisconnectedEvent
   | PlayerReconnectedEvent
+  | StateSyncEvent
 
