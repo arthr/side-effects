@@ -49,6 +49,8 @@ export interface GameState {
   turnPhase: TurnPhase
   /** ID do jogador com o turno atual */
   currentTurn: PlayerId
+  /** Nivel de dificuldade da IA */
+  difficulty: DifficultyLevel
   /** Estado dos jogadores */
   players: Record<PlayerId, Player>
   /** Pilulas disponiveis na mesa */

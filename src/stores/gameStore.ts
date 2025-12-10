@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 import type {
+  DifficultyLevel,
   GameAction,
   GameConfig,
   GameState,
@@ -131,6 +132,7 @@ const initialState: GameState = {
   phase: 'setup',
   turnPhase: 'consume',
   currentTurn: 'player1',
+  difficulty: 'normal' as DifficultyLevel,
   players: {
     player1: createPlayer('player1', 'Player 1', 3, 6, false),
     player2: createPlayer('player2', 'Player 2', 3, 6, true),
