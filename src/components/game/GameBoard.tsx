@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import { LogOut } from 'lucide-react'
 import { useGameStore } from '@/stores/gameStore'
 import { useOverlayStore } from '@/stores/overlayStore'
@@ -40,6 +40,24 @@ export function GameBoard() {
   const lastQuestReset = useGameStore((s) => s.lastQuestReset)
   const toggleWantsStore = useGameStore((s) => s.toggleWantsStore)
 
+  // Multiplayer - verifica se pode interagir
+  const { isMultiplayer, isLocalTurn, canInteract, localPlayerId } = useMultiplayer()
+
+  // Determina perspectiva: jogador local sempre e exibido como "meu" card
+  // Em single player: player1 e sempre o jogador local (humano)
+  // Em multiplayer: localPlayerId determina quem e o jogador local
+  const { localPlayer, remotePlayer, localId, remoteId } = useMemo(() => {
+    const localPid: PlayerId = isMultiplayer && localPlayerId ? localPlayerId : 'player1'
+    const remotePid: PlayerId = localPid === 'player1' ? 'player2' : 'player1'
+    return {
+      localPlayer: players[localPid],
+      remotePlayer: players[remotePid],
+      localId: localPid,
+      remoteId: remotePid,
+    }
+  }, [players, isMultiplayer, localPlayerId])
+
+  // Aliases para compatibilidade com o restante do codigo
   const player1 = players.player1
   const player2 = players.player2
 
@@ -57,9 +75,6 @@ export function GameBoard() {
   const currentPlayer = players[currentTurn]
   const isHumanTurn = !currentPlayer.isAI
   const isRoundEnding = gamePhase === 'roundEnding'
-
-  // Multiplayer - verifica se pode interagir
-  const { isMultiplayer, isLocalTurn, canInteract } = useMultiplayer()
 
   // Estado do dialog de saida
   const [showForfeitDialog, setShowForfeitDialog] = useState(false)
@@ -275,20 +290,21 @@ export function GameBoard() {
         showWaitingForOpponent={isMultiplayer && !isLocalTurn}
       />
 
-      {/* Layout principal: Player1 | Pills | Player2 */}
+      {/* Layout principal: Jogador Local | Pills | Oponente */}
+      {/* A perspectiva e sempre do jogador local - ele ve seu card a esquerda */}
       <div className="flex flex-col-reverse md:grid md:grid-cols-[1fr_3fr_1fr] gap-6 md:items-start">
-        {/* Player 1 - Esquerda (card auto-suficiente) */}
+        {/* Jogador Local - Esquerda (card interativo) */}
         <AnimatedPlayerArea
-          player={player1}
-          isCurrentTurn={currentTurn === 'player1'}
-          animationType={getPlayerAnimation('player1')}
-          effectValue={getEffectValue('player1')}
-          effectType={getEffectType('player1')}
+          player={localPlayer}
+          isCurrentTurn={currentTurn === localId}
+          animationType={getPlayerAnimation(localId)}
+          effectValue={getEffectValue(localId)}
+          effectType={getEffectType(localId)}
           onItemClick={handleItemClick}
           usingItemId={selectedItemId}
-          quest={shapeQuests.player1}
-          questJustReset={isQuestResetRecent('player1')}
-          onToggleStore={() => toggleWantsStore('player1')}
+          quest={shapeQuests[localId]}
+          questJustReset={isQuestResetRecent(localId)}
+          onToggleStore={() => toggleWantsStore(localId)}
         />
 
         {/* Pill Pool - Centro */}
@@ -313,16 +329,16 @@ export function GameBoard() {
           }
         />
 
-        {/* Player 2 - Direita (card auto-suficiente) */}
+        {/* Oponente - Direita (card do adversario) */}
         <AnimatedPlayerArea
-          player={player2}
-          isCurrentTurn={currentTurn === 'player2'}
-          animationType={getPlayerAnimation('player2')}
-          effectValue={getEffectValue('player2')}
-          effectType={getEffectType('player2')}
-          quest={shapeQuests.player2}
-          questJustReset={isQuestResetRecent('player2')}
-          onToggleStore={() => toggleWantsStore('player2')}
+          player={remotePlayer}
+          isCurrentTurn={currentTurn === remoteId}
+          animationType={getPlayerAnimation(remoteId)}
+          effectValue={getEffectValue(remoteId)}
+          effectType={getEffectType(remoteId)}
+          quest={shapeQuests[remoteId]}
+          questJustReset={isQuestResetRecent(remoteId)}
+          onToggleStore={() => toggleWantsStore(remoteId)}
         />
       </div>
 

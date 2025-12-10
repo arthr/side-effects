@@ -326,15 +326,44 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
     switch (eventType) {
       case 'player_joined': {
-        // Guest entrou - atualiza sala (apenas host processa)
+        // Guest entrou - atualiza sala e inicia jogo (apenas host processa)
         if (state.localRole === 'host' && state.room) {
-          const guestName = payload.payload as { guestName: string }
-          set({
-            room: {
-              ...state.room,
-              status: 'ready',
-              guestId: payload.playerId as string,
-              guestName: guestName?.guestName ?? 'Guest',
+          const guestNamePayload = (payload.payload as { guestName?: string }) ?? {}
+          const guestName = guestNamePayload.guestName ?? 'Guest'
+
+          // Atualiza sala
+          const updatedRoom = {
+            ...state.room,
+            status: 'ready' as const,
+            guestId: payload.playerId as string,
+            guestName,
+          }
+
+          set({ room: updatedRoom })
+
+          // Inicia o jogo automaticamente (host gera os dados)
+          const gameStore = useGameStore.getState()
+          gameStore.initGame({
+            mode: 'multiplayer',
+            roomId: state.room.id,
+            player1: { name: state.room.hostName, isAI: false },
+            player2: { name: guestName, isAI: false },
+          })
+
+          // Obtem dados gerados para sincronizar com guest
+          const { pillPool, shapeQuests } = useGameStore.getState()
+
+          // Envia evento game_started COM dados sincronizados
+          get().sendEvent({
+            type: 'game_started',
+            payload: {
+              hostName: state.room.hostName,
+              guestName,
+              // Dados sincronizados para garantir estado identico
+              syncData: {
+                pillPool,
+                shapeQuests,
+              },
             },
           })
         }
@@ -368,8 +397,40 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       }
 
       case 'game_started': {
-        // Jogo iniciado
-        if (state.room) {
+        // Jogo iniciado pelo host - guest sincroniza usando dados recebidos
+        if (state.localRole === 'guest' && state.room) {
+          const startPayload = (payload.payload as {
+            hostName?: string
+            guestName?: string
+            syncData?: {
+              pillPool: unknown[]
+              shapeQuests: Record<string, unknown>
+            }
+          }) ?? {}
+
+          // Atualiza room com dados do host
+          const updatedRoom = {
+            ...state.room,
+            status: 'playing' as const,
+            hostName: startPayload.hostName ?? state.room.hostName,
+          }
+
+          set({ room: updatedRoom })
+
+          // Inicia o jogo localmente COM dados sincronizados do host
+          const gameStore = useGameStore.getState()
+          gameStore.initGame({
+            mode: 'multiplayer',
+            roomId: state.room.id,
+            player1: { name: startPayload.hostName ?? 'Host', isAI: false },
+            player2: { name: startPayload.guestName ?? state.room.guestName ?? 'Guest', isAI: false },
+            // Passa dados sincronizados para garantir estado identico
+            syncData: startPayload.syncData as import('@/types').SyncData | undefined,
+          })
+
+          console.log('[MultiplayerStore] Guest iniciou com dados sincronizados do host')
+        } else if (state.localRole === 'host' && state.room) {
+          // Host tambem atualiza status
           set({
             room: {
               ...state.room,
@@ -404,6 +465,13 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       case 'store_confirmed': {
         // Aplica evento no gameStore
         const gameStore = useGameStore.getState()
+        console.log('[MultiplayerStore] Delegando evento para gameStore:', {
+          eventType,
+          payloadPlayerId: payload.playerId,
+          localPlayerId: state.localPlayerId,
+          currentTurn: gameStore.currentTurn,
+          gamePhase: gameStore.phase,
+        })
         if ('applyRemoteEvent' in gameStore) {
           (gameStore as unknown as { applyRemoteEvent: (event: GameEvent) => void }).applyRemoteEvent(
             payload as unknown as GameEvent

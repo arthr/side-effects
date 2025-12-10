@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/8bit/button'
 import { Input } from '@/components/ui/8bit/input'
 import { useMultiplayer } from '@/hooks'
 import { realtimeService } from '@/services'
+import { validatePlayerName } from '@/lib/utils'
 
 interface JoinRoomFormProps {
   /** Callback quando usuario clica em voltar */
@@ -38,18 +39,9 @@ export function JoinRoomForm({ onBack }: JoinRoomFormProps) {
     const trimmedName = guestName.trim()
     const trimmedCode = roomCode.trim()
 
-    if (!trimmedName) {
-      setErrorMessage('Digite seu nome')
-      return
-    }
-
-    if (trimmedName.length < 2) {
-      setErrorMessage('Nome muito curto (minimo 2 caracteres)')
-      return
-    }
-
-    if (trimmedName.length > 20) {
-      setErrorMessage('Nome muito longo (maximo 20 caracteres)')
+    const nameError = validatePlayerName(trimmedName)
+    if (nameError) {
+      setErrorMessage(nameError)
       return
     }
 

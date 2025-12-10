@@ -20,6 +20,7 @@ export type {
   GamePhase,
   GameState,
   GameStats,
+  SyncData,
   TurnPhase,
 } from './game'
 

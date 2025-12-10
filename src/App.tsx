@@ -47,6 +47,23 @@ function GameContent() {
     return <WaitingRoom onCancel={() => resetMultiplayer()} />
   }
 
+  // Se multiplayer e sala esta em ready (aguardando jogo iniciar)
+  // Isso acontece brevemente enquanto host processa player_joined
+  if (isMultiplayer && room?.status === 'ready' && phase === 'setup') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
+        <div className="animate-pulse text-center">
+          <h2 className="text-xl font-normal text-foreground">
+            Iniciando partida...
+          </h2>
+          <p className="text-muted-foreground text-sm mt-2">
+            Aguarde enquanto o jogo e preparado
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   // Tela inicial - Setup
   if (phase === 'setup') {
     return (

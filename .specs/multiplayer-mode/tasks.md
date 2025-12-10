@@ -558,6 +558,68 @@
 
 ---
 
+## Hotfixes da Revisao
+
+### HOTFIX-MP-001: Corrigir inicio automatico do jogo
+- [x] Adicionar transicao automatica waiting -> itemSelection quando guest entra
+- [x] Host inicia jogo e emite `game_started` apos `player_joined`
+- [x] Guest sincroniza config e inicia jogo ao receber `game_started`
+- [x] Adicionar tela de transicao "Iniciando partida..." em App.tsx
+
+**Arquivos:**
+- `src/stores/multiplayerStore.ts` (handleEvent player_joined e game_started)
+- `src/App.tsx` (tela de transicao para status 'ready')
+
+---
+
+### HOTFIX-MP-002: Extrair validacao de nome (DRY)
+- [x] Criar funcao `validatePlayerName` em `src/lib/utils.ts`
+- [x] Atualizar `CreateRoomForm.tsx` para usar funcao
+- [x] Atualizar `JoinRoomForm.tsx` para usar funcao
+
+**Arquivos:**
+- `src/lib/utils.ts` (nova funcao)
+- `src/components/multiplayer/CreateRoomForm.tsx`
+- `src/components/multiplayer/JoinRoomForm.tsx`
+
+---
+
+### HOTFIX-MP-003: Melhorar tratamento de erros em emitMultiplayerEvent
+- [x] Refatorar funcao para ser sincrona com agendamento async
+- [x] Adicionar tratamento de erro com log detalhado
+
+**Arquivos:**
+- `src/stores/gameStore.ts` (emitMultiplayerEvent)
+
+---
+
+### HOTFIX-MP-004: Sincronizar pillPool e quests entre clientes
+- [x] Adicionar tipo `SyncData` em `src/types/game.ts`
+- [x] Modificar `GameConfig` para aceitar `syncData` opcional
+- [x] Host envia `syncData` (pillPool + shapeQuests) em `game_started`
+- [x] Guest usa `syncData` recebido em `initGame`
+- [x] Adicionar logs de debug para diagnostico de sincronia
+- [x] Corrigir `confirmItemSelection` para NAO regenerar pool (reutiliza existente)
+
+**Arquivos:**
+- `src/types/game.ts` (SyncData, GameConfig)
+- `src/types/index.ts` (export SyncData)
+- `src/stores/gameStore.ts` (initGame com syncData, confirmItemSelection sem regenerar)
+- `src/stores/multiplayerStore.ts` (handleEvent game_started e player_joined)
+
+---
+
+### HOTFIX-MP-005: Corrigir perspectiva de UI para jogador local
+- [x] Jogador local sempre exibido a esquerda (posicao "player1" visual)
+- [x] Oponente sempre exibido a direita (posicao "player2" visual)
+- [x] Usar `localPlayerId` do multiplayerStore para determinar perspectiva
+- [x] Manter compatibilidade com single player (player1 = local)
+
+**Arquivos:**
+- `src/components/game/GameBoard.tsx` (perspectiva local/remote)
+
+---
+
 ## Ordem de Execucao Recomendada
 
 1. **Infraestrutura:** TASK-MP-001, TASK-MP-002

@@ -15,6 +15,7 @@ import type {
   PlayerEffect,
   PlayerEffectType,
   PlayerId,
+  ShapeQuest,
 } from '@/types'
 import { DEFAULT_GAME_CONFIG, ROUND_TRANSITION_DELAY } from '@/utils/constants'
 import { applyPillEffect, applyHeal, createPlayer, hasPlayerEffect } from '@/utils/gameLogic'
@@ -65,24 +66,33 @@ interface MultiplayerEventEmit {
  * Emite evento para multiplayer se aplicavel
  * Verifica modo e flag de sync antes de emitir
  * Usa import dinamico para evitar dependencia circular
+ * Funcao sincrona que agenda emissao - erros sao logados mas nao propagados
  */
-async function emitMultiplayerEvent(
+function emitMultiplayerEvent(
   mode: string,
   event: MultiplayerEventEmit
-): Promise<void> {
+): void {
   // Nao emite se nao for multiplayer ou se estiver sincronizando de fonte remota
   if (mode !== 'multiplayer' || isSyncingFromRemote) {
     return
   }
 
   // Import dinamico para evitar dependencia circular
-  const { useMultiplayerStore } = await import('@/stores/multiplayerStore')
-  const multiplayerStore = useMultiplayerStore.getState()
-
-  multiplayerStore.sendEvent({
-    type: event.type as Parameters<typeof multiplayerStore.sendEvent>[0]['type'],
-    payload: event.payload,
-  })
+  // Agenda emissao de forma assincrona com tratamento de erro
+  import('@/stores/multiplayerStore')
+    .then(({ useMultiplayerStore }) => {
+      const multiplayerStore = useMultiplayerStore.getState()
+      multiplayerStore.sendEvent({
+        type: event.type as Parameters<typeof multiplayerStore.sendEvent>[0]['type'],
+        payload: event.payload,
+      })
+    })
+    .catch((err) => {
+      console.error('[GameStore] Erro ao emitir evento multiplayer:', err, {
+        type: event.type,
+        payload: event.payload,
+      })
+    })
 }
 
 /**
@@ -260,6 +270,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Inicializa um novo jogo com configuracao
+   * Em multiplayer, o guest recebe syncData do host para garantir estado identico
    */
   initGame: (config?: Partial<GameConfig>) => {
     const finalConfig = { ...DEFAULT_GAME_CONFIG, ...config }
@@ -280,17 +291,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
       finalConfig.player2.isAI
     )
 
-    // Quantidade dinamica baseada na rodada (usa POOL_SCALING)
-    const pillPool = generatePillPool(1)
+    // Em multiplayer com syncData (guest), usa dados do host
+    // Caso contrario (host ou single player), gera localmente
+    let pillPool: Pill[]
+    let shapeQuests: Record<PlayerId, ShapeQuest | null>
+
+    if (finalConfig.syncData) {
+      // Guest: usa dados sincronizados do host
+      pillPool = finalConfig.syncData.pillPool
+      shapeQuests = finalConfig.syncData.shapeQuests
+      console.log('[GameStore] Usando dados sincronizados do host')
+    } else {
+      // Host ou single player: gera localmente
+      pillPool = generatePillPool(1)
+      const shapeCounts = countPillShapes(pillPool)
+      shapeQuests = {
+        player1: generateShapeQuest(1, shapeCounts),
+        player2: generateShapeQuest(1, shapeCounts),
+      }
+    }
 
     const typeCounts = countPillTypes(pillPool)
     const shapeCounts = countPillShapes(pillPool)
-
-    // Gera quests para ambos jogadores baseados no pool
-    const shapeQuests = {
-      player1: generateShapeQuest(1, shapeCounts),
-      player2: generateShapeQuest(1, shapeCounts),
-    }
 
     const startAction: GameAction = {
       type: 'GAME_START',
@@ -799,16 +821,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
-    // Ambos confirmaram - gera pilulas e inicia o jogo (rodada 1)
-    const pillPool = generatePillPool(1)
-    const typeCounts = countPillTypes(pillPool)
-    const shapeCounts = countPillShapes(pillPool)
-
-    // Gera quests para ambos jogadores baseados no pool
-    const shapeQuests = {
-      player1: generateShapeQuest(1, shapeCounts),
-      player2: generateShapeQuest(1, shapeCounts),
-    }
+    // Ambos confirmaram - inicia o jogo (rodada 1)
+    // Em multiplayer, o pool e quests ja foram sincronizados via initGame/syncData
+    // Em single player, tambem ja foram gerados no initGame
+    // Apenas reutiliza os dados existentes!
 
     const startAction: GameAction = {
       type: 'GAME_START',
@@ -818,10 +834,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       phase: 'playing',
-      pillPool,
-      typeCounts,
-      shapeCounts,
-      shapeQuests,
       round: 1,
       itemSelectionConfirmed: newConfirmed,
       actionHistory: [...state.actionHistory, startAction],
@@ -1889,10 +1901,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     setSyncingFromRemote(true)
 
+    console.log('[GameStore] applyRemoteEvent:', {
+      eventType: event.type,
+      eventPlayerId: event.playerId,
+      currentTurn: state.currentTurn,
+      phase: state.phase,
+      pillPoolLength: state.pillPool.length,
+    })
+
     try {
       switch (event.type) {
         case 'pill_consumed': {
           const payload = event.payload as { pillId: string; forcedTarget?: PlayerId }
+
+          console.log('[GameStore] pill_consumed payload:', payload)
 
           // Valida turno e pilula
           if (!validateTurn()) break

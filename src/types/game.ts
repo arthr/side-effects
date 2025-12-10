@@ -115,6 +115,17 @@ export interface GameAction {
 }
 
 /**
+ * Dados sincronizados do host para guest em multiplayer
+ * Garante que ambos clientes tenham exatamente o mesmo estado inicial
+ */
+export interface SyncData {
+  /** Pool de pilulas gerado pelo host */
+  pillPool: Pill[]
+  /** Quests de shape geradas pelo host */
+  shapeQuests: Record<PlayerId, ShapeQuest | null>
+}
+
+/**
  * Configuracao inicial do jogo
  */
 export interface GameConfig {
@@ -138,6 +149,8 @@ export interface GameConfig {
   mode: GameMode
   /** ID da sala multiplayer (apenas multiplayer) */
   roomId?: string
+  /** Dados sincronizados do host (apenas guest em multiplayer) */
+  syncData?: SyncData
 }
 
 /**
