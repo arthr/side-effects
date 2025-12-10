@@ -74,6 +74,7 @@ interface GameStore extends GameState {
   purchaseStoreItem: (playerId: PlayerId, itemId: string) => void
   confirmStorePurchases: (playerId: PlayerId) => void
   checkShoppingComplete: () => void
+  applyPendingBoosts: () => void
 
   // Selectors (computed)
   getCurrentPlayer: () => Player
@@ -1395,9 +1396,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (p1Done && p2Done) {
       // Todos confirmaram - aplica boosts e inicia nova rodada
-      // applyPendingBoosts sera implementado na proxima task
+      get().applyPendingBoosts()
       get().resetRound()
     }
+  },
+
+  /**
+   * Aplica os boosts pendentes comprados na loja
+   * Chamado antes de resetRound quando shopping termina
+   */
+  applyPendingBoosts: () => {
+    const state = get()
+    const { storeState, players } = state
+
+    if (!storeState) {
+      return
+    }
+
+    const newPlayers = { ...players }
+
+    // Aplica boosts para cada jogador
+    for (const playerId of ['player1', 'player2'] as PlayerId[]) {
+      const boosts = storeState.pendingBoosts[playerId]
+      let player = newPlayers[playerId]
+
+      for (const boost of boosts) {
+        switch (boost) {
+          case 'life_up':
+            // +1 vida (max MAX_LIVES do GAME_LIMITS)
+            player = {
+              ...player,
+              lives: Math.min(player.lives + 1, player.maxLives),
+            }
+            break
+
+          case 'full_resistance':
+            // Resistencia MAX
+            player = {
+              ...player,
+              resistance: player.maxResistance,
+            }
+            break
+
+          case 'reveal_start':
+            // Flag para revelar pills no inicio da rodada
+            // Sera tratado em resetRound (via revealAtStart)
+            // Por enquanto, apenas registramos - a implementacao
+            // do revealAtStart sera feita na proxima task
+            break
+        }
+      }
+
+      // Reseta wantsStore para proxima rodada
+      player = {
+        ...player,
+        wantsStore: false,
+      }
+
+      newPlayers[playerId] = player
+    }
+
+    // Atualiza jogadores e limpa storeState
+    set({
+      players: newPlayers,
+      storeState: null,
+    })
   },
 
   // ============ SELECTORS ============

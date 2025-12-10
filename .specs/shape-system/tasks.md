@@ -278,7 +278,7 @@
   - Verifica se todos que precisam confirmar ja confirmaram
   - Chama applyPendingBoosts() e resetRound()
 
-- [ ] TASK-SS-087: Implementar `applyPendingBoosts()` no gameStore
+- [x] TASK-SS-087: Implementar `applyPendingBoosts()` no gameStore
   - Aplica life_up, full_resistance
   - Marca flag para reveal_start na proxima rodada
   - Reseta `wantsStore = false` para ambos jogadores
