@@ -10,6 +10,7 @@ const MAX_INVENTORY_ITEMS = 5
  */
 export const STORE_ITEMS: StoreItem[] = [
   // ============ BOOSTS (efeitos imediatos na proxima rodada) ============
+  // Boosts sao nao-stackable (limite de 1 por carrinho)
 
   {
     id: 'life_up',
@@ -20,6 +21,7 @@ export const STORE_ITEMS: StoreItem[] = [
     icon: Heart,
     boostType: 'life_up',
     isAvailable: (player) => player.lives < GAME_LIMITS.MAX_LIVES,
+    stackable: false,
   },
   {
     id: 'full_resistance',
@@ -30,6 +32,7 @@ export const STORE_ITEMS: StoreItem[] = [
     icon: Shield,
     boostType: 'full_resistance',
     isAvailable: (player) => player.resistance < player.maxResistance,
+    stackable: false,
   },
   {
     id: 'reveal_start',
@@ -39,6 +42,7 @@ export const STORE_ITEMS: StoreItem[] = [
     cost: 2,
     icon: Scan,
     boostType: 'reveal_start',
+    stackable: false,
   },
 
   // ============ POWER-UPS (adiciona ao inventario) ============

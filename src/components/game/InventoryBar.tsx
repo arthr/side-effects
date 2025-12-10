@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import type { InventoryItem } from '@/types'
+import type { InventoryItem, ItemType } from '@/types'
 import { InventorySlot } from './InventorySlot'
 
 interface InventoryBarProps {
@@ -13,6 +13,43 @@ interface InventoryBarProps {
   disabled?: boolean
   /** Callback ao clicar em um item */
   onItemClick?: (itemId: string) => void
+}
+
+/** Representa um grupo de itens do mesmo tipo */
+interface GroupedItem {
+  /** Primeiro item do grupo (usado para ID e referencia) */
+  item: InventoryItem
+  /** Tipo do item */
+  type: ItemType
+  /** Quantidade total deste tipo */
+  count: number
+  /** IDs de todos os itens neste grupo */
+  ids: string[]
+}
+
+/**
+ * Agrupa itens do mesmo tipo para exibicao compacta
+ * Mantém a ordem de primeira aparicao de cada tipo
+ */
+function groupItemsByType(items: InventoryItem[]): GroupedItem[] {
+  const groups = new Map<ItemType, GroupedItem>()
+  
+  for (const item of items) {
+    const existing = groups.get(item.type)
+    if (existing) {
+      existing.count++
+      existing.ids.push(item.id)
+    } else {
+      groups.set(item.type, {
+        item,
+        type: item.type,
+        count: 1,
+        ids: [item.id],
+      })
+    }
+  }
+  
+  return Array.from(groups.values())
 }
 
 /**
@@ -63,6 +100,7 @@ const slotWrapperVariants = {
 /**
  * Barra horizontal de inventario
  * Exibe os itens do jogador durante a partida
+ * Itens do mesmo tipo sao agrupados com contador
  */
 export function InventoryBar({
   items,
@@ -71,10 +109,13 @@ export function InventoryBar({
   disabled = false,
   onItemClick,
 }: InventoryBarProps) {
-  // Cria array de slots (preenchidos + vazios)
-  const slots: (InventoryItem | undefined)[] = []
+  // Agrupa itens do mesmo tipo
+  const groupedItems = groupItemsByType(items)
+  
+  // Cria array de slots (grupos + vazios)
+  const slots: (GroupedItem | undefined)[] = []
   for (let i = 0; i < maxSlots; i++) {
-    slots.push(items[i])
+    slots.push(groupedItems[i])
   }
 
   return (
@@ -85,23 +126,33 @@ export function InventoryBar({
       animate="animate"
     >
       <AnimatePresence mode="popLayout">
-        {slots.map((item, index) => (
-          <motion.div
-            key={item?.id ?? `empty-${index}`}
-            layout
-            variants={slotWrapperVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <InventorySlot
-              item={item}
-              disabled={disabled || !item}
-              isUsing={item?.id === usingItemId}
-              onClick={item && onItemClick ? () => onItemClick(item.id) : undefined}
-            />
-          </motion.div>
-        ))}
+        {slots.map((group, index) => {
+          // Verifica se algum item do grupo esta sendo usado
+          const isUsingGroup = group?.ids.includes(usingItemId ?? '') ?? false
+          
+          return (
+            <motion.div
+              key={group?.type ?? `empty-${index}`}
+              layout
+              variants={slotWrapperVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <InventorySlot
+                item={group?.item}
+                count={group?.count}
+                disabled={disabled || !group}
+                isUsing={isUsingGroup}
+                onClick={
+                  group && onItemClick
+                    ? () => onItemClick(group.item.id)
+                    : undefined
+                }
+              />
+            </motion.div>
+          )
+        })}
       </AnimatePresence>
     </motion.div>
   )

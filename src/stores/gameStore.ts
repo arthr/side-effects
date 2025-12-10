@@ -1338,6 +1338,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const currentCart = storeState.cart[playerId]
     const cartTotal = currentCart.reduce((sum, ci) => sum + ci.cost, 0)
 
+    // Validacao: item nao-stackable ja esta no carrinho
+    const isStackable = item.stackable ?? true
+    if (!isStackable) {
+      const alreadyInCart = currentCart.some((ci) => ci.storeItemId === itemId)
+      if (alreadyInCart) {
+        useToastStore.getState().show({
+          type: 'quest',
+          message: 'Limite de 1 por compra!',
+          playerId,
+          duration: 1500,
+        })
+        return
+      }
+    }
+
     // Validacao: coins suficientes para carrinho + novo item
     if (player.pillCoins < cartTotal + item.cost) {
       useToastStore.getState().show({
@@ -1514,7 +1529,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (totalCost > 0) {
       useToastStore.getState().show({
         type: 'quest',
-        message: `Compra finalizada! -${totalCost} Pill Coins`,
+        message: `-${totalCost} Pill Coins`,
         playerId,
         duration: 2000,
       })

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Plus, Minus, Check } from 'lucide-react'
+import { Plus, Minus, Check, Lock } from 'lucide-react'
 import type { StoreItem } from '@/types'
 import { ItemIcon } from './ItemIcon'
 import dosedPill from '/dosed_pill.svg'
@@ -24,9 +24,10 @@ interface StoreItemCardProps {
  * Exibe icone, nome, descricao, custo e controles de carrinho
  * 
  * Sistema de carrinho:
- * - Click no card adiciona ao carrinho
+ * - Click no card adiciona ao carrinho (se stackable ou nao esta no carrinho)
  * - Botao "-" remove do carrinho
- * - Badge mostra quantidade no carrinho
+ * - Badge mostra quantidade no carrinho (ou "Adicionado" para nao-stackable)
+ * - Itens nao-stackable: limite de 1 por carrinho
  */
 export function StoreItemCard({
   item,
@@ -38,12 +39,19 @@ export function StoreItemCard({
 }: StoreItemCardProps) {
   const Icon = item.icon
   const isInCart = inCartCount > 0
-  const canAdd = isAvailable && canAfford
+  const isStackable = item.stackable ?? true
+  
+  // Itens nao-stackable que ja estao no carrinho nao podem adicionar mais
+  const isNonStackableInCart = !isStackable && isInCart
+  const canAdd = isAvailable && canAfford && !isNonStackableInCart
 
   // Determina estilo baseado no estado
   const getStateClasses = () => {
     if (!isAvailable) {
       return 'opacity-40 cursor-not-allowed bg-muted/20'
+    }
+    if (isNonStackableInCart) {
+      return 'cursor-default bg-emerald-500/10 border-emerald-500/50'
     }
     if (!canAfford && !isInCart) {
       return 'opacity-60 cursor-not-allowed bg-muted/30'
@@ -95,14 +103,26 @@ export function StoreItemCard({
       </div>
 
       {/* Badge de indisponivel */}
-      {!isAvailable && (
+      {!isAvailable && !isInCart && (
         <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-medium uppercase bg-red-500/30 text-red-400">
           Indisponivel
         </div>
       )}
 
-      {/* Badge de quantidade no carrinho */}
-      {isInCart && (
+      {/* Badge para item nao-stackable adicionado */}
+      {isNonStackableInCart && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute top-1 right-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/30 text-emerald-400"
+        >
+          <Check size={10} />
+          <span className="text-[9px] font-medium">Adicionado</span>
+        </motion.div>
+      )}
+
+      {/* Badge de quantidade no carrinho (apenas para stackable) */}
+      {isInCart && isStackable && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -120,6 +140,7 @@ export function StoreItemCard({
           ${item.type === 'boost' ? 'bg-emerald-500/10' : 'bg-blue-500/10'}
           ${!isAvailable ? 'grayscale opacity-50' : ''}
           ${isInCart ? 'ring-2 ring-amber-500/50' : ''}
+          ${isNonStackableInCart ? 'ring-emerald-500/50' : ''}
         `}
       >
         {/* Power-ups com itemType usam ItemIcon (imagens), boosts usam icone Lucide */}
@@ -171,8 +192,8 @@ export function StoreItemCard({
           </span>
         </div>
 
-        {/* Botao adicionar (se disponivel) */}
-        {canAdd && (
+        {/* Botao adicionar (se disponivel e stackable ou nao no carrinho) */}
+        {isAvailable && canAfford && !isNonStackableInCart && (
           <motion.button
             type="button"
             initial={{ scale: 0 }}
@@ -182,6 +203,18 @@ export function StoreItemCard({
           >
             <Plus size={12} />
           </motion.button>
+        )}
+
+        {/* Indicador de limite atingido para nao-stackable */}
+        {isNonStackableInCart && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="p-1 rounded-full bg-muted/50 text-muted-foreground"
+            title="Limite de 1 por compra"
+          >
+            <Lock size={12} />
+          </motion.div>
         )}
       </div>
     </motion.div>

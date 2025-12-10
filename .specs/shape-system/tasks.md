@@ -488,6 +488,65 @@
 
 ---
 
+## Fase 8: Stackable e Agrupamento de Inventario
+
+> **CONTEXTO:** Durante testes manuais, identificou-se que jogadores podiam comprar
+> multiplas unidades de boosts de uso unico (life_up, full_resistance, reveal_start),
+> o que nao fazia sentido. Tambem foi solicitado melhor visualizacao de itens duplicados no inventario.
+
+### 8.1 Sistema de Itens Stackable
+
+- [x] TASK-SS-095: Adicionar campo `stackable?: boolean` ao tipo `StoreItem`
+  - Default: true (stackable)
+  - Boosts de uso unico: false
+
+- [x] TASK-SS-096: Configurar boosts como nao-stackable em `storeConfig.ts`
+  - `life_up`: stackable: false
+  - `full_resistance`: stackable: false
+  - `reveal_start`: stackable: false
+
+- [x] TASK-SS-097: Validar stackable em `addToCart` no `gameStore.ts`
+  - Se item nao-stackable ja esta no carrinho: bloqueia + toast
+  - Mensagem: "Limite de 1 por compra!"
+
+- [x] TASK-SS-098: Atualizar UI do `StoreItemCard.tsx` para nao-stackable
+  - Badge "Adicionado" (verde) ao inves de quantidade (Nx)
+  - Desabilitar botao + quando nao-stackable ja no carrinho
+  - Icone de cadeado (Lock) no lugar do botao +
+  - Fundo e borda verde ao inves de amber
+
+### 8.2 Agrupamento de Inventario
+
+- [x] TASK-SS-099: Criar funcao `groupItemsByType` no `InventoryBar.tsx`
+  - Agrupa itens do mesmo `ItemType`
+  - Retorna array de `GroupedItem` com count e ids
+
+- [x] TASK-SS-100: Atualizar `InventorySlot.tsx` para aceitar prop `count`
+  - Badge de quantidade no canto superior direito
+  - Exibido apenas quando count > 1
+  - Background primary, texto bold
+
+- [x] TASK-SS-101: Modificar `InventoryBar.tsx` para usar agrupamento
+  - Substitui iteracao individual por iteracao de grupos
+  - Passa count para InventorySlot
+  - Verifica isUsing considerando todos IDs do grupo
+
+### 8.3 Documentacao
+
+- [x] TASK-SS-102: Atualizar `requirements.md` com secoes 5.3.2 e 5.3.3
+  - Itens Stackable vs Nao-Stackable
+  - Agrupamento de Itens no Inventario
+  - Criterios de aceitacao
+
+- [x] TASK-SS-103: Atualizar `design.md` com detalhes de implementacao
+  - Campo stackable no StoreItem
+  - Validacao em addToCart
+  - Componentes de UI modificados
+
+- [x] TASK-SS-104: Adicionar tasks ao `tasks.md` (esta secao)
+
+---
+
 ## Resumo de Arquivos
 
 ### Novos Arquivos
@@ -515,16 +574,21 @@
 | `src/types/game.ts` | shapeCounts, shapeQuests, storeState, novas phases |
 | `src/types/player.ts` | pillCoins, wantsStore |
 | `src/types/item.ts` | shape_bomb, shape_scanner |
+| `src/types/store.ts` | Campo stackable no StoreItem |
 | `src/types/index.ts` | Exportar novos tipos |
 | `src/utils/constants.ts` | SHAPE_CLASSES, SHAPE_CLIP_PATHS, SHAPE_LABELS |
 | `src/utils/pillGenerator.ts` | generatePillPool() usa shapeProgression, createPillWithShape() |
 | `src/utils/itemCatalog.ts` | Novos itens (shape_bomb, shape_scanner com targetType: pill) |
+| `src/utils/storeConfig.ts` | Boosts marcados como nao-stackable |
 | `src/utils/aiLogic.ts` | selectAIItemTarget para shape items (seleciona pill da shape desejada) |
-| `src/stores/gameStore.ts` | Estado, quests, pillCoins, store actions, logica shape items |
+| `src/stores/gameStore.ts` | Estado, quests, pillCoins, store actions, validacao stackable |
 | `src/components/game/Pill.tsx` | Renderizacao de shapes |
 | `src/components/game/AnimatedPlayerArea.tsx` | ShapeQuestDisplay, Pill Coins |
 | `src/components/game/Game.tsx` | Renderizar overlays da loja |
 | `src/components/game/ItemTargetSelector.tsx` | Instrucoes para shape items |
+| `src/components/game/StoreItemCard.tsx` | UI para itens nao-stackable (badge, lock) |
+| `src/components/game/InventoryBar.tsx` | Agrupamento de itens por tipo |
+| `src/components/game/InventorySlot.tsx` | Badge de quantidade (count > 1) |
 
 ---
 
@@ -550,6 +614,9 @@ Fase 5 (Itens de Shape) - Expansao
      |
      v
 Fase 6 (Testes) - Validacao
+     |
+     v
+Fase 8 (Stackable/Agrupamento) - UX
      |
      v
 Fase 7 (Polish) - Refinamento

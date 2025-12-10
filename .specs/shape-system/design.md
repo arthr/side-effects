@@ -161,6 +161,12 @@ export interface StoreItem {
   boostType?: BoostType
   /** Condicao para estar disponivel */
   isAvailable?: (player: Player) => boolean
+  /** 
+   * Se o item pode ser adicionado multiplas vezes ao carrinho
+   * Default: true (stackable)
+   * Boosts de uso unico devem ser false
+   */
+  stackable?: boolean
 }
 
 /**
@@ -802,6 +808,7 @@ checkAndStartShopping: () => {
 
 /**
  * Adiciona item ao carrinho de compras (NAO debita coins)
+ * Respeita regra de stackable: itens nao-stackable limitados a 1 por carrinho
  */
 addToCart: (playerId: PlayerId, itemId: string) => {
   const state = get()
@@ -811,8 +818,20 @@ addToCart: (playerId: PlayerId, itemId: string) => {
   
   if (!item || !storeState) return
   
+  const currentCart = storeState.cart[playerId]
+  
+  // Validacao: item nao-stackable ja esta no carrinho
+  const isStackable = item.stackable ?? true
+  if (!isStackable) {
+    const alreadyInCart = currentCart.some((ci) => ci.storeItemId === itemId)
+    if (alreadyInCart) {
+      toast('Limite de 1 por compra!')
+      return
+    }
+  }
+  
   // Calcula total do carrinho + novo item
-  const cartTotal = storeState.cart[playerId].reduce((sum, ci) => sum + ci.cost, 0)
+  const cartTotal = currentCart.reduce((sum, ci) => sum + ci.cost, 0)
   if (player.pillCoins < cartTotal + item.cost) return
   if (item.isAvailable && !item.isAvailable(player)) return
   
@@ -822,7 +841,7 @@ addToCart: (playerId: PlayerId, itemId: string) => {
       ...storeState,
       cart: {
         ...storeState.cart,
-        [playerId]: [...storeState.cart[playerId], { storeItemId: itemId, cost: item.cost }],
+        [playerId]: [...currentCart, { storeItemId: itemId, cost: item.cost }],
       },
     },
   })
@@ -1626,6 +1645,71 @@ describe('shapeProgression', () => {
     })
   })
 })
+```
+
+---
+
+## Componentes de UI Modificados
+
+### InventoryBar (Agrupamento de Itens)
+
+**Arquivo:** `src/components/game/InventoryBar.tsx`
+
+O componente foi modificado para agrupar itens do mesmo tipo, exibindo um contador ao inves de multiplos slots.
+
+```typescript
+/** Representa um grupo de itens do mesmo tipo */
+interface GroupedItem {
+  /** Primeiro item do grupo (usado para ID e referencia) */
+  item: InventoryItem
+  /** Tipo do item */
+  type: ItemType
+  /** Quantidade total deste tipo */
+  count: number
+  /** IDs de todos os itens neste grupo */
+  ids: string[]
+}
+
+/**
+ * Agrupa itens do mesmo tipo para exibicao compacta
+ * Mantém a ordem de primeira aparicao de cada tipo
+ */
+function groupItemsByType(items: InventoryItem[]): GroupedItem[]
+```
+
+### InventorySlot (Contador de Quantidade)
+
+**Arquivo:** `src/components/game/InventorySlot.tsx`
+
+Props adicionadas:
+
+```typescript
+interface InventorySlotProps {
+  // ... props existentes ...
+  /** Quantidade de itens deste tipo (para agrupamento) */
+  count?: number
+}
+```
+
+Badge de quantidade exibido quando `count > 1`:
+- Posicionado no canto superior direito
+- Background: `bg-primary`
+- Texto: quantidade em fonte bold
+
+### StoreItemCard (Itens Nao-Stackable)
+
+**Arquivo:** `src/components/game/StoreItemCard.tsx`
+
+Modificacoes para suportar itens nao-stackable:
+
+```typescript
+const isStackable = item.stackable ?? true
+const isNonStackableInCart = !isStackable && isInCart
+
+// UI diferenciada:
+// - Badge "Adicionado" (verde) ao inves de quantidade
+// - Icone de cadeado no lugar do botao +
+// - Fundo verde ao inves de amber
 ```
 
 ---

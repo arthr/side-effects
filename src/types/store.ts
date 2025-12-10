@@ -37,6 +37,12 @@ export interface StoreItem {
   boostType?: BoostType
   /** Condicao para estar disponivel (opcional) */
   isAvailable?: (player: Player) => boolean
+  /** 
+   * Se o item pode ser adicionado multiplas vezes ao carrinho.
+   * Default: true (stackable)
+   * Boosts de uso unico devem ser false
+   */
+  stackable?: boolean
 }
 
 /**

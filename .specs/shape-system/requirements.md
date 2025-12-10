@@ -349,6 +349,80 @@ function onPillConsumed(player: Player, pill: Pill) {
 - Nao permite adicionar se item indisponivel (inventario cheio, etc)
 - Considera itens do carrinho ao validar disponibilidade
 
+#### 5.3.2 Itens Stackable vs Nao-Stackable
+
+> **NOVO:** Sistema para controlar quais itens podem ser comprados em multiplas unidades.
+
+**Conceito:**
+- **Stackable:** Itens que podem ser adicionados multiplas vezes ao carrinho
+- **Nao-Stackable:** Itens limitados a 1 unidade por carrinho (uso unico por rodada)
+
+**Configuracao:**
+```typescript
+interface StoreItem {
+  // ... outros campos ...
+  stackable?: boolean  // Default: true
+}
+```
+
+**Itens Nao-Stackable (stackable: false):**
+
+| ID | Nome | Motivo |
+| :--- | :--- | :--- |
+| `life_up` | 1-Up | Efeito de uso unico |
+| `full_resistance` | Reboot | Efeito de uso unico |
+| `reveal_start` | Scanner-2X | Efeito de uso unico |
+
+**Itens Stackable (stackable: true ou omitido):**
+- Todos os Power-Ups (Scanner, Shield, Pocket Pill, Discard, Shape Bomb, Shape Scanner)
+
+**Comportamento na UI:**
+- **Nao-Stackable no carrinho:** Badge "Adicionado" (verde), botao + desabilitado, icone de cadeado
+- **Stackable no carrinho:** Badge "Nx" (amber), botoes +/- disponiveis
+
+**Validacao em addToCart:**
+1. Verifica se item e stackable (`item.stackable ?? true`)
+2. Se nao-stackable e ja no carrinho: bloqueia + toast "Limite de 1 por compra!"
+
+#### 5.3.3 Agrupamento de Itens no Inventario
+
+> **NOVO:** Sistema para agrupar itens do mesmo tipo com contador visual.
+
+**Conceito:**
+Itens do mesmo tipo no inventario sao agrupados em um unico slot com badge de quantidade.
+
+**Antes:**
+```
+[Scanner] [Scanner] [Shield] [___] [___]
+```
+
+**Depois:**
+```
+[Scanner (2)] [Shield] [___] [___] [___]
+```
+
+**Beneficios:**
+- UI mais limpa e organizada
+- Melhor aproveitamento de slots visuais
+- Facilita identificacao de quantidade
+
+**Implementacao:**
+- `InventoryBar`: agrupa itens por `ItemType` antes de renderizar
+- `InventorySlot`: aceita prop `count` para exibir badge de quantidade
+- Badge exibido apenas quando `count > 1`
+- Tooltip atualizado para mostrar quantidade
+
+**Criterios de Aceitacao:**
+- [x] Campo `stackable` no tipo `StoreItem`
+- [x] Boosts (life_up, full_resistance, reveal_start) configurados como nao-stackable
+- [x] `addToCart` impede duplicatas de itens nao-stackable
+- [x] Toast de feedback ao tentar duplicar item nao-stackable
+- [x] UI mostra "Adicionado" para itens nao-stackable no carrinho
+- [x] Icone de cadeado quando nao-stackable ja adicionado
+- [x] InventoryBar agrupa itens do mesmo tipo
+- [x] InventorySlot exibe badge de quantidade quando count > 1
+- [x] Tooltip mostra quantidade de itens agrupados
+
 #### 5.4 Itens da Loja
 
 **Tipos de Itens:**

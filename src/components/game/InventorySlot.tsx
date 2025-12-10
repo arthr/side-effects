@@ -11,6 +11,8 @@ import {
 interface InventorySlotProps {
   /** Item no slot (undefined = vazio) */
   item?: InventoryItem
+  /** Quantidade de itens deste tipo (para agrupamento) */
+  count?: number
   /** Se o slot esta desabilitado */
   disabled?: boolean
   /** Se o item esta sendo usado (highlight) */
@@ -73,9 +75,11 @@ const slotVariants = {
 /**
  * Slot individual do inventario
  * Exibe um item ou um espaco vazio
+ * Suporta agrupamento com contador para multiplos itens do mesmo tipo
  */
 export function InventorySlot({
   item,
+  count = 1,
   disabled = false,
   isUsing = false,
   onClick,
@@ -114,7 +118,7 @@ export function InventorySlot({
           onClick={onClick}
           disabled={disabled}
           className={`
-            w-10 h-10 rounded-md
+            relative w-10 h-10 rounded-md
             flex items-center justify-center
             border-2 transition-colors duration-200
             focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
@@ -134,14 +138,37 @@ export function InventorySlot({
           exit="exit"
           whileHover={!disabled ? { scale: 1.15 } : undefined}
           whileTap={!disabled ? { scale: 0.9 } : undefined}
-          aria-label={`${itemDef.name}: ${itemDef.description}`}
+          aria-label={`${itemDef.name}${count > 1 ? ` (x${count})` : ''}: ${itemDef.description}`}
         >
           <ItemIcon type={item.type} size={34} />
+          
+          {/* Badge de quantidade para itens agrupados */}
+          {count > 1 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="
+                absolute -bottom-1 -right-1
+                min-w-[16px] h-4 px-1
+                flex items-center justify-center
+                bg-primary text-primary-foreground
+                text-[8px] font-normal rounded-full
+                shadow-sm
+              "
+            >
+              x{count}
+            </motion.span>
+          )}
         </motion.button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-52">
         <div className="space-y-1">
-          <p className="font-normal text-sm">{itemDef.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-normal text-sm">{itemDef.name}</p>
+            {count > 1 && (
+              <span className="text-xs text-primary font-medium">x{count}</span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">{itemDef.description}</p>
           <p className="text-[10px] text-primary/80 uppercase tracking-wider">
             {CATEGORY_LABELS[itemDef.category]}
