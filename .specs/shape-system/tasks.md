@@ -344,7 +344,7 @@
 
 ### 5.2 Logica dos Itens
 
-- [ ] TASK-SS-048: Implementar logica de `SHAPE_BOMB` em `gameStore.executeItem()`
+- [x] TASK-SS-048: Implementar logica de `SHAPE_BOMB` em `gameStore.executeItem()`
   - Jogador seleciona uma pill (sistema existente)
   - Extrai shape da pill selecionada
   - Remove TODAS pilulas dessa shape do pool

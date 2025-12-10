@@ -982,6 +982,47 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         break
       }
+
+      case 'shape_bomb': {
+        // Shape Bomb: remove TODAS pilulas da mesma shape da pill selecionada
+        if (targetId) {
+          const targetPill = state.pillPool.find((p) => p.id === targetId)
+          if (!targetPill) break
+
+          const targetShape = targetPill.visuals.shape
+          const removedCount = state.pillPool.filter((p) => p.visuals.shape === targetShape).length
+          const newPillPool = state.pillPool.filter((p) => p.visuals.shape !== targetShape)
+          const newTypeCounts = countPillTypes(newPillPool)
+          const newShapeCounts = countPillShapes(newPillPool)
+
+          newState.pillPool = newPillPool
+          newState.typeCounts = newTypeCounts
+          newState.shapeCounts = newShapeCounts
+
+          // Remove pills dessa shape da lista de reveladas
+          const removedPillIds = state.pillPool
+            .filter((p) => p.visuals.shape === targetShape)
+            .map((p) => p.id)
+          newState.revealedPills = state.revealedPills.filter((id) => !removedPillIds.includes(id))
+
+          // Toast com feedback
+          const toastStore = useToastStore.getState()
+          toastStore.show({
+            message: `Shape Bomb! ${removedCount} pilulas eliminadas`,
+            type: 'item',
+            playerId: currentPlayerId,
+          })
+
+          // Verifica se pool esvaziou - inicia transicao de rodada
+          if (newPillPool.length === 0) {
+            newState.phase = 'roundEnding'
+            setTimeout(() => {
+              get().checkAndStartShopping()
+            }, ROUND_TRANSITION_DELAY)
+          }
+        }
+        break
+      }
     }
 
     set(newState)
