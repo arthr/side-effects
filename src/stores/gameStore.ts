@@ -624,15 +624,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Passa para o proximo turno manualmente
+   * @delegate gameFlowStore.nextTurn
    */
   nextTurn: () => {
     const state = get()
     if (state.phase !== 'playing') return
 
-    const nextTurn: PlayerId =
-      state.currentTurn === 'player1' ? 'player2' : 'player1'
+    // Delega para gameFlowStore (usa getNextTurn que suporta N jogadores)
+    const alivePlayers = Object.keys(state.players).filter(
+      (id) => state.players[id as PlayerId].lives > 0
+    ) as PlayerId[]
+    const nextPlayer = useGameFlowStore.getState().nextTurn(alivePlayers)
 
-    set({ currentTurn: nextTurn })
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
+    set({ currentTurn: nextPlayer })
   },
 
   /**
@@ -750,10 +755,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Finaliza o jogo com um vencedor
+   * @delegate gameFlowStore.endGame
    */
   endGame: (winnerId: PlayerId) => {
-    const state = get()
+    // Delega para gameFlowStore
+    useGameFlowStore.getState().endGame(winnerId)
 
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
+    const state = get()
     const endAction: GameAction = {
       type: 'GAME_END',
       playerId: winnerId,
@@ -780,8 +789,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Inicia a fase de selecao de itens
+   * @delegate gameFlowStore.startItemSelection
    */
   startItemSelectionPhase: () => {
+    // Delega para gameFlowStore
+    useGameFlowStore.getState().startItemSelection()
+
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
     set({ phase: 'itemSelection' })
   },
 

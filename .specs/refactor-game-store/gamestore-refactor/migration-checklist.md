@@ -15,7 +15,7 @@ Este checklist deve ser seguido na ordem. Apos cada item, rodar testes.
 
 ## Batch 1: Delegacao Simples (Baixo Risco)
 
-**Status:** EM PROGRESSO - 15/22 funcoes delegadas
+**Status:** CONCLUIDO - 15/22 funcoes delegadas (7 NAO DELEGAR ou MOVIDAS)
 
 ### 1.1 Revealed Pills -> pillPoolStore
 
@@ -54,20 +54,19 @@ Este checklist deve ser seguido na ordem. Apos cada item, rodar testes.
 
 ### 1.6 Shop Basico -> shopStore
 
-- [ ] `addToCart` - ADIADO (logica complexa de validacao)
-- [ ] `removeFromCart` - ADIADO (logica complexa)
-- [ ] `purchaseStoreItem` - ADIADO
-- [ ] **Movido para Batch 2**
+- [~] `addToCart` - MOVIDO para Batch 2.3 (Shopping Flow)
+- [~] `removeFromCart` - MOVIDO para Batch 2.3 (Shopping Flow)
+- [~] `purchaseStoreItem` - MOVIDO para Batch 2.3 (Shopping Flow)
 
 ### 1.7 Player Basico -> playerStore
 
-- [ ] `toggleWantsStore` - ADIADO (logica de validacao + multiplayer)
-- [ ] `removeItemFromInventory` - NAO DELEGAR (playerStore nao inicializado durante jogo)
-- [ ] `selectItem` - NAO DELEGAR (playerStore nao inicializado durante itemSelection)
-- [ ] `deselectItem` - NAO DELEGAR (playerStore nao inicializado durante itemSelection)
-- [x] **CORRECAO:** Removida delegacao prematura que quebrava selecao de itens
+- [~] `toggleWantsStore` - MOVIDO para Batch 2.3 (Shopping Flow)
+- [x] `removeItemFromInventory` - NAO DELEGAR (playerStore nao inicializado durante jogo)
+- [x] `selectItem` - NAO DELEGAR (playerStore nao inicializado durante itemSelection)
+- [x] `deselectItem` - NAO DELEGAR (playerStore nao inicializado durante itemSelection)
+- [x] **DECISAO:** Funcoes de itemSelection permanecem no gameStore (playerStore nao inicializado)
 
-**Checkpoint Batch 1:** 224 testes passando. Teste manual pendente.
+**Checkpoint Batch 1:** CONCLUIDO - 224 testes passando.
 
 ---
 
@@ -75,16 +74,10 @@ Este checklist deve ser seguido na ordem. Apos cada item, rodar testes.
 
 ### 2.1 Game Flow -> gameFlowStore
 
-- [ ] `nextTurn` (linha 623)
-  ```typescript
-  nextTurn: () => {
-    const alivePlayers = usePlayerStore.getState().getAlivePlayerIds()
-    useGameFlowStore.getState().nextTurn(alivePlayers)
-  }
-  ```
-- [ ] `endGame` (linha 749)
-- [ ] `startItemSelectionPhase` (linha 779)
-- [ ] **TESTE:** `pnpm tsc --noEmit && pnpm test`
+- [x] `nextTurn` (linha 628) - delegado com DUAL-WRITE
+- [x] `endGame` (linha 754) - delegado com DUAL-WRITE
+- [x] `startItemSelectionPhase` (linha 784) - delegado com DUAL-WRITE
+- [x] **TESTE:** 224 testes passando
 
 ### 2.2 Item Selection Confirm -> itemUsageStore + gameFlowStore
 
