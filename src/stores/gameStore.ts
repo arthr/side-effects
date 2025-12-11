@@ -103,7 +103,7 @@ interface GameStore extends GameState {
   consumePill: (pillId: string, options?: { forcedTarget?: PlayerId }) => void
   revealPillById: (pillId: string) => void
   nextTurn: () => void
-  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null> }) => void
+  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => void
   endGame: (winnerId: PlayerId) => void
   resetGame: () => void
 
@@ -648,7 +648,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Em multiplayer, apenas host gera dados e emite evento para sincronizar
    * @param syncData - Dados sincronizados (apenas guest em multiplayer)
    */
-  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null> }) => {
+  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => {
     const state = get()
     // Aceita tanto 'playing' quanto 'roundEnding' quanto 'shopping'
     if (state.phase !== 'playing' && state.phase !== 'roundEnding' && state.phase !== 'shopping') return
@@ -679,10 +679,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Caso contrario (host ou single player), gera localmente
     let newPillPool: Pill[]
     let newShapeQuests: Record<PlayerId, ShapeQuest | null>
+    let pillsToReveal: string[] = []
 
     if (syncData) {
+      // Guest: usa dados recebidos do host
       newPillPool = syncData.pillPool
       newShapeQuests = syncData.shapeQuests
+      pillsToReveal = syncData.pillsToReveal || []
     } else {
       // Host ou single player: gera localmente
       newPillPool = generatePillPool(newRound)
@@ -690,6 +693,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newShapeQuests = {
         player1: generateShapeQuest(newRound, newShapeCounts),
         player2: generateShapeQuest(newRound, newShapeCounts),
+      }
+
+      // Calcula pills a revelar ANTES de emitir evento (para sincronizar)
+      const { revealAtStart } = state
+      const totalToReveal = revealAtStart.player1 + revealAtStart.player2
+
+      if (totalToReveal > 0 && newPillPool.length > 0) {
+        // Seleciona pills aleatorias para revelar
+        const shuffledPillIds = shuffleArray(newPillPool.map((p) => p.id))
+        const revealCount = Math.min(totalToReveal, shuffledPillIds.length)
+        for (let i = 0; i < revealCount; i++) {
+          pillsToReveal.push(shuffledPillIds[i])
+        }
       }
 
       // Em multiplayer (host), emite evento para sincronizar com guest
@@ -701,6 +717,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             syncData: {
               pillPool: newPillPool,
               shapeQuests: newShapeQuests,
+              pillsToReveal, // Inclui pills a revelar para sincronizar
             },
           },
         })
@@ -709,24 +726,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
-
-    usePillPoolStore.getState().setPool(newPillPool)
-
-    // Aplica revealAtStart - revela pills automaticamente para quem comprou Scanner-2X
-    const { revealAtStart } = state
-    const pillsToReveal: string[] = []
-
-    // Calcula total de pills a revelar (soma de ambos jogadores)
-    const totalToReveal = revealAtStart.player1 + revealAtStart.player2
-
-    if (totalToReveal > 0 && newPillPool.length > 0) {
-      // Seleciona pills aleatorias para revelar
-      const shuffledPillIds = shuffleArray(newPillPool.map((p) => p.id))
-      const revealCount = Math.min(totalToReveal, shuffledPillIds.length)
-      for (let i = 0; i < revealCount; i++) {
-        pillsToReveal.push(shuffledPillIds[i])
-      }
-    }
 
     usePillPoolStore.getState().clearRevealedPills()
     pillsToReveal.forEach((pillId) => {

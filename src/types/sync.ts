@@ -48,3 +48,16 @@ export interface EmitOptions {
   onError?: (error: Error) => void
 }
 
+/**
+ * Dados de sincronizacao para resetRound
+ * Usado para garantir consistencia entre host e guest
+ */
+export interface RoundResetSyncData {
+  /** Pool de pilulas da nova rodada */
+  pillPool: unknown[]
+  /** Shape quests de cada jogador */
+  shapeQuests: Record<string, unknown>
+  /** IDs das pilulas a revelar (Scanner-2X) */
+  pillsToReveal?: string[]
+}
+

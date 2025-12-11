@@ -670,6 +670,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             syncData?: {
               pillPool: unknown[]
               shapeQuests: Record<string, unknown>
+              pillsToReveal?: string[]
             }
           }) ?? {}
 
@@ -678,6 +679,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             gameStore.resetRound(resetPayload.syncData as {
               pillPool: import('@/types').Pill[]
               shapeQuests: Record<import('@/types').PlayerId, import('@/types').ShapeQuest | null>
+              pillsToReveal?: string[]
             })
             console.log('[MultiplayerStore] Guest aplicou round_reset com dados do host')
           }
