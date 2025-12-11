@@ -104,7 +104,7 @@ confirmed: { player1: false, player2: false }
 
 ### Fase 2: Migracao (Funcoes Puras para Utils)
 
-- [ ] **2.1** Criar `utils/turnManager.ts` (funcoes puras):
+- [x] **2.1** Criar `utils/turnManager.ts` (funcoes puras):
   ```typescript
   /** Retorna proximo jogador na rotacao */
   export function getNextTurn(

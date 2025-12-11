@@ -18,6 +18,21 @@ import shapeCoin from '@/assets/shapes/shape_14.png'
 import shapeGem from '@/assets/shapes/shape_15.png'
 import shapeDomino from '@/assets/shapes/shape_16.png'
 
+
+/**
+ * Limites do jogo
+ */
+export const GAME_LIMITS = {
+  MIN_LIVES: 1,
+  MAX_LIVES: 5,
+  MIN_RESISTANCE: 3,
+  MAX_RESISTANCE: 10,
+  MIN_PILLS_PER_ROUND: 4,
+  MAX_PILLS_PER_ROUND: 12,
+  MIN_PLAYERS: 2,
+  MAX_ROOM_PLAYERS: 4,
+} as const
+
 /**
  * Configuracao padrao do jogo
  */
@@ -214,20 +229,6 @@ export const SHAPE_LABELS: Record<PillShape, string> = {
   pineapple: 'Abacaxi',
   fruit: 'Fruta',
 }
-
-/**
- * Limites do jogo
- */
-export const GAME_LIMITS = {
-  MIN_LIVES: 1,
-  MAX_LIVES: 5,
-  MIN_RESISTANCE: 3,
-  MAX_RESISTANCE: 10,
-  MIN_PILLS_PER_ROUND: 4,
-  MAX_PILLS_PER_ROUND: 12,
-  MIN_PLAYERS: 2,
-  MAX_ROOM_PLAYERS: 4,
-} as const
 
 /**
  * Cores para barra de resistencia baseado em porcentagem
