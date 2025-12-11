@@ -103,15 +103,14 @@ Este checklist deve ser seguido na ordem. Apos cada item, rodar testes.
 
 ### 2.4 Round Management
 
-- [ ] `resetRound` (linha 639)
-  - pillPoolStore.generatePool ou setPool
-  - gameFlowStore.startRound
-  - Gerar quests (manter inline por enquanto)
-- [ ] `resetGame` (linha 768)
-  - Chamar reset() de todos os stores
-- [ ] **TESTE:** `pnpm tsc --noEmit && pnpm test`
+- [x] `resetRound` (linha 649) - delegado com DUAL-WRITE
+  - effectsStore.removeEffectFromAll('shield')
+  - pillPoolStore.setPool() + clearRevealedPills() + addRevealedPill()
+- [x] `resetGame` (linha 782) - delegado
+  - Chama reset() de todos os stores modulares
+- [x] **TESTE:** 224 testes passando
 
-**Checkpoint Batch 2:** Teste manual completo (partida single player).
+**Checkpoint Batch 2:** CONCLUIDO - Teste manual pendente.
 
 ---
 

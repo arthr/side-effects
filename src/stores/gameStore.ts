@@ -645,6 +645,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Em multiplayer, apenas host gera dados e emite evento para sincronizar
    * Guest deve chamar com syncData recebido via evento round_reset
    * @param syncData - Dados sincronizados (apenas guest em multiplayer)
+   * @delegate effectsStore.removeEffectFromAll + pillPoolStore.setPool
    */
   resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null> }) => {
     const state = get()
@@ -658,10 +659,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
-    // Remove efeitos de Shield (duram apenas 1 rodada) e reseta wantsStore
-    // DUAL-WRITE: Remove shield de ambos os jogadores no effectsStore
+    // Delega para effectsStore
     useEffectsStore.getState().removeEffectFromAll('shield')
 
+    // DUAL-WRITE: Sync local state
     const player1Updated: Player = {
       ...player1,
       effects: player1.effects.filter((e) => e.type !== 'shield'),
@@ -712,6 +713,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
 
+    // Delega para pillPoolStore
+    usePillPoolStore.getState().setPool(newPillPool)
+
     // Aplica revealAtStart - revela pills automaticamente para quem comprou Scanner-2X
     const { revealAtStart } = state
     const pillsToReveal: string[] = []
@@ -728,6 +732,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
+    // Delega revealed pills para pillPoolStore
+    usePillPoolStore.getState().clearRevealedPills()
+    pillsToReveal.forEach((pillId) => {
+      usePillPoolStore.getState().addRevealedPill(pillId)
+    })
+
     const roundAction: GameAction = {
       type: 'NEW_ROUND',
       playerId: state.currentTurn,
@@ -735,6 +745,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       payload: { round: newRound },
     }
 
+    // DUAL-WRITE: Sync local state
     set({
       phase: 'playing', // Volta para playing
       pillPool: newPillPool,
@@ -778,10 +789,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Reseta o jogo para o estado inicial
+   * @delegate Todos os stores modulares
    */
   resetGame: () => {
-    // Reseta effectsStore junto com o gameStore
+    // Reseta todos os stores modulares
     useEffectsStore.getState().reset()
+    useShopStore.getState().reset()
+    usePillPoolStore.getState().reset()
+    useItemUsageStore.getState().reset()
+    useGameFlowStore.getState().reset()
+
+    // Reseta estado local
     set(initialState)
   },
 
