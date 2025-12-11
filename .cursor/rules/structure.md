@@ -27,7 +27,21 @@ src/
 │
 ├── hooks/                        # Custom hooks (useGameActions, usePillConsumption, useAIPlayer, useItem*, useAIStore, useStoreTimer)
 │
-├── stores/                       # Zustand stores (gameStore, toastStore, overlayStore)
+├── stores/                       # Zustand stores
+│   ├── gameStore.ts              # Store principal (orquestracao)
+│   ├── toastStore.ts             # Fila de notificacoes
+│   ├── overlayStore.ts           # Stack de overlays
+│   ├── multiplayerStore.ts       # Estado de conexao multiplayer
+│   ├── game/                     # Stores modulares do jogo (refactor em andamento)
+│   │   ├── effectsStore.ts       # Efeitos de jogador (shield, handcuffs)
+│   │   ├── shopStore.ts          # Pill Store, carrinho, boosts
+│   │   ├── pillPoolStore.ts      # Pool de pilulas (TODO)
+│   │   ├── inventoryStore.ts     # Itens e selecao (TODO)
+│   │   ├── playerStore.ts        # Vidas, resistencia (TODO)
+│   │   ├── gameFlowStore.ts      # Fases, turnos, rodadas (TODO)
+│   │   └── index.ts              # Barrel export
+│   └── multiplayer/              # Stores de multiplayer
+│       └── index.ts              # Barrel export
 │
 ├── types/                        # TypeScript types
 │   ├── game.ts                   # GameState, GamePhase, GameConfig, DifficultyLevel
@@ -39,18 +53,27 @@ src/
 │   ├── store.ts                  # StoreState, StoreItem, CartItem, BoostType
 │   └── index.ts                  # Barrel export
 │
-├── utils/                        # Funções utilitárias
+├── utils/                        # Funcoes utilitarias (PURAS, sem side effects)
 │   ├── constants.ts              # Constantes do jogo, cores, labels, shapes
-│   ├── pillGenerator.ts          # Geração de pool de pílulas
-│   ├── pillProgression.ts        # Progressão de tipos e quantidade por rodada
-│   ├── shapeProgression.ts       # Progressão de shapes ATIVAS/SAZONAIS
-│   ├── gameLogic.ts              # Lógica de efeitos e colapso
-│   ├── aiLogic.ts                # Lógica de decisão da IA (refatorado)
-│   ├── aiConfig.ts               # Configurações de IA por dificuldade
-│   ├── itemCatalog.ts            # Catálogo de itens/power-ups
-│   ├── itemLogic.ts              # Lógica de efeitos de itens
-│   ├── questGenerator.ts         # Geração e validação de Shape Quests
-│   └── storeConfig.ts            # Configuração da Pill Store
+│   ├── turnManager.ts            # Rotacao de turnos N-jogadores (NOVO)
+│   ├── playerManager.ts          # Helpers para N jogadores (NOVO)
+│   ├── pillGenerator.ts          # Geracao de pool de pilulas
+│   ├── pillProgression.ts        # Progressao de tipos e quantidade por rodada
+│   ├── shapeProgression.ts       # Progressao de shapes ATIVAS/SAZONAIS
+│   ├── gameLogic.ts              # Logica de efeitos e colapso
+│   ├── aiLogic.ts                # Logica de decisao da IA
+│   ├── aiConfig.ts               # Configuracoes de IA por dificuldade
+│   ├── itemCatalog.ts            # Catalogo de itens/power-ups
+│   ├── itemLogic.ts              # Logica de efeitos de itens
+│   ├── questGenerator.ts         # Geracao e validacao de Shape Quests
+│   ├── storeConfig.ts            # Configuracao da Pill Store
+│   └── __tests__/                # Testes unitarios
+│       ├── turnManager.test.ts   # 20 testes
+│       ├── playerManager.test.ts # 26 testes
+│       ├── pillGenerator.test.ts
+│       ├── pillProgression.test.ts
+│       ├── questGenerator.test.ts
+│       └── shapeProgression.test.ts
 
 ```
 

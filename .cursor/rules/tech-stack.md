@@ -19,12 +19,16 @@
 - **Componentes Retro:** 8bit/ui (visual pixelado)
 - **Animacoes:** Framer Motion
 
-## Backend & Multiplayer (NOVO)
+## Backend & Multiplayer
 - **BaaS:** Supabase (Auth, Database, Realtime)
-- **Multiplayer:** Supabase Realtime (Channels) para sincronizacao de estado.
-- **Padrão de Sincronizacao:**
-  - O "Dono da Sala" (Host) ou o Servidor (Edge Function) detém a verdade do GameState.
-  - Clientes apenas enviam "Intenções" (Actions) e recebem "Estado Atualizado" (Patch).
+- **Autenticacao:** Supabase Auth (Google, Discord, Twitch) - Guest-First
+  - `Player.userId: string | null` - Link para usuario autenticado
+  - `null` = Guest/Bot (sem persistencia)
+  - `string` = Autenticado (ranking, conquistas, stats)
+- **Multiplayer:** Supabase Realtime (Channels) para sincronizacao de estado
+- **Padrao de Sincronizacao:**
+  - O "Dono da Sala" (Host) ou o Servidor (Edge Function) detem a verdade do GameState
+  - Clientes apenas enviam "Intencoes" (Actions) e recebem "Estado Atualizado" (Patch)
 
 ## Estado e Logica
 - **State Management:** Zustand (stores modulares)
@@ -33,9 +37,18 @@
 
 ## Arquitetura de Estado
 ```
-gameStore     -> Estado principal do jogo (players, pills, phase, round)
-toastStore    -> Fila de notificacoes (non-blocking)
-overlayStore  -> Stack de overlays (blocking: PillReveal, GameOver, NewRound)
+stores/
+├── gameStore        -> Orquestracao (delega para stores modulares)
+├── toastStore       -> Fila de notificacoes (non-blocking)
+├── overlayStore     -> Stack de overlays (blocking)
+├── multiplayerStore -> Estado de conexao multiplayer
+└── game/            -> Stores modulares (refactor em andamento)
+    ├── effectsStore   -> Efeitos de jogador (shield, handcuffs)
+    ├── shopStore      -> Pill Store, carrinho, boosts
+    ├── pillPoolStore  -> Pool de pilulas (TODO)
+    ├── playerStore    -> Vidas, resistencia (TODO)
+    ├── inventoryStore -> Itens, selecao (TODO)
+    └── gameFlowStore  -> Fases, turnos, rodadas (TODO)
 ```
 
 ## Fluxo de Dados
