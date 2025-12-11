@@ -151,10 +151,11 @@ confirmed: { player1: false, player2: false }
   - Actions: `generatePool`, `setPool`, `consumePill`, `revealPillById`, `invertPill`, `doublePill`, `clearPillModifiers`
   - Criar testes unitarios (35 testes passando)
 
-- [ ] **3.4** Extrair `inventoryStore.ts`:
-  - Estado: `inventory` (por jogador), `selectedItems`, `targetSelection`
-  - Actions: `selectItem`, `deselectItem`, `useItem`, `addItem`, `removeItem`
-  - Criar testes unitarios
+- [x] **3.4** Extrair `itemUsageStore.ts`:
+  - Estado: `targetSelection`, `selectionConfirmed` (N jogadores)
+  - Actions: `startItemUsage`, `cancelItemUsage`, `completeItemUsage`, `confirmSelection`, `isAllConfirmed`
+  - Nota: Inventario permanece no Player (playerStore)
+  - Criar testes unitarios (36 testes passando)
 
 - [ ] **3.5** Extrair `playerStore.ts`:
   - Estado: `players` (vidas, resistencia, maxResistance)
