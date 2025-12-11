@@ -270,6 +270,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   /**
    * Inicializa um novo jogo com configuracao
    * Em multiplayer, o guest recebe syncData do host para garantir estado identico
+   * @delegate Inicializa todos os stores modulares
    */
   initGame: (config?: Partial<GameConfig>) => {
     const finalConfig = { ...DEFAULT_GAME_CONFIG, ...config }
@@ -296,8 +297,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let shapeQuests: Record<PlayerId, ShapeQuest | null>
 
     if (finalConfig.syncData) {
+      // Guest: usa dados sincronizados do host
       pillPool = finalConfig.syncData.pillPool
       shapeQuests = finalConfig.syncData.shapeQuests
+      console.log('[GameStore] Usando dados sincronizados do host')
     } else {
       // Host ou single player: gera localmente
       pillPool = generatePillPool(1)
@@ -330,6 +333,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       payload: { config: finalConfig },
     }
 
+    // DUAL-WRITE: Sync local state
     set({
       phase: 'itemSelection',
       turnPhase: 'consume',
@@ -410,7 +414,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       },
     })
 
+    // Delega para pillPoolStore
     usePillPoolStore.getState().consumePill(pillId)
+
+    // DUAL-WRITE: Sync local state
     const newPillPool = state.pillPool.filter((p) => p.id !== pillId)
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
@@ -521,6 +528,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Atualiza jogador que consumiu com efeitos decrementados e pillCoins
+    // DUAL-WRITE: Decrementa effects no effectsStore
     useEffectsStore.getState().decrementEffects(consumerId)
 
     let updatedConsumer = decrementPlayerEffects(result.player)
@@ -561,6 +570,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Verifica se proximo jogador esta algemado (Handcuffs)
     if (hasPlayerEffect(nextPlayer, 'handcuffed')) {
+      // DUAL-WRITE: Remove handcuffed do effectsStore
       useEffectsStore.getState().removeEffect(nextPlayerId, 'handcuffed')
 
       // Remove o efeito handcuffed e pula o turno (mantem turno atual)
@@ -631,22 +641,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Passa para o proximo turno manualmente
+   * @delegate gameFlowStore.nextTurn
    */
   nextTurn: () => {
     const state = get()
     if (state.phase !== 'playing') return
 
+    // Delega para gameFlowStore (usa getNextTurn que suporta N jogadores)
     const alivePlayers = Object.keys(state.players).filter(
       (id) => state.players[id as PlayerId].lives > 0
     ) as PlayerId[]
     const nextPlayer = useGameFlowStore.getState().nextTurn(alivePlayers)
+
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
     set({ currentTurn: nextPlayer })
   },
 
   /**
    * Inicia nova rodada (chamado apos fase roundEnding)
    * Em multiplayer, apenas host gera dados e emite evento para sincronizar
+   * Guest deve chamar com syncData recebido via evento round_reset
    * @param syncData - Dados sincronizados (apenas guest em multiplayer)
+   * @delegate effectsStore.removeEffectFromAll + pillPoolStore.setPool
    */
   resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null> }) => {
     const state = get()
@@ -660,8 +676,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Delega para effectsStore
     useEffectsStore.getState().removeEffectFromAll('shield')
 
+    // DUAL-WRITE: Sync local state
     const player1Updated: Player = {
       ...player1,
       effects: player1.effects.filter((e) => e.type !== 'shield'),
@@ -681,8 +699,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let newShapeQuests: Record<PlayerId, ShapeQuest | null>
 
     if (syncData) {
+      // Guest: usa dados sincronizados do host
       newPillPool = syncData.pillPool
       newShapeQuests = syncData.shapeQuests
+      console.log('[GameStore] resetRound: usando dados sincronizados do host')
     } else {
       // Host ou single player: gera localmente
       newPillPool = generatePillPool(newRound)
@@ -710,6 +730,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newTypeCounts = countPillTypes(newPillPool)
     const newShapeCounts = countPillShapes(newPillPool)
 
+    // Delega para pillPoolStore
     usePillPoolStore.getState().setPool(newPillPool)
 
     // Aplica revealAtStart - revela pills automaticamente para quem comprou Scanner-2X
@@ -728,6 +749,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
+    // Delega revealed pills para pillPoolStore
     usePillPoolStore.getState().clearRevealedPills()
     pillsToReveal.forEach((pillId) => {
       usePillPoolStore.getState().addRevealedPill(pillId)
@@ -740,6 +762,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       payload: { round: newRound },
     }
 
+    // DUAL-WRITE: Sync local state
     set({
       phase: 'playing', // Volta para playing
       pillPool: newPillPool,
@@ -760,9 +783,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Finaliza o jogo com um vencedor
+   * @delegate gameFlowStore.endGame
    */
   endGame: (winnerId: PlayerId) => {
+    // Delega para gameFlowStore
     useGameFlowStore.getState().endGame(winnerId)
+
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
     const state = get()
     const endAction: GameAction = {
       type: 'GAME_END',
@@ -779,13 +806,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Reseta o jogo para o estado inicial
+   * @delegate Todos os stores modulares
    */
   resetGame: () => {
+    // Reseta todos os stores modulares
     useEffectsStore.getState().reset()
     useShopStore.getState().reset()
     usePillPoolStore.getState().reset()
     useItemUsageStore.getState().reset()
     useGameFlowStore.getState().reset()
+
+    // Reseta estado local
     set(initialState)
   },
 
@@ -793,9 +824,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Inicia a fase de selecao de itens
+   * @delegate gameFlowStore.startItemSelection
    */
   startItemSelectionPhase: () => {
+    // Delega para gameFlowStore
     useGameFlowStore.getState().startItemSelection()
+
+    // DUAL-WRITE: Sync local state para retrocompatibilidade
     set({ phase: 'itemSelection' })
   },
 
@@ -814,8 +849,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Usa itemId fornecido (evento remoto) ou gera novo (local)
     const newItemId = itemId ?? uuidv4()
 
+    // NOTA: NAO delegar para playerStore aqui - ele nao esta inicializado
+    // durante a fase itemSelection (antes do jogo comecar)
     const newItem: InventoryItem = {
       id: newItemId,
       type: itemType,
@@ -844,6 +882,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Remove um item do inventario do jogador (pre-game)
+   * NOTA: NAO delega para playerStore - ele nao esta inicializado durante itemSelection
    */
   deselectItem: (playerId: PlayerId, itemId: string) => {
     const state = get()
@@ -873,6 +912,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   /**
    * Confirma a selecao de itens de um jogador
    * Quando ambos confirmarem, inicia o jogo
+   * @delegate itemUsageStore.confirmSelection + gameFlowStore.startGame
    */
   confirmItemSelection: (playerId: PlayerId) => {
     const state = get()
@@ -885,8 +925,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       type: 'selection_confirmed',
     })
 
+    // Delega para itemUsageStore
     useItemUsageStore.getState().confirmSelection(playerId)
 
+    // DUAL-WRITE: Sync local state
     const newConfirmed = {
       ...state.itemSelectionConfirmed,
       [playerId]: true,
@@ -899,8 +941,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Ambos confirmaram - delega para gameFlowStore
     useGameFlowStore.getState().startGame()
 
+    // DUAL-WRITE: Sync local state
     const startAction: GameAction = {
       type: 'GAME_START',
       playerId,
@@ -916,9 +960,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ============ ITEM USAGE ACTIONS ============
+  // Gradualmente delegando para itemUsageStore
 
   /**
    * Inicia o uso de um item (ativa modo de selecao de alvo se necessario)
+   * @delegate itemUsageStore.startItemUsage (parcial)
    */
   startItemUsage: (itemId: string) => {
     const state = get()
@@ -942,8 +988,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // Delega para itemUsageStore (para itens que requerem alvo)
     useItemUsageStore.getState().startItemUsage(itemId, item.type, itemDef.targetType)
 
+    // Sync local state para retrocompatibilidade
     let validTargets: 'pills' | 'opponent' | null = null
     if (itemDef.targetType === 'pill' || itemDef.targetType === 'pill_to_opponent') {
       validTargets = 'pills'
@@ -962,9 +1010,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Cancela o uso de um item (reseta targetSelection)
+   * @delegate itemUsageStore.cancelItemUsage
    */
   cancelItemUsage: () => {
+    // Delega para itemUsageStore
     useItemUsageStore.getState().cancelItemUsage()
+    
+    // Sync local state para retrocompatibilidade
     set({
       targetSelection: {
         active: false,
@@ -1042,16 +1094,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // ========== INTEL ITEMS ==========
 
       case 'scanner': {
+        // Revela o tipo da pilula temporariamente (adiciona a revealedPills)
         if (targetId && !state.revealedPills.includes(targetId)) {
+          // Delega para pillPoolStore
           usePillPoolStore.getState().addRevealedPill(targetId)
+          // DUAL-WRITE: Sync local state
           newState.revealedPills = [...state.revealedPills, targetId]
         }
         break
       }
 
       case 'inverter': {
+        // Marca a pilula como invertida
         if (targetId) {
+          // Delega para pillPoolStore
           usePillPoolStore.getState().invertPill(targetId)
+          // DUAL-WRITE: Sync local state
           const pillIndex = state.pillPool.findIndex((p) => p.id === targetId)
           if (pillIndex !== -1) {
             const newPillPool = [...state.pillPool]
@@ -1066,8 +1124,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       case 'double': {
+        // Marca a pilula como dobrada
         if (targetId) {
+          // Delega para pillPoolStore
           usePillPoolStore.getState().doublePill(targetId)
+          // DUAL-WRITE: Sync local state
           const pillIndex = state.pillPool.findIndex((p) => p.id === targetId)
           if (pillIndex !== -1) {
             const newPillPool = [...state.pillPool]
@@ -1094,9 +1155,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       case 'shield': {
+        // Adiciona efeito de shield ao jogador atual
         const hasShieldAlready = updatedCurrentPlayer.effects.some((e) => e.type === 'shield')
         if (!hasShieldAlready) {
+          // DUAL-WRITE: Adiciona shield no effectsStore
           useEffectsStore.getState().applyEffect(currentPlayerId, { type: 'shield', roundsRemaining: 1 })
+
           const playerWithShield: Player = {
             ...updatedCurrentPlayer,
             effects: [
@@ -1115,13 +1179,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // ========== CONTROL ITEMS ==========
 
       case 'handcuffs': {
+        // Adiciona efeito de handcuffed ao oponente (se nao tiver shield)
         const opponent = state.players[opponentId]
         const opponentHasShield = opponent.effects.some((e) => e.type === 'shield')
 
         if (!opponentHasShield) {
           const hasHandcuffsAlready = opponent.effects.some((e) => e.type === 'handcuffed')
           if (!hasHandcuffsAlready) {
+            // DUAL-WRITE: Adiciona handcuffs no effectsStore
             useEffectsStore.getState().applyEffect(opponentId, { type: 'handcuffed', roundsRemaining: 1 })
+
             const opponentWithHandcuffs: Player = {
               ...opponent,
               effects: [
@@ -1139,32 +1206,49 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
       }
 
-      case 'force_feed':
-        // Force Feed: delegado ao GameBoard para exibir PillReveal
+      case 'force_feed': {
+        // Force Feed: apenas remove o item e armazena info do alvo
+        // O consumo real e delegado ao GameBoard que chama startConsumption com forcedTarget
+        // Isso garante que o PillReveal overlay seja exibido corretamente
+        // Nota: targetId contem o pillId, opponentId e calculado no GameBoard
         break
+      }
 
       // ========== CHAOS ITEMS ==========
 
-      case 'shuffle':
-        newState.pillPool = shuffleArray([...state.pillPool])
+      case 'shuffle': {
+        // Embaralha as pilulas da mesa
+        const shuffledPillPool = shuffleArray([...state.pillPool])
+        newState.pillPool = shuffledPillPool
         break
+      }
 
-      case 'discard':
+      case 'discard': {
+        // Remove pilula sem ativar efeito
         if (targetId) {
           const newPillPool = state.pillPool.filter((p) => p.id !== targetId)
+          const newTypeCounts = countPillTypes(newPillPool)
+          const newShapeCounts = countPillShapes(newPillPool)
           newState.pillPool = newPillPool
-          newState.typeCounts = countPillTypes(newPillPool)
-          newState.shapeCounts = countPillShapes(newPillPool)
+          newState.typeCounts = newTypeCounts
+          newState.shapeCounts = newShapeCounts
+
+          // Remove da lista de reveladas tambem
           newState.revealedPills = state.revealedPills.filter((id) => id !== targetId)
 
+          // Verifica se pool esvaziou - inicia transicao de rodada
           if (newPillPool.length === 0) {
             newState.phase = 'roundEnding'
-            setTimeout(() => get().checkAndStartShopping(), ROUND_TRANSITION_DELAY)
+            setTimeout(() => {
+              get().checkAndStartShopping()
+            }, ROUND_TRANSITION_DELAY)
           }
         }
         break
+      }
 
-      case 'shape_bomb':
+      case 'shape_bomb': {
+        // Shape Bomb: remove TODAS pilulas da mesma shape da pill selecionada
         if (targetId) {
           const targetPill = state.pillPool.find((p) => p.id === targetId)
           if (!targetPill) break
@@ -1172,53 +1256,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
           const targetShape = targetPill.visuals.shape
           const removedCount = state.pillPool.filter((p) => p.visuals.shape === targetShape).length
           const newPillPool = state.pillPool.filter((p) => p.visuals.shape !== targetShape)
+          const newTypeCounts = countPillTypes(newPillPool)
+          const newShapeCounts = countPillShapes(newPillPool)
 
           newState.pillPool = newPillPool
-          newState.typeCounts = countPillTypes(newPillPool)
-          newState.shapeCounts = countPillShapes(newPillPool)
+          newState.typeCounts = newTypeCounts
+          newState.shapeCounts = newShapeCounts
 
+          // Remove pills dessa shape da lista de reveladas
           const removedPillIds = state.pillPool
             .filter((p) => p.visuals.shape === targetShape)
             .map((p) => p.id)
           newState.revealedPills = state.revealedPills.filter((id) => !removedPillIds.includes(id))
 
-          useToastStore.getState().show({
+          // Toast com feedback
+          const toastStore = useToastStore.getState()
+          toastStore.show({
             message: `Shape Bomb! ${removedCount} pilulas eliminadas`,
             type: 'item',
             playerId: currentPlayerId,
           })
 
+          // Verifica se pool esvaziou - inicia transicao de rodada
           if (newPillPool.length === 0) {
             newState.phase = 'roundEnding'
-            setTimeout(() => get().checkAndStartShopping(), ROUND_TRANSITION_DELAY)
+            setTimeout(() => {
+              get().checkAndStartShopping()
+            }, ROUND_TRANSITION_DELAY)
           }
         }
         break
+      }
 
-      case 'shape_scanner':
+      case 'shape_scanner': {
+        // Shape Scanner: revela TODAS pilulas da mesma shape da pill selecionada
         if (targetId) {
           const targetPill = state.pillPool.find((p) => p.id === targetId)
           if (!targetPill) break
 
           const targetShape = targetPill.visuals.shape
+
+          // Encontra todas pills dessa shape e adiciona aos revelados
           const pillsToReveal = state.pillPool
             .filter((p) => p.visuals.shape === targetShape)
             .map((p) => p.id)
-            .filter((id) => !state.revealedPills.includes(id))
+            .filter((id) => !state.revealedPills.includes(id)) // Evita duplicatas
 
+          // Delega para pillPoolStore
           pillsToReveal.forEach((pillId) => {
             usePillPoolStore.getState().addRevealedPill(pillId)
           })
 
+          // DUAL-WRITE: Sync local state
+          const revealedCount = pillsToReveal.length
           newState.revealedPills = [...state.revealedPills, ...pillsToReveal]
 
-          useToastStore.getState().show({
-            message: `Shape Scanner! ${pillsToReveal.length} pilulas reveladas`,
+          // Toast com feedback
+          const toastStore = useToastStore.getState()
+          toastStore.show({
+            message: `Shape Scanner! ${revealedCount} pilulas reveladas`,
             type: 'item',
             playerId: currentPlayerId,
           })
         }
         break
+      }
     }
 
     set(newState)
@@ -1226,6 +1328,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Remove um item do inventario do jogador (durante o jogo)
+   * NOTA: playerStore pode nao estar inicializado, entao nao delegamos
    */
   removeItemFromInventory: (playerId: PlayerId, itemId: string) => {
     const state = get()
@@ -1247,9 +1350,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ============ PLAYER EFFECTS ACTIONS ============
+  // NOTA: DUAL-WRITE - Atualiza tanto effectsStore quanto player.effects
+  // Durante a migracao, ambos sao mantidos em sincronia
+  // @see ADR-001-store-decomposition.md
 
   /**
    * Aplica um efeito a um jogador (ex: Shield, Handcuffs)
+   * Se o jogador ja tiver um efeito do mesmo tipo, nao adiciona duplicata
    */
   applyPlayerEffect: (playerId: PlayerId, effect: PlayerEffect) => {
     const state = get()
@@ -1259,8 +1366,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const hasEffect = player.effects.some((e) => e.type === effect.type)
     if (hasEffect) return
 
+    // DUAL-WRITE: Atualiza effectsStore
     useEffectsStore.getState().applyEffect(playerId, effect)
 
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     set({
       players: {
         ...state.players,
@@ -1279,8 +1388,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     const player = state.players[playerId]
 
+    // DUAL-WRITE: Atualiza effectsStore
     useEffectsStore.getState().removeEffect(playerId, effectType)
 
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     set({
       players: {
         ...state.players,
@@ -1294,13 +1405,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Decrementa as rodadas restantes de todos os efeitos do jogador
+   * Remove automaticamente efeitos que chegam a 0 rodadas
    */
   decrementEffectRounds: (playerId: PlayerId) => {
     const state = get()
     const player = state.players[playerId]
 
+    // DUAL-WRITE: Atualiza effectsStore
     useEffectsStore.getState().decrementEffects(playerId)
 
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     const updatedEffects = player.effects
       .map((effect) => {
         // Shield dura a rodada inteira, nao decrementa por turno
@@ -1326,12 +1440,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ============ REVEALED PILLS ACTIONS ============
+  // DELEGADO para pillPoolStore
 
   /**
    * Adiciona uma pilula a lista de reveladas (usado pelo Scanner)
+   * @delegate pillPoolStore.addRevealedPill
    */
   addRevealedPill: (pillId: string) => {
     usePillPoolStore.getState().addRevealedPill(pillId)
+    // Sync local state para retrocompatibilidade
     const state = get()
     if (!state.revealedPills.includes(pillId)) {
       set({ revealedPills: [...state.revealedPills, pillId] })
@@ -1340,27 +1457,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Remove uma pilula da lista de reveladas
+   * @delegate pillPoolStore.removeRevealedPill
    */
   removeRevealedPill: (pillId: string) => {
     usePillPoolStore.getState().removeRevealedPill(pillId)
+    // Sync local state para retrocompatibilidade
     set({ revealedPills: get().revealedPills.filter((id) => id !== pillId) })
   },
 
   /**
    * Limpa todas as pilulas reveladas (usado ao iniciar nova rodada)
+   * @delegate pillPoolStore.clearRevealedPills
    */
   clearRevealedPills: () => {
     usePillPoolStore.getState().clearRevealedPills()
+    // Sync local state para retrocompatibilidade
     set({ revealedPills: [] })
   },
 
   // ============ PILL MODIFIERS ACTIONS ============
+  // DELEGADO para pillPoolStore
 
   /**
    * Marca uma pilula como invertida (dano vira cura, cura vira dano)
+   * Usado pelo item Inverter
+   * @delegate pillPoolStore.invertPill
    */
   invertPill: (pillId: string) => {
     usePillPoolStore.getState().invertPill(pillId)
+    // Sync local state para retrocompatibilidade
     const state = get()
     const pillIndex = state.pillPool.findIndex((p) => p.id === pillId)
     if (pillIndex === -1) return
@@ -1371,9 +1496,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Marca uma pilula como dobrada (efeito x2)
+   * Usado pelo item Double
+   * @delegate pillPoolStore.doublePill
    */
   doublePill: (pillId: string) => {
     usePillPoolStore.getState().doublePill(pillId)
+    // Sync local state para retrocompatibilidade
     const state = get()
     const pillIndex = state.pillPool.findIndex((p) => p.id === pillId)
     if (pillIndex === -1) return
@@ -1384,9 +1512,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Remove todos os modificadores de uma pilula
+   * @delegate pillPoolStore.clearPillModifiers
    */
   clearPillModifiers: (pillId: string) => {
     usePillPoolStore.getState().clearPillModifiers(pillId)
+    // Sync local state para retrocompatibilidade
     const state = get()
     const pillIndex = state.pillPool.findIndex((p) => p.id === pillId)
     if (pillIndex === -1) return
@@ -1446,7 +1576,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Verifica se deve abrir loja ao fim da rodada
+   * Chamado quando pool esvazia (apos verificar Game Over)
    * Em multiplayer, apenas host inicia nova rodada - guest aguarda evento
+   * @delegate shopStore.openShop
    */
   checkAndStartShopping: () => {
     const state = get()
@@ -1457,9 +1589,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const p2Wants = players.player2.wantsStore && players.player2.pillCoins > 0
 
     if (p1Wants || p2Wants) {
+      // Delega para shopStore (suporta N jogadores)
       const playerIds = Object.keys(players) as PlayerId[]
       useShopStore.getState().openShop(DEFAULT_STORE_CONFIG.shoppingTime, playerIds)
 
+      // DUAL-WRITE: Sync local state + change phase
       set({
         phase: 'shopping',
         storeState: useShopStore.getState().storeState,
@@ -1472,6 +1606,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           const mpState = useMultiplayerStore.getState()
           if (mpState.localRole === 'host') {
             get().resetRound()
+          } else {
+            console.log('[GameStore] Guest aguardando round_reset do host')
           }
         })
       } else {
@@ -1482,6 +1618,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Adiciona item ao carrinho de compras
+   * NAO debita Pill Coins - apenas reserva para compra futura
+   * @param playerId - ID do jogador
+   * @param itemId - ID do item na loja
    */
   addToCart: (playerId: PlayerId, itemId: string) => {
     const state = get()
@@ -1589,6 +1728,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Remove item do carrinho de compras
+   * @param playerId - ID do jogador
+   * @param itemId - ID do item na loja a remover
    */
   removeFromCart: (playerId: PlayerId, itemId: string) => {
     const state = get()
@@ -1636,6 +1777,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Processa o carrinho de compras - debita coins e aplica itens
+   * Chamado internamente quando jogador confirma compras
+   * @param playerId - ID do jogador
+   * @param itemIds - IDs opcionais para power-ups (usado em multiplayer para sincronizar)
+   * @returns Array de IDs gerados para power-ups (usado para sincronizar com outro cliente)
    */
   processCart: (playerId: PlayerId, itemIds?: string[]): string[] => {
     const state = get()
@@ -1678,8 +1823,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           },
         }
       } else if (item.type === 'boost' && item.boostType) {
+        // Delega para shopStore
         useShopStore.getState().addPendingBoost(playerId, item.boostType)
 
+        // DUAL-WRITE: Sync local state
         newStoreState = {
           ...newStoreState,
           pendingBoosts: {
@@ -1696,8 +1843,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillCoins: updatedPlayer.pillCoins - totalCost,
     }
 
+    // Delega limpeza do carrinho para shopStore
     useShopStore.getState().clearCart(playerId)
 
+    // DUAL-WRITE: Sync local state
     newStoreState = {
       ...newStoreState,
       cart: {
@@ -1714,6 +1863,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       storeState: newStoreState,
     })
 
+    // Toast de confirmacao
+    // Nota: desativado temporariamente para nao sobrepor toast da pilula
+    // if (totalCost > 0) {
+    //   useToastStore.getState().show({
+    //     type: 'quest',
+    //     message: `-${totalCost} Pill Coins`,
+    //     playerId,
+    //     duration: 2000,
+    //   })
+    // }
+
     return generatedItemIds
   },
 
@@ -1727,6 +1887,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Jogador confirma que terminou de fazer compras
+   * Processa o carrinho (debita coins e aplica itens) antes de confirmar
+   * @param playerId - ID do jogador confirmando
+   * @param itemIds - IDs opcionais para power-ups (usado em multiplayer para sincronizar)
+   * @delegate shopStore.confirmPlayer
    */
   confirmStorePurchases: (playerId: PlayerId, itemIds?: string[]) => {
     const state = get()
@@ -1783,8 +1947,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     }
 
+    // Delega para shopStore
     useShopStore.getState().confirmPlayer(playerId)
 
+    // DUAL-WRITE: Sync local state
     set({
       storeState: {
         ...updatedStoreState,
@@ -1802,6 +1968,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Verifica se a fase de shopping terminou
+   * Chamado apos confirmacao ou timeout
+   * @delegate shopStore.isConfirmed
    */
   checkShoppingComplete: () => {
     const state = get()
@@ -1831,6 +1999,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           const mpState = useMultiplayerStore.getState()
           if (mpState.localRole === 'host') {
             get().resetRound()
+          } else {
+            console.log('[GameStore] Guest aguardando round_reset do host (shopping)')
           }
         })
       } else {
@@ -1841,6 +2011,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Aplica os boosts pendentes comprados na loja
+   * Chamado antes de resetRound quando shopping termina
+   * @delegate shopStore.getPendingBoosts + shopStore.closeShop
    */
   applyPendingBoosts: () => {
     const state = get()
@@ -1855,8 +2027,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newPlayers = { ...players }
     const newRevealAtStart = { ...revealAtStart }
 
+    // Aplica boosts para cada jogador (usando shopStore)
     const playerIds = Object.keys(players) as PlayerId[]
     for (const playerId of playerIds) {
+      // Delega para shopStore.getPendingBoosts
       const boosts = shopState.getPendingBoosts(playerId)
       let player = newPlayers[playerId]
 
@@ -1871,6 +2045,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
 
           case 'full_resistance':
+            // Resistencia MAX
             player = {
               ...player,
               resistance: player.maxResistance,
@@ -1878,11 +2053,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
 
           case 'reveal_start':
+            // Acumula quantidade de pills a revelar no inicio da rodada
+            // Scanner-2X revela 2 pills
             newRevealAtStart[playerId] = (newRevealAtStart[playerId] || 0) + 2
             break
         }
       }
 
+      // Reseta wantsStore para proxima rodada
       player = {
         ...player,
         wantsStore: false,
@@ -1891,8 +2069,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newPlayers[playerId] = player
     }
 
+    // Delega para shopStore
     shopState.closeShop()
 
+    // DUAL-WRITE: Sync local state
     set({
       players: newPlayers,
       storeState: null,
@@ -1921,6 +2101,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     }
 
+    // Helper: verifica turno (apenas warning, nao rejeita)
+    // Eventos remotos ja foram validados pelo remetente - rejeitar causa dessincronizacao
     const warnIfWrongTurn = (): void => {
       if (state.currentTurn !== event.playerId) {
         console.warn(`[GameStore] Evento de turno diferente (local: ${state.currentTurn}, remoto: ${event.playerId})`, {
@@ -1930,6 +2112,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
+    // Helper: valida se pillId existe no pool (usa pillPoolStore)
     const validatePill = (pillId: string): boolean => {
       const pill = usePillPoolStore.getState().getPill(pillId) ?? state.pillPool.find((p) => p.id === pillId)
       if (!pill) {
@@ -1939,6 +2122,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return true
     }
 
+    // Helper: valida se itemId existe no inventario do jogador
     const validateItem = (playerId: PlayerId, itemId: string): boolean => {
       const player = state.players[playerId]
       const item = player?.inventory.items.find((i) => i.id === itemId)
@@ -1950,6 +2134,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     setSyncingFromRemote(true)
+
+    console.log('[GameStore] applyRemoteEvent:', {
+      eventType: event.type,
+      eventPlayerId: event.playerId,
+      currentTurn: state.currentTurn,
+      phase: state.phase,
+      pillPoolLength: state.pillPool.length,
+    })
 
     try {
       switch (event.type) {
@@ -1965,6 +2157,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
             }
           }
 
+          console.log('[GameStore] pill_consumed payload:', payload)
+
+          // Verifica turno (apenas warning) e valida pilula
           warnIfWrongTurn()
           if (!validatePill(payload.pillId)) break
 
@@ -2012,8 +2207,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
             itemType?: ItemType
           }
 
+          // Verifica turno (apenas warning) e valida item
           warnIfWrongTurn()
           if (!validateItem(event.playerId, payload.itemId)) break
+
+          // Valida alvo se for pilula
+          if (payload.targetId && state.pillPool.length > 0) {
+            // Tenta validar como pill (pode ser outro tipo de alvo)
+            const isPillTarget = state.pillPool.some((p) => p.id === payload.targetId)
+            if (!isPillTarget) {
+              // Nao e pill - pode ser outro tipo de alvo valido (ex: oponente)
+              // Permite continuar
+            }
+          }
 
           get().executeItem(payload.itemId, payload.targetId)
 
@@ -2042,6 +2248,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
           }
 
+          // Passa itemId para sincronizar IDs entre clientes
           get().selectItem(event.playerId, payload.itemType, payload.itemId)
           break
         }
@@ -2079,6 +2286,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
           }
 
+          // Toggle apenas se estado diferente
           if (player.wantsStore !== payload.wantsStore) {
             get().toggleWantsStore(event.playerId)
           }
@@ -2109,6 +2317,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             break
           }
 
+          // Extrai itemIds do payload para sincronizar IDs de power-ups
           const storePayload = event.payload as { itemIds?: string[] } | undefined
           get().confirmStorePurchases(event.playerId, storePayload?.itemIds)
           break
@@ -2118,6 +2327,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           console.warn('[GameStore] Evento remoto nao tratado:', event.type)
       }
     } catch (error) {
+      // Recuperacao graceful - log erro mas nao crasha
       console.error('[GameStore] Erro ao aplicar evento remoto:', error, {
         type: event.type,
         playerId: event.playerId,
@@ -2129,14 +2339,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ============ SELECTORS ============
+  // Gradualmente delegando para stores modulares
 
   /**
    * Retorna o jogador do turno atual
+   * @delegate playerStore.getPlayer
    */
   getCurrentPlayer: () => {
     const state = get()
+    // Tenta playerStore primeiro
     const player = usePlayerStore.getState().getPlayer(state.currentTurn)
-    return player ?? state.players[state.currentTurn]
+    if (player) return player
+    // Fallback para estado local
+    return state.players[state.currentTurn]
   },
 
   /**
@@ -2152,16 +2367,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Busca uma pilula pelo ID
+   * @delegate pillPoolStore.getPill
    */
   getPillById: (pillId: string) => {
+    // Delega para pillPoolStore (fonte da verdade)
     const pill = usePillPoolStore.getState().getPill(pillId)
-    return pill ?? get().pillPool.find((p) => p.id === pillId)
+    if (pill) return pill
+    // Fallback para estado local (retrocompatibilidade)
+    return get().pillPool.find((p) => p.id === pillId)
   },
 
   /**
    * Verifica se o pool de pilulas esta vazio
+   * @delegate pillPoolStore.isEmpty
    */
-  isPillPoolEmpty: () => usePillPoolStore.getState().isEmpty(),
+  isPillPoolEmpty: () => {
+    // Delega para pillPoolStore
+    return usePillPoolStore.getState().isEmpty()
+  },
 
   /**
    * Calcula estatisticas do jogo
