@@ -174,10 +174,16 @@ confirmed: { player1: false, player2: false }
 
 ### Fase 4: Integracao (Conectar via Hooks)
 
+- [x] **4.0** Atualizar barrel export (`src/stores/game/index.ts`):
+  - Exportar todos os 6 stores modulares
+  - Manter re-export do gameStore para retrocompatibilidade
+  - 224 testes passando
+
 - [ ] **4.1** Refatorar `gameStore.ts` para orquestracao:
   - Delegar para stores especificos
   - Manter retrocompatibilidade via re-exports
-  - Meta: < 350 linhas
+  - Abordagem: Facade pattern - gameStore orquestra stores modulares
+  - Meta: < 350 linhas (atual: 2359 linhas)
 
 - [ ] **4.2** Atualizar `useItemUsage.ts`:
   - Usar `getTargetablePlayers()` para validTargets
