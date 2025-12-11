@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  createPill,
   createPillWithShape,
   countPillTypes,
   revealPill,
   generatePillPoolWithCount,
 } from '../pillGenerator'
 import { PILL_HEX_COLORS, HIDDEN_PILL_HEX } from '../constants'
-import type { Pill, PillType, PillShape } from '@/types'
+import type { Pill, PillType } from '@/types'
 
 // ============================================
 // Testes de createPillWithShape()
@@ -115,25 +114,6 @@ describe('createPillWithShape', () => {
       expect(pill.stats.heal).toBe(0)
       expect(pill.stats.isFatal).toBe(false)
     })
-  })
-})
-
-// ============================================
-// Testes de createPill() (deprecated)
-// ============================================
-
-describe('createPill (deprecated)', () => {
-  it('cria pilula com shape round por padrao', () => {
-    const pill = createPill('SAFE')
-
-    expect(pill.visuals.shape).toBe('round')
-  })
-
-  it('funciona como wrapper para createPillWithShape', () => {
-    const pill = createPill('DMG_LOW')
-
-    expect(pill.type).toBe('DMG_LOW')
-    expect(pill.isRevealed).toBe(false)
   })
 })
 
