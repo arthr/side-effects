@@ -1,7 +1,8 @@
 # ADR-001: Decomposicao do GameStore e Arquitetura Multiplayer-First
 
-**Status:** Proposta  
+**Status:** Em Progresso  
 **Data:** 2024-12-11  
+**Atualizado:** 2024-12-11  
 **Deciders:** Time de Desenvolvimento  
 **Technical Story:** Refatoracao da arquitetura do jogo Dosed
 
@@ -219,5 +220,8 @@ Dividir em stores focados:
 | Data | Autor | Alteracao |
 |------|-------|-----------|
 | 2024-12-11 | Senior Review | Criacao inicial |
+| 2024-12-11 | Refactor | Fase 3 completa: 6 stores extraidos (224 testes) |
+| 2024-12-11 | Refactor | Fase 4.2-4.5: Hooks atualizados para N-player |
+| 2024-12-11 | Refactor | Documentacao de apoio criada para 4.1 |
 
 

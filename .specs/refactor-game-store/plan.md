@@ -180,9 +180,15 @@ confirmed: { player1: false, player2: false }
   - 224 testes passando
 
 - [ ] **4.1** Refatorar `gameStore.ts` para orquestracao:
-  - Delegar para stores especificos
-  - Manter retrocompatibilidade via re-exports
-  - Abordagem: Facade pattern - gameStore orquestra stores modulares
+  - **Documentacao de apoio criada:**
+    - `gamestore-refactor/README.md` - Visao geral
+    - `gamestore-refactor/mapping.md` - Mapeamento funcao -> store
+    - `gamestore-refactor/migration-checklist.md` - Checklist executavel
+    - `gamestore-refactor/test-scenarios.md` - Cenarios de teste
+  - **Batches de migracao:**
+    - Batch 1: Delegacao simples (22 funcoes) - BAIXO RISCO
+    - Batch 2: Orquestracao media (10 funcoes) - MEDIO RISCO
+    - Batch 3: Orquestracao alta (4 funcoes) - ALTO RISCO
   - Meta: < 350 linhas (atual: 2359 linhas)
 
 - [x] **4.2** Atualizar `useItemUsage.ts`:
