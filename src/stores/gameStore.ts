@@ -9,6 +9,7 @@ import type {
   GameStats,
   InventoryItem,
   ItemType,
+  MultiplayerEventEmit,
   Pill,
   PillType,
   Player,
@@ -52,14 +53,6 @@ export function setSyncingFromRemote(value: boolean): void {
  */
 export function getIsSyncingFromRemote(): boolean {
   return isSyncingFromRemote
-}
-
-/**
- * Tipo de evento a emitir para multiplayer
- */
-interface MultiplayerEventEmit {
-  type: string
-  payload?: Record<string, unknown>
 }
 
 /**

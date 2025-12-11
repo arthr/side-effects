@@ -94,3 +94,11 @@ export type {
   WantsStoreToggledEvent,
 } from './events'
 
+// Sync types
+export type {
+  EmitOptions,
+  MultiplayerEventEmit,
+  RemoteEventHandler,
+  SyncState,
+} from './sync'
+
