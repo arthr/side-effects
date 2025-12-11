@@ -9,6 +9,8 @@ export type {
   PlayerEffectResult,
   PlayerEffectType,
   PlayerId,
+  generatePlayerId,
+  isValidPlayerId,
 } from './player'
 
 // Game types

@@ -2,195 +2,197 @@
 
 **Data de Criacao:** 2024-12-11  
 **Ultima Atualizacao:** 2024-12-11  
-**Status:** Em Andamento (Fase 2 - Revisao)
+**Status:** Em Andamento
 
 ---
 
 ## Objetivo
 
-Refatorar o Core Loop do jogo para:
+Refatorar o Core Loop para:
 
-1. **Decompor `gameStore.ts`** (~2359 linhas) em stores menores e focados (~200-350 linhas cada)
-2. **Generalizar para N jogadores** (2 a MAX_ROOM_PLAYERS), eliminando logica hardcoded de 1v1
-3. **Manter simplicidade** - Codigo obvio para um desenvolvedor solo
+1. **Decompor `gameStore.ts`** (~2359 linhas) em stores menores (~200-350 linhas cada)
+2. **Generalizar para N jogadores** (2 a MAX_ROOM_PLAYERS), eliminando logica hardcoded `player1`/`player2`
+3. **Preparar para Multiplayer** usando padrao "Optimistic UI + Authority" conforme `architecture.md`
 
-> **Escopo Expandido:** Alem da decomposicao do store, este refactor prepara a arquitetura para salas de 2+ jogadores, abandonando a logica fixa `player1` vs `player2`.
-
----
-
-## Pontos de Falha com 3+ Jogadores (Diagnostico)
-
-### Lógica de Turnos
-| Local | Codigo Atual | Problema |
-|-------|--------------|----------|
-| `gameStore.ts:627` | `currentTurn === 'player1' ? 'player2' : 'player1'` | Binario, nao rotaciona |
-| `gameStore.ts:545` | `state.currentTurn === 'player1' ? 'player2' : 'player1'` | Proximo turno fixo |
-| `gameStore.ts:479` | `consumerId === 'player1' ? 'player2' : 'player1'` | Winner binario |
-
-### Estrutura de Jogadores
-| Local | Codigo Atual | Problema |
-|-------|--------------|----------|
-| `types/player.ts:6` | `PlayerId = 'player1' \| 'player2'` | Union type fixa |
-| `gameStore.ts:202-203` | `players: { player1, player2 }` | Estrutura fixa |
-| `gameStore.ts:325` | `players: { player1, player2 }` | initGame fixo |
-
-### Conceito de "Opponent"
-| Local | Codigo Atual | Problema |
-|-------|--------------|----------|
-| `gameStore.ts:970` | `opponentId = currentPlayerId === 'player1' ? 'player2' : 'player1'` | 1 oponente unico |
-| `gameStore.ts:2255-2257` | `useOpponent()` hook | Retorna apenas 1 |
-| `types/item.ts` | `targetType: 'opponent'` | Implica 1 alvo |
-
-### Stores Extraidos (Parcialmente Hardcoded)
-| Store | Linhas Hardcoded | Status |
-|-------|------------------|--------|
-| `effectsStore.ts:75-78` | `activeEffects: { player1: [], player2: [] }` | Precisa generalizar |
-| `effectsStore.ts:125-128` | `removeEffectFromAll` com player1/player2 | Precisa generalizar |
-| `shopStore.ts:107-112` | `createInitialStoreState` com player1/player2 | Precisa generalizar |
+> **Conceito Unificado (product.md):** O sistema trata todos como `Player`, diferenciados apenas pela origem das acoes (Local, Remoto ou Bot).
 
 ---
 
 ## Arquivos Afetados
 
-### Criacao (~6 arquivos de stores)
+### Criacao
 
-| Arquivo | Status | Descricao |
-|---------|--------|-----------|
-| `stores/game/effectsStore.ts` | PARCIAL | Efeitos de jogador (precisa N-players) |
-| `stores/game/shopStore.ts` | PARCIAL | Pill Store (precisa N-players) |
-| `stores/game/pillPoolStore.ts` | PENDENTE | Pool de pilulas, consumo, reveal |
-| `stores/game/inventoryStore.ts` | PENDENTE | Itens, selecao, uso |
-| `stores/game/playerStore.ts` | PENDENTE | Vidas, resistencia, maximos |
-| `stores/game/gameFlowStore.ts` | PENDENTE | Fases, turnos, rodadas, winner |
+| Arquivo | Descricao | Linhas Est. |
+|---------|-----------|-------------|
+| `src/utils/turnManager.ts` | Funcoes puras para rotacao de turnos | ~50 |
+| `src/utils/playerManager.ts` | Helpers para N jogadores | ~80 |
+| `src/stores/game/pillPoolStore.ts` | Pool de pilulas, consumo, reveal | ~250 |
+| `src/stores/game/inventoryStore.ts` | Itens, selecao, uso | ~200 |
+| `src/stores/game/playerStore.ts` | Vidas, resistencia | ~200 |
+| `src/stores/game/gameFlowStore.ts` | Fases, turnos, rodadas | ~300 |
 
-### Modificacao (Types e Constantes)
+### Modificacao
 
-| Arquivo | Mudanca | Prioridade |
-|---------|---------|------------|
-| `types/player.ts` | `PlayerId` -> string dinamico | CRITICA |
-| `utils/constants.ts` | Adicionar `MAX_ROOM_PLAYERS` | CRITICA |
-| `types/game.ts` | `players: Record<string, Player>` | ALTA |
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/types/player.ts` | `PlayerId` -> `string` (dinamico) |
+| `src/types/game.ts` | `players: Record<string, Player>` |
+| `src/utils/constants.ts` | Adicionar `MAX_ROOM_PLAYERS`, `MIN_PLAYERS` |
+| `src/stores/game/effectsStore.ts` | Generalizar para N jogadores |
+| `src/stores/game/shopStore.ts` | Generalizar para N jogadores |
+| `src/stores/gameStore.ts` | Reduzir para orquestracao (~350 linhas) |
 
-### Refatoracao (~3 arquivos)
+### Adaptacao
 
-| Arquivo | Linhas Atuais | Meta | Status |
-|---------|---------------|------|--------|
-| `stores/gameStore.ts` | 2359 | < 350 (orquestracao) | PENDENTE |
-| `hooks/useItemUsage.ts` | ~200 | Adaptar para N-players | PENDENTE |
-| `hooks/usePillConsumption.ts` | ~150 | Adaptar para N-players | PENDENTE |
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/hooks/useItemUsage.ts` | Usar novos stores |
+| `src/hooks/usePillConsumption.ts` | Usar novos stores |
+| `src/hooks/useGameActions.ts` | Usar gameFlowStore |
+
+---
+
+## Diagnostico
+
+### Violacao de Fronteiras
+- [x] **OK** - UI acessa apenas Hooks, nao Stores diretamente
+
+### Acoplamento Oculto
+- [!] `gameStore.ts` tem 2359 linhas - mudancas em qualquer area afetam todo o arquivo
+- [!] Logica de turnos hardcoded quebra ao adicionar 3+ jogadores
+
+### Complexidade Desnecessaria
+- [!] `player1`/`player2` hardcoded em ~56 locais
+- [!] Stores extraidos (`effectsStore`, `shopStore`) ainda usam estrutura fixa
+
+### Codigo Hardcoded (player1/player2)
+
+```typescript
+// gameStore.ts:627 - Turnos binarios
+currentTurn === 'player1' ? 'player2' : 'player1'
+
+// effectsStore.ts:75-78 - Estado inicial fixo
+activeEffects: { player1: [], player2: [] }
+
+// shopStore.ts:107-112 - Estrutura fixa
+confirmed: { player1: false, player2: false }
+```
 
 ---
 
 ## Passo a Passo (Checklist)
 
-### Fase 1: Preparacao (Baixo Risco) - COMPLETA
+### Fase 1: Preparacao (Types e Interfaces)
 
 - [x] **1.1** Criar pasta `stores/game/` com `index.ts`
 - [x] **1.2** Criar pasta `stores/multiplayer/` com `index.ts`
 - [x] **1.3** Criar pasta `services/sync/` e `services/realtime/` com placeholders
-- [x] **1.4** Adicionar testes unitarios para `pillGenerator.ts` e `questGenerator.ts`
+- [x] **1.4** Testes unitarios para `pillGenerator.ts` e `questGenerator.ts`
+- [x] **1.5** Definir constantes em `utils/constants.ts`:
+  ```typescript
+  export const MIN_PLAYERS = 2
+  export const MAX_ROOM_PLAYERS = 4  // Limite razoavel para UX
+  ```
+- [x] **1.6** Atualizar `types/player.ts`:
+  ```typescript
+  // DE: export type PlayerId = 'player1' | 'player2'
+  // PARA:
+  export type PlayerId = string
+  export function isValidPlayerId(id: string): boolean
+  export function generatePlayerId(index: number): PlayerId
+  ```
 
-### Fase 2: Fundacao N-Jogadores (NOVA - Alta Prioridade)
+### Fase 2: Migracao (Funcoes Puras para Utils)
 
-- [ ] **2.0** Definir constantes de limites de jogadores
-  - Criar `MAX_ROOM_PLAYERS` em `utils/constants.ts`
-  - Criar `MIN_PLAYERS = 2`
-  - Documentar limite razoavel (ex: 4 ou 6 jogadores)
+- [ ] **2.1** Criar `utils/turnManager.ts` (funcoes puras):
+  ```typescript
+  /** Retorna proximo jogador na rotacao */
+  export function getNextTurn(
+    currentTurn: PlayerId,
+    playerOrder: PlayerId[],
+    alivePlayers?: PlayerId[]
+  ): PlayerId
 
-- [ ] **2.1** Generalizar tipo `PlayerId`
-  - Mudar de `'player1' | 'player2'` para `string`
-  - Criar helper `generatePlayerId(index: number): string`
-  - Criar type guard `isValidPlayerId(id: string): boolean`
+  /** Retorna jogadores que podem ser alvos */
+  export function getTargetablePlayers(
+    currentPlayer: PlayerId,
+    allPlayers: PlayerId[]
+  ): PlayerId[]
+  ```
+- [ ] **2.2** Criar `utils/playerManager.ts` (funcoes puras):
+  ```typescript
+  /** Gera ID unico para jogador */
+  export function generatePlayerId(index: number): PlayerId
 
-- [ ] **2.2** Criar funcao `getNextTurn()`
-  - Assinatura: `(currentTurn: PlayerId, playerOrder: PlayerId[]) => PlayerId`
-  - Logica circular: `playerOrder[(currentIndex + 1) % playerOrder.length]`
-  - Considerar jogadores eliminados (filtrar `lives > 0`)
+  /** Cria estado inicial para N jogadores */
+  export function createInitialPlayersState(
+    playerConfigs: PlayerConfig[]
+  ): Record<PlayerId, Player>
+  ```
+- [ ] **2.3** Criar testes unitarios para `turnManager.ts`
+- [ ] **2.4** Criar testes unitarios para `playerManager.ts`
 
-- [ ] **2.3** Criar funcao `getTargetablePlayers()`
-  - Assinatura: `(currentPlayer: PlayerId, allPlayers: PlayerId[]) => PlayerId[]`
-  - Exclui jogador atual
-  - Exclui jogadores eliminados
-  - Retorna array (permite multi-target futuro)
+### Fase 3: Extracao de Stores
 
-### Fase 3: Extracao de Stores de Dominio (Medio Risco)
+**Estrategia DUAL-WRITE:** gameStore continua sendo fonte da verdade durante migracao.
 
-**Estrategia:** DUAL-WRITE - gameStore continua sendo fonte da verdade durante migracao.
+- [ ] **3.1** Generalizar `effectsStore.ts` para N jogadores:
+  - Mudar `activeEffects` para `Record<string, PlayerEffect[]>`
+  - Adicionar `initializeForPlayers(playerIds: PlayerId[])`
+  - Atualizar testes
 
-- [ ] **3.1** Atualizar `effectsStore.ts` para N-jogadores
-  - Mudar `activeEffects` de `{ player1, player2 }` para `Record<PlayerId, PlayerEffect[]>`
-  - Inicializar dinamicamente no `reset()`
-  - Parametrizar `removeEffectFromAll` para iterar todos jogadores
-  - Atualizar testes unitarios
-
-- [ ] **3.2** Atualizar `shopStore.ts` para N-jogadores
-  - Mudar `confirmed`, `pendingBoosts`, `cart` para `Record<PlayerId, T>`
+- [ ] **3.2** Generalizar `shopStore.ts` para N jogadores:
   - Parametrizar `openShop(timerDuration, playerIds: PlayerId[])`
-  - Atualizar `clearPendingBoosts` para iterar todos jogadores
-  - Atualizar testes unitarios
+  - Mudar `confirmed`, `pendingBoosts`, `cart` para dinamicos
+  - Atualizar testes
 
-- [ ] **3.3** Extrair `pillPoolStore.ts` do gameStore
+- [ ] **3.3** Extrair `pillPoolStore.ts`:
   - Estado: `pillPool`, `revealedPills`, `typeCounts`, `shapeCounts`
   - Actions: `generatePool`, `consumePill`, `revealPill`, `shuffle`, `discard`
   - Criar testes unitarios
 
-- [ ] **3.4** Extrair `inventoryStore.ts` do gameStore
+- [ ] **3.4** Extrair `inventoryStore.ts`:
   - Estado: `inventory` (por jogador), `selectedItems`, `targetSelection`
   - Actions: `selectItem`, `deselectItem`, `useItem`, `addItem`, `removeItem`
   - Criar testes unitarios
 
-- [ ] **3.5** Extrair `playerStore.ts` do gameStore
+- [ ] **3.5** Extrair `playerStore.ts`:
   - Estado: `players` (vidas, resistencia, maxResistance)
   - Actions: `applyDamage`, `heal`, `loseLife`, `gainLife`, `resetResistance`
   - Criar testes unitarios
 
-- [ ] **3.6** Extrair `gameFlowStore.ts` do gameStore
+- [ ] **3.6** Extrair `gameFlowStore.ts`:
   - Estado: `phase`, `round`, `currentTurn`, `playerOrder`, `winner`
-  - Actions: `startGame`, `endGame`, `nextTurn`, `nextRound`, `resetGame`
-  - **IMPORTANTE:** Usar `getNextTurn()` da Fase 2.2
+  - Actions: `startGame`, `endGame`, `nextTurn`, `nextRound`
+  - Usar `turnManager.getNextTurn()` internamente
   - Criar testes unitarios
 
-### Fase 4: Refatorar gameStore (Medio Risco)
+### Fase 4: Integracao (Conectar via Hooks)
 
-- [ ] **4.1** Refatorar `initGame()` para N-jogadores
-  - Parametro `playerConfigs: PlayerConfig[]` em vez de `player1`/`player2`
-  - Gerar `playerOrder` dinamicamente
-  - Inicializar stores filhos com lista de playerIds
+- [ ] **4.1** Refatorar `gameStore.ts` para orquestracao:
+  - Delegar para stores especificos
+  - Manter retrocompatibilidade via re-exports
+  - Meta: < 350 linhas
 
-- [ ] **4.2** Refatorar `consumePill()` para N-jogadores
-  - Usar `getNextTurn()` em vez de ternario
-  - Verificar eliminacao em loop (pode haver multiplos eliminados)
+- [ ] **4.2** Atualizar `useItemUsage.ts`:
+  - Usar `getTargetablePlayers()` para validTargets
+  - Retornar array de alvos (nao apenas 1)
 
-- [ ] **4.3** Refatorar `executeItem()` para N-jogadores
-  - Substituir `opponentId` por `getTargetablePlayers()`
-  - Items como Force Feed precisam de selector de alvo explicito
+- [ ] **4.3** Atualizar `usePillConsumption.ts`:
+  - Usar `getNextTurn()` para rotacao
+  - Suportar N jogadores
 
-- [ ] **4.4** Refatorar `checkAndStartShopping()` para N-jogadores
-  - Verificar `wantsStore` de todos jogadores
-  - Inicializar storeState com todos playerIds
+- [ ] **4.4** Criar hook `useTargetablePlayers()`:
+  - Substituir `useOpponent()` (deprecar, nao remover)
+  - Retornar `PlayerId[]`
 
-### Fase 5: Adaptacao de Hooks (Baixo Risco)
+### Fase 5: Limpeza
 
-- [ ] **5.1** Atualizar `useOpponent()` -> `useTargetablePlayers()`
-  - Retornar array em vez de unico
-  - Manter `useOpponent()` deprecado para retrocompatibilidade temporaria
-
-- [ ] **5.2** Atualizar `useItemUsage.ts` para usar stores especificos
-  - Adaptar `validTargets` para array de playerIds
-
-- [ ] **5.3** Atualizar `usePillConsumption.ts` para usar stores especificos
-
-- [ ] **5.4** Atualizar `useGameActions.ts` para usar gameFlowStore
-
-- [ ] **5.5** Verificar que todos os componentes funcionam via hooks
-
-### Fase 6: Limpeza (Baixo Risco)
-
-- [ ] **6.1** Remover codigo duplicado entre gameStore e stores especificos
-- [ ] **6.2** Remover re-exports desnecessarios apos migracao completa
-- [ ] **6.3** Atualizar documentacao de arquitetura (`architecture.md`)
-- [ ] **6.4** Atualizar ADR-001 com status "Implementado"
-- [ ] **6.5** Remover referencias deprecadas a `player1`/`player2` hardcoded
+- [ ] **5.1** Remover codigo duplicado entre gameStore e stores especificos
+- [ ] **5.2** Remover re-exports desnecessarios apos validacao
+- [ ] **5.3** Atualizar `architecture.md` com novos stores
+- [ ] **5.4** Marcar `useOpponent()` como `@deprecated`
+- [ ] **5.5** Atualizar ADR-001 com status "Implementado"
 
 ---
 
@@ -198,71 +200,68 @@ Refatorar o Core Loop do jogo para:
 
 ### Pre-Implementacao
 
-- [x] Adiciona alguma biblioteca npm? **NAO** - Usa apenas Zustand existente
+- [x] Adiciona biblioteca npm? **NAO**
 - [x] Cria pastas fora do padrao `structure.md`? **NAO**
 - [x] Mistura UI com Logica? **NAO** - Stores sao logica pura
 
-### Testes Manuais Necessarios (por fase)
+### Testes Manuais Necessarios
 
-| Fase | Cenario de Teste | Criticidade |
-|------|------------------|-------------|
-| 2.1-2.3 | Testes unitarios das funcoes helper | Alta |
-| 3.1 | Shield bloqueia dano, Handcuffs pula turno (2-4 jogadores) | Alta |
-| 3.2 | Abrir loja, checkout, boosts aplicados (2-4 jogadores) | Alta |
-| 3.3 | Consumir pilula, revelar com Scanner, Shuffle funciona | Critica |
-| 3.4 | Selecionar/usar itens, Force Feed com target selector | Critica |
-| 3.5 | Perder vida, ganhar vida, resistencia zera = perde vida | Critica |
-| 3.6 | Transicoes de fase, turnos rotacionando (3+ jogadores) | Critica |
-| 4.1-4.4 | Jogo completo com 2, 3 e 4 jogadores | Critica |
+| Fase | Cenario | Criticidade |
+|------|---------|-------------|
+| 2.1-2.4 | Testes unitarios das funcoes helper | Alta |
+| 3.1-3.2 | Shield/Handcuffs/Shop funcionam (2 jogadores) | Alta |
+| 3.3-3.6 | Fluxo completo single player | Critica |
+| 4.1-4.4 | Jogo completo com 2 jogadores (regressao) | Critica |
+| 4.1-4.4 | Jogo com 3-4 jogadores (novo) | Alta |
 
-### Multiplayer (Validar apos Fase 5)
+### Multiplayer (Validar Separadamente)
 
-- [ ] Sincronizacao de efeitos com N jogadores
-- [ ] Sincronizacao de consumo de pilula
-- [ ] Sincronizacao de uso de itens
-- [ ] Reconexao mantem estado consistente
+- [ ] Sincronizacao de efeitos
+- [ ] Sincronizacao de consumo
+- [ ] Sincronizacao de turnos N jogadores
+- [ ] Reconexao mantem estado
 
 ---
 
 ## Riscos e Mitigacoes
 
-| Risco | Probabilidade | Impacto | Mitigacao |
-|-------|--------------|---------|-----------|
-| Quebrar sincronizacao multiplayer | Alta | Critico | DUAL-WRITE: gameStore continua emitindo eventos |
-| Regressao em single player | Media | Alto | Manter testes de 2 jogadores como baseline |
-| Performance (N jogadores) | Baixa | Baixo | Zustand e eficiente, stores pequenos |
-| Dependencias circulares | Media | Medio | Usar `getState()` em vez de hooks internos |
-| UI nao preparada para N jogadores | Alta | Alto | Escopo de UI em spec separada |
+| Risco | Prob. | Impacto | Mitigacao |
+|-------|-------|---------|-----------|
+| Quebrar single player | Media | Critico | DUAL-WRITE: manter gameStore funcional |
+| Quebrar multiplayer | Alta | Critico | Testar sync apos cada fase |
+| Performance N jogadores | Baixa | Baixo | Zustand e eficiente |
+| UI nao preparada | Alta | Alto | UI em spec separada |
 
 ---
 
 ## Metricas de Sucesso
 
-| Metrica | Atual | Meta | Status |
-|---------|-------|------|--------|
-| Linhas no `gameStore.ts` | 2359 | < 350 | PENDENTE |
-| Stores com > 500 linhas | 1 | 0 | PENDENTE |
-| Cobertura de testes (stores/game) | ~10% | > 70% | EM ANDAMENTO |
-| Hardcoded `player1`/`player2` | ~56 refs | 0 | PENDENTE |
-| Suporte a 3+ jogadores | NAO | SIM | PENDENTE |
+| Metrica | Atual | Meta |
+|---------|-------|------|
+| Linhas `gameStore.ts` | 2359 | < 350 |
+| Stores > 500 linhas | 1 | 0 |
+| Refs hardcoded `player1`/`player2` | ~56 | 0 |
+| Cobertura testes stores/game | ~10% | > 70% |
+| Suporte 3+ jogadores | NAO | SIM |
 
 ---
 
 ## Proximos Passos
 
-1. **IMEDIATO:** Fase 2.0-2.3 (Fundacao N-Jogadores)
-2. **DEPOIS:** Fase 3.1-3.2 (Generalizar stores existentes)
-3. **CONTINUAR:** Fase 3.3-3.6 (Extrair stores restantes)
-4. **FUTURO:** Camada de Sincronizacao em spec separada (`mp-sync-refactor`)
+1. **IMEDIATO:** Fase 1.5-1.6 (Constantes e Types)
+2. **DEPOIS:** Fase 2.1-2.4 (Funcoes puras em utils)
+3. **CONTINUAR:** Fase 3.1-3.6 (Generalizar e extrair stores)
+4. **FUTURO:** UI para N jogadores (spec separada)
 
 ---
 
 ## Referencias
 
 - [ADR-001: Store Decomposition](.specs/refactor-game-store/ADR-001-store-decomposition.md)
-- [Architecture Rules](.cursor/rules/architecture.md)
-- [Zustand Best Practices](https://docs.pmnd.rs/zustand/guides/practice-with-no-store-actions)
+- [Architecture Rules](.cursor/rules/architecture.md) - Padrao "Optimistic UI + Authority"
+- [Product Rules](.cursor/rules/product.md) - Conceito Unificado de Player
+- [Structure Rules](.cursor/rules/structure.md) - Localizacao de arquivos
 
 ---
 
-> **NOTA:** Esta refatoracao e incremental. O jogo permanece funcional (modo 2 jogadores) durante todo o processo gracas ao padrao DUAL-WRITE. A UI para N jogadores sera tratada em spec separada.
+> **NOTA:** O jogo permanece funcional (2 jogadores) durante todo o processo. A UI para N jogadores sera tratada em spec separada.

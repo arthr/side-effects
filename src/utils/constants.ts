@@ -225,6 +225,8 @@ export const GAME_LIMITS = {
   MAX_RESISTANCE: 10,
   MIN_PILLS_PER_ROUND: 4,
   MAX_PILLS_PER_ROUND: 12,
+  MIN_PLAYERS: 2,
+  MAX_ROOM_PLAYERS: 4,
 } as const
 
 /**
