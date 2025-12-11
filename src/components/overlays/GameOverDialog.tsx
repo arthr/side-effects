@@ -55,6 +55,8 @@ interface GameOverDialogProps {
   onClose: () => void
   /** Se esta em modo multiplayer */
   isMultiplayer?: boolean
+  /** ID do jogador local (para determinar quem solicitou rematch) */
+  localPlayerId?: PlayerId
   /** Estado de rematch (apenas multiplayer) */
   rematchState?: import('@/types').RematchState
   /** Callback para solicitar rematch */
@@ -109,6 +111,7 @@ export function GameOverDialog({
   onRestart,
   onClose,
   isMultiplayer = false,
+  localPlayerId,
   rematchState,
   onRequestRematch,
   onAcceptRematch,
@@ -122,7 +125,15 @@ export function GameOverDialog({
   // Determina qual UI mostrar baseado no estado de rematch
   const showRematchUI = isMultiplayer && rematchState
   const isWaitingForOpponent = showRematchUI && rematchState.status === 'waiting'
-  const opponentRequested = isWaitingForOpponent && rematchState.requestedBy !== null
+  
+  // Verifica se EU solicitei rematch (aguardando oponente)
+  const iRequestedRematch = isWaitingForOpponent && 
+                            rematchState.requestedBy === localPlayerId
+  
+  // Verifica se OPONENTE solicitou rematch (posso aceitar/recusar)
+  const opponentRequested = isWaitingForOpponent && 
+                            rematchState.requestedBy !== null && 
+                            rematchState.requestedBy !== localPlayerId
 
   return (
     <Dialog
@@ -311,7 +322,6 @@ export function GameOverDialog({
                   <Button
                     onClick={() => {
                       onDeclineRematch()
-                      onClose()
                     }}
                     variant="outline"
                     size="lg"
@@ -323,8 +333,8 @@ export function GameOverDialog({
               </div>
             )}
 
-            {/* Variante 2: Aguardando oponente (você solicitou rematch) */}
-            {isWaitingForOpponent && !opponentRequested && (
+            {/* Variante 2: EU solicitei rematch - aguardando oponente */}
+            {iRequestedRematch && (
               <div className="text-center space-y-3">
                 <p className="text-sm sm:text-base font-mono text-muted-foreground animate-pulse">
                   Aguardando oponente...
@@ -333,7 +343,6 @@ export function GameOverDialog({
                   onClick={() => {
                     if (onDeclineRematch) {
                       onDeclineRematch()
-                      onClose()
                     }
                   }}
                   variant="outline"
@@ -345,8 +354,8 @@ export function GameOverDialog({
               </div>
             )}
 
-            {/* Variante 3: Oponente aguardando você */}
-            {isWaitingForOpponent && opponentRequested && (
+            {/* Variante 3: OPONENTE solicitou - posso aceitar/recusar */}
+            {opponentRequested && (
               <div className="text-center space-y-3">
                 <p className="text-sm sm:text-base font-mono text-primary font-bold">
                   Oponente quer jogar novamente!
@@ -356,7 +365,6 @@ export function GameOverDialog({
                     onClick={() => {
                       if (onAcceptRematch) {
                         onAcceptRematch()
-                        onClose()
                       }
                     }}
                     size="lg"
@@ -372,7 +380,6 @@ export function GameOverDialog({
                     onClick={() => {
                       if (onDeclineRematch) {
                         onDeclineRematch()
-                        onClose()
                       }
                     }}
                     variant="outline"

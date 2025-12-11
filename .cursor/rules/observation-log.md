@@ -17,6 +17,34 @@ Exemplo:
 
 - [2024-12-11] **Race Conditions em Multiplayer:** Quando dois jogadores acionam mesma action simultaneamente, validar se estado atual ja reflete a intencao antes de criar novo estado. Exemplo: ambos em `rematchState.status === 'waiting'` significa "ambos aceitaram".
 
+- [2024-12-11] **Verificacao de Estado Local vs Remoto:** Ao implementar sistemas de coordenacao multiplayer, SEMPRE verificar se o estado pertence ao jogador local ou remoto. Nao assumir que `requestedBy !== null` identifica o oponente - pode ser o proprio jogador! Padrao correto:
+  ```typescript
+  // ❌ ERRADO
+  const isOpponentState = state.someField !== null
+  
+  // ✅ CORRETO
+  const isMyState = state.someField === myId
+  const isOpponentState = state.someField !== null && state.someField !== myId
+  ```
+  Exemplo: Bug de auto-aceitar rematch corrigido verificando `requestedBy === localPlayerId` vs `requestedBy !== localPlayerId`.
+
+- [2024-12-11] **Callback Chains em React Dialogs:** Ao implementar acoes em Dialogs, EVITAR chamar `onClose()` apos acoes que mudam estado (ex: `onAcceptRematch()`). O Dialog deve fechar automaticamente via mudanca de estado (fase/modo). Problema:
+  ```typescript
+  // ❌ ERRADO - Cria callback chain duplo
+  <Button onClick={() => {
+    onAcceptRematch()  // 1. Muda estado
+    onClose()          // 2. Dispara onOpenChange
+                       // 3. onOpenChange pode chamar outra action conflitante
+  }}>
+  
+  // ✅ CORRETO - Fecha automaticamente
+  <Button onClick={() => {
+    onAcceptRematch()  // 1. Muda estado
+                       // 2. Dialog fecha quando componente pai re-renderiza
+  }}>
+  ```
+  Exemplo: Bug de dupla chamada `acceptRematch()` + `declineRematch()` corrigido removendo `onClose()` manual.
+
 ### Decisoes Arquiteturais
 
 - [2024-12-11] **PlayerId vs UserId:** Decidimos separar dois conceitos:

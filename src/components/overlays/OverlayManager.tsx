@@ -80,6 +80,7 @@ export function OverlayManager() {
           onRestart={handleRestart}
           onClose={close}
           isMultiplayer={isMultiplayer}
+          localPlayerId={localPlayerId ?? undefined}
           rematchState={rematchState}
           onRequestRematch={requestRematch}
           onAcceptRematch={acceptRematch}
