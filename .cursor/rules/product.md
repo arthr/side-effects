@@ -1,12 +1,12 @@
 # Produto: Dosed (Pill Roulette)
 
 ## Conceito
-Jogo de estrategia por turnos onde dois jogadores competem para ser o ultimo sobrevivente atraves do consumo de pilulas com efeitos ocultos.
+Jogo de estrategia por turnos onde jogadores competem para ser o ultimo sobrevivente atraves do consumo de pilulas com efeitos ocultos.
 
-## Modo de Jogo Atual
-- **Humano vs IA** (Player 1 vs Player 2)
-- Turnos alternados automaticamente
-- IA com delay de "pensamento" para UX
+## Modos de Jogo
+- **Single Player:** Humano vs Bot (Local). O Bot é simulado no cliente.
+- **Multiplayer:** Humano vs Humano (Online via Supabase). Sincronizado em tempo real.
+- **Conceito Unificado:** O sistema trata todos como `Player`, diferenciados apenas pela origem das ações (Local, Remoto ou Bot).
 
 ## Mecanicas Implementadas
 
@@ -150,10 +150,6 @@ Cada jogador seleciona 5 itens antes da partida (inventario fixo de 5 slots). It
 ### Prioridade Baixa
 - [ ] Modo PvP (multiplayer)
 - [ ] Leaderboard/ranking
-
----
-
-## Funcionalidades Implementadas (Recentes)
 
 ### Sistema de Dificuldade da IA
 - 4 niveis: `easy` (Paciente), `normal` (Cobaia), `hard` (Sobrevivente), `insane` (Hofmann)

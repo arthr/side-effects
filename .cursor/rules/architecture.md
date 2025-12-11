@@ -1,6 +1,6 @@
 # Arquitetura do Jogo
 
-## ⚠️ Regras de Ouro (Refatoracao)
+## Regras de Ouro (Refatoracao & Solo Dev)
 
 1. **Simplicidade Cognitiva:** O codigo deve ser obvio. Se voce precisar de um diagrama complexo para explicar uma refatoracao, ela esta errada. Evite abstracoes desnecessarias (ex: Managers ou Services intermediarios sem valor claro).
 2. **Fronteiras Rigidas:**
@@ -8,6 +8,19 @@
    - **Hooks** conectam UI aos Stores/Logica. Eles contem os `useEffect` e regras de "quando" algo acontece.
    - **Utils (Logic)** devem ser FUNCOES PURAS. Elas recebem dados e retornam dados. Sem `useStore`, sem `DOM`, sem efeitos colaterais. Isso garante testabilidade.
 3. **Imutabilidade:** O estado do Zustand deve ser tratado como imutavel. Sempre retorne novos objetos em updates.
+
+## Arquitetura Multiplayer (Transition Guide)
+
+Ao refatorar para suportar multiplayer, siga o padrão **Optimistic UI + Authority**:
+
+1. **Ações:** O jogador clica -> UI atualiza imediatamente (Optimistic) -> Envia evento ao Supabase.
+2. **Reconciliação:** Se o Supabase rejeitar (ex: lag, cheat), o cliente faz rollback do estado.
+3. **Generalização:** O `playerId` não é mais fixo ('player1'). Use `auth.user.id` ou IDs de sessão gerados.
+4. **Bots:** Em Multiplayer, Bots devem rodar no lado do HOST (Dono da sala) ou via Edge Function, nunca em ambos os clientes ao mesmo tempo.
+
+### Estado: Local vs Sincronizado
+- **GameState (Sincronizado):** Vidas, Resistência, Turno Atual, PillPool. Este estado vem do Supabase (A verdade absoluta).
+- **UIState (Local):** Hover, Seleção de Item, Animações, Toasts, Inputs de formulário. Este estado NUNCA trafega pelo WebSocket.
 
 ## Componentes Principais
 
@@ -336,12 +349,3 @@ Loja:
 ### storeConfig.ts
 - `STORE_ITEMS` - Array de itens disponiveis na Pill Store
 - `DEFAULT_STORE_CONFIG` - Configuracao da loja (shoppingTime, reduceMultiplier)
-
-## Arquitetura Multiplayer (Transition Guide)
-
-Ao refatorar para suportar multiplayer, siga o padrão **Optimistic UI + Authority**:
-
-1. **Ações:** O jogador clica -> UI atualiza imediatamente (Optimistic) -> Envia evento ao Supabase.
-2. **Reconciliação:** Se o Supabase rejeitar (ex: lag, cheat), o cliente faz rollback do estado.
-3. **Generalização:** O `playerId` não é mais fixo ('player1'). Use `auth.user.id` ou IDs de sessão gerados.
-4. **Bots:** Em Multiplayer, Bots devem rodar no lado do HOST (Dono da sala) ou via Edge Function, nunca em ambos os clientes ao mesmo tempo.
