@@ -1,25 +1,25 @@
 /**
  * Game Domain Stores
  *
- * Este modulo ira conter os stores de dominio do jogo:
- * - gameFlowStore   - Fases, turnos, rodadas, winner
- * - pillPoolStore   - Pool de pilulas, consumo, reveal
- * - playerStore     - Vidas, resistencia, maximos
- * - inventoryStore  - Itens, selecao, uso
- * - effectsStore    - Efeitos de jogador (shield, handcuffs)
- * - shopStore       - Pill Store, carrinho, boosts
- *
- * Por enquanto, re-exporta do gameStore legado para retrocompatibilidade.
+ * Este modulo contem os stores de dominio do jogo:
+ * - effectsStore    - Efeitos de jogador (shield, handcuffs) [EXTRAIDO]
+ * - gameFlowStore   - Fases, turnos, rodadas, winner (TODO)
+ * - pillPoolStore   - Pool de pilulas, consumo, reveal (TODO)
+ * - playerStore     - Vidas, resistencia, maximos (TODO)
+ * - inventoryStore  - Itens, selecao, uso (TODO)
+ * - shopStore       - Pill Store, carrinho, boosts (TODO)
  *
  * @see ADR-001-store-decomposition.md
  */
 
-// TODO: Fase 2 - Extrair stores individuais e re-exportar aqui
+// Stores extraidos
+export * from './effectsStore'
+
+// TODO: Fase 2 - Extrair stores restantes
 // export * from './gameFlowStore'
 // export * from './pillPoolStore'
 // export * from './playerStore'
 // export * from './inventoryStore'
-// export * from './effectsStore'
 // export * from './shopStore'
 
 // Retrocompatibilidade: re-exporta do store legado

@@ -1,5 +1,14 @@
 # Arquitetura do Jogo
 
+## ⚠️ Regras de Ouro (Refatoracao)
+
+1. **Simplicidade Cognitiva:** O codigo deve ser obvio. Se voce precisar de um diagrama complexo para explicar uma refatoracao, ela esta errada. Evite abstracoes desnecessarias (ex: Managers ou Services intermediarios sem valor claro).
+2. **Fronteiras Rigidas:**
+   - **UI (Components)** SO podem chamar **Hooks**. NUNCA chamam Stores ou Utils diretamente.
+   - **Hooks** conectam UI aos Stores/Logica. Eles contem os `useEffect` e regras de "quando" algo acontece.
+   - **Utils (Logic)** devem ser FUNCOES PURAS. Elas recebem dados e retornam dados. Sem `useStore`, sem `DOM`, sem efeitos colaterais. Isso garante testabilidade.
+3. **Imutabilidade:** O estado do Zustand deve ser tratado como imutavel. Sempre retorne novos objetos em updates.
+
 ## Componentes Principais
 
 ### Game Board (`src/components/game/`)

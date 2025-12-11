@@ -1,5 +1,17 @@
 # Estrutura do Projeto e Convencoes
 
+## ⚠️ Localizacao Obrigatoria de Arquivos (Refatoracao)
+
+Se voce criar ou mover arquivos durante a refatoracao, siga estritamente este mapa. Nao crie pastas fora deste padrao.
+
+- Logica pura de jogo/regras? -> `src/utils/`
+- Logica de React/Ciclo de vida? -> `src/hooks/`
+- Estado global? -> `src/stores/`
+- Interfaces/Tipos compartilhados? -> `src/types/`
+- Componentes Visuais? -> `src/components/ui/` (se generico) ou `src/components/game/` (se especifico do jogo)
+
+**Regra de Colocacao:** Se um arquivo for usado por APENAS um componente, mantenha-o na mesma pasta do componente. Se for usado por dois ou mais, mova para `src/utils` ou `src/hooks`.
+
 ## Estrutura de Pastas
 ```
 src/

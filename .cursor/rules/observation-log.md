@@ -1,5 +1,12 @@
 # Registro de Observacoes
 
+## 🧠 Licoes de Refatoracao (Preencha durante o processo)
+
+Use esta secao para registrar armadilhas encontradas.
+Exemplo:
+- [Data] **Risco de Render:** Ao refatorar `GameBoard`, descobrimos que o timer dispara re-renders no componente pai. Solucao: O timer foi isolado em um componente filho `TurnTimer`.
+- [Data] **Zustand:** Nao desestruture stores dentro de loops ou callbacks. Use seletores granulares (`useStore(s => s.item)`) para evitar renders desnecessarios.
+
 ## Diretrizes para o Agente
 
 ### Antes de Qualquer Alteracao

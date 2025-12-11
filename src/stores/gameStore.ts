@@ -19,6 +19,7 @@ import type {
   ShapeQuest,
 } from '@/types'
 import { DEFAULT_GAME_CONFIG, ROUND_TRANSITION_DELAY } from '@/utils/constants'
+import { useEffectsStore } from '@/stores/game/effectsStore'
 import { applyPillEffect, applyHeal, createPlayer, hasPlayerEffect } from '@/utils/gameLogic'
 import {
   countPillTypes,
@@ -506,6 +507,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     // Atualiza jogador que consumiu com efeitos decrementados e pillCoins
+    // DUAL-WRITE: Decrementa effects no effectsStore
+    useEffectsStore.getState().decrementEffects(consumerId)
+
     let updatedConsumer = decrementPlayerEffects(result.player)
     if (earnedPillCoin) {
       updatedConsumer = { ...updatedConsumer, pillCoins: updatedConsumer.pillCoins + 1 }
@@ -544,6 +548,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Verifica se proximo jogador esta algemado (Handcuffs)
     if (hasPlayerEffect(nextPlayer, 'handcuffed')) {
+      // DUAL-WRITE: Remove handcuffed do effectsStore
+      useEffectsStore.getState().removeEffect(nextPlayerId, 'handcuffed')
+
       // Remove o efeito handcuffed e pula o turno (mantem turno atual)
       nextPlayer = {
         ...nextPlayer,
@@ -642,6 +649,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     // Remove efeitos de Shield (duram apenas 1 rodada) e reseta wantsStore
+    // DUAL-WRITE: Remove shield de ambos os jogadores no effectsStore
+    useEffectsStore.getState().removeEffectFromAll('shield')
+
     const player1Updated: Player = {
       ...player1,
       effects: player1.effects.filter((e) => e.type !== 'shield'),
@@ -756,6 +766,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Reseta o jogo para o estado inicial
    */
   resetGame: () => {
+    // Reseta effectsStore junto com o gameStore
+    useEffectsStore.getState().reset()
     set(initialState)
   },
 
@@ -1068,6 +1080,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Adiciona efeito de shield ao jogador atual
         const hasShieldAlready = updatedCurrentPlayer.effects.some((e) => e.type === 'shield')
         if (!hasShieldAlready) {
+          // DUAL-WRITE: Adiciona shield no effectsStore
+          useEffectsStore.getState().applyEffect(currentPlayerId, { type: 'shield', roundsRemaining: 1 })
+
           const playerWithShield: Player = {
             ...updatedCurrentPlayer,
             effects: [
@@ -1093,6 +1108,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (!opponentHasShield) {
           const hasHandcuffsAlready = opponent.effects.some((e) => e.type === 'handcuffed')
           if (!hasHandcuffsAlready) {
+            // DUAL-WRITE: Adiciona handcuffs no effectsStore
+            useEffectsStore.getState().applyEffect(opponentId, { type: 'handcuffed', roundsRemaining: 1 })
+
             const opponentWithHandcuffs: Player = {
               ...opponent,
               effects: [
@@ -1246,6 +1264,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ============ PLAYER EFFECTS ACTIONS ============
+  // NOTA: DUAL-WRITE - Atualiza tanto effectsStore quanto player.effects
+  // Durante a migracao, ambos sao mantidos em sincronia
+  // @see ADR-001-store-decomposition.md
 
   /**
    * Aplica um efeito a um jogador (ex: Shield, Handcuffs)
@@ -1259,6 +1280,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const hasEffect = player.effects.some((e) => e.type === effect.type)
     if (hasEffect) return
 
+    // DUAL-WRITE: Atualiza effectsStore
+    useEffectsStore.getState().applyEffect(playerId, effect)
+
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     set({
       players: {
         ...state.players,
@@ -1277,6 +1302,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     const player = state.players[playerId]
 
+    // DUAL-WRITE: Atualiza effectsStore
+    useEffectsStore.getState().removeEffect(playerId, effectType)
+
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     set({
       players: {
         ...state.players,
@@ -1296,11 +1325,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     const player = state.players[playerId]
 
+    // DUAL-WRITE: Atualiza effectsStore
+    useEffectsStore.getState().decrementEffects(playerId)
+
+    // DUAL-WRITE: Atualiza player.effects (retrocompatibilidade)
     const updatedEffects = player.effects
-      .map((effect) => ({
-        ...effect,
-        roundsRemaining: effect.roundsRemaining - 1,
-      }))
+      .map((effect) => {
+        // Shield dura a rodada inteira, nao decrementa por turno
+        if (effect.type === 'shield') {
+          return effect
+        }
+        return {
+          ...effect,
+          roundsRemaining: effect.roundsRemaining - 1,
+        }
+      })
       .filter((effect) => effect.roundsRemaining > 0)
 
     set({

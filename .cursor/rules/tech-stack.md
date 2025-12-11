@@ -1,5 +1,11 @@
 # Stack Tecnologica
 
+## ⚠️ Restricoes de Dependencias (Refatoracao)
+
+- **Zero Novas Libs:** Nao adicione pacotes npm (ex: lodash, moment, axios) sem aprovacao explicita. Use o que ja esta instalado ou implemente utilitarios nativos.
+- **Tailwind-First:** Nao crie arquivos CSS ou SCSS. Nao use styled-components. Tudo deve ser utility classes.
+- **Zustand Exclusivo:** Nao introduza Context API ou Redux. Se precisar de estado global, use/estenda os stores existentes.
+
 ## Core
 - **Framework:** React 18+ (hooks funcionais)
 - **Build Tool:** Vite

@@ -1,56 +1,46 @@
 # Implementar Refatoracao
 
 ## Descricao
-Executa, passo a passo, o plano de refatoracao definido previamente em `.specs/refactor-[nome]/plan.md`, garantindo que nenhuma funcionalidade existente seja quebrada (regressao) durante o processo.
+Executa o plano de refatoracao definido em `.specs/refactor-[nome]/plan.md`, garantindo estabilidade, localizacao correta de arquivos e atualizacao da base de conhecimento.
 
 ## Instrucoes
 
-### 1. Contexto Obrigatorio
-Antes de tocar em qualquer arquivo, leia:
-- O arquivo de plano: `.specs/refactor-[nome]/plan.md`
-- ADRs: `.specs/refactor-[name]/ADR-*.mb`
-- As regras globais: `@.cursor/rules/architecture.md`
-- `@.cursor/rules/coding-style.md` - Para garantir consistencia de estilo
-- `@.cursor/rules/tech-stack.md`   - Para garantir uso correto de tecnologia
-- O codigo atual que sera modificado (para entender o estado inicial).
+### 1. Contexto de Execucao
+Antes de iniciar, carregue na memoria:
+- O plano: `.specs/refactor-[nome]/plan.md`
+- O mapa do projeto: `@.cursor/rules/structure.md` (CRITICO: Nao crie arquivos fora das pastas permitidas).
+- As restricoes: `@.cursor/rules/tech-stack.md` (Nao instale pacotes nao planejados).
+- O historico: `@.cursor/rules/observation-log.md`.
 
-### 2. Selecao de Etapa (Step-by-Step)
-Localize no arquivo `plan.md` a proxima etapa marcada como pendente `[ ]`.
-- **Nao tente executar todo o plano de uma vez.**
-- Foque exclusivamente na tarefa atual.
+### 2. Selecao de Tarefa Atomica
+Localize a proxima tarefa `[ ]` no `plan.md`.
+- Execute APENAS uma tarefa por vez.
+- Nao pule etapas.
 
-### 3. Analise de Impacto Imediato
-Antes de codar, verifique:
-- Quais arquivos importam o modulo que voce vai alterar?
-- Existem `types` ou `interfaces` compartilhadas que precisarao ser atualizadas?
-- A alteracao vai quebrar a build momentaneamente? Se sim, avise.
+### 3. Proposta de Implementacao
+Antes de escrever codigo, explique brevemente:
+1. "Vou mover a logica X para `src/utils/` conforme Regra de Ouro".
+2. "Vou criar o hook em `src/hooks/`".
+3. Pergunte: "Posso executar?"
 
-### 4. Proposta de Alteracao
-Explique ao usuario:
-1. O que sera movido/renomeado/alterado.
-2. Como voce garantira que a logica se mantem a mesma (ex: "Manterei a mesma assinatura da funcao `processTurn`").
-3. **Solicite Aprovacao:** "Posso aplicar esta etapa?"
-
-### 5. Execucao Cirurgica
+### 4. Execucao e Regra de Ouro
 Apos aprovacao:
-- Execute a refatoracao.
-- **Regra de Ouro:** Se voce encontrar um bug pre-existente durante a refatoracao, NAO O CORRIJA AGORA. Apenas adicione um comentario `// TODO: Bug encontrado...` e siga a refatoracao. Misturar refatoracao com correcao de bug e perigoso.
-- Use `ts-prune` ou analise estatica para garantir que nao sobraram imports inuteis.
+- Realize a mudanca.
+- **Regra de Bugs:** Se encontrar um bug logico nao relacionado a refatoracao, APENAS adicione um comentario `// TODO: Bug [descrição]` e continue.
+- **Regra de Imports:** Garanta que nao restaram imports relativos quebrados (ex: `../../`).
 
-### 6. Verificacao de Integridade
-Apos a alteracao:
-- Execute o linter.
-- Verifique se o TypeScript compila sem erros.
-- Se a refatoracao envolveu UI, pergunte: "O layout visual precisa ser verificado?"
+### 5. Verificacao Imediata
+Apos cada passo:
+- Rode o linter/type-checker.
+- Valide: O arquivo novo esta na pasta exata definida em `structure.md`?
 
-### 7. Atualizar Progresso
-- Marque a tarefa como concluida `[x]` no arquivo `plan.md`.
-- Se a refatoracao mudou a forma de usar um componente/funcao, atualize referencias no codigo.
+### 6. Atualizar Progresso
+- Marque `[x]` no `plan.md`.
+- Pergunte: "Passo concluido. Deseja verificar o diff ou ir para o proximo?"
 
-### 8. Loop
-Pergunte:
-> "Etapa concluida e validada. Podemos prosseguir para a proxima etapa do plano?"
-
-### 9. Limpeza Final (Quando `plan.md` estiver 100% concluido)
-- Pergunte ao usuario se o arquivo `.specs/refactor-[nome]/plan.md` pode ser deletado.
-- Sugira um commit com a mensagem: `refactor: [nome da refatoracao] complete`
+### 7. Finalizacao e Aprendizado
+Quando todo o plano estiver `[x]`:
+1. Delete a pasta `.specs/refactor-[nome]/`.
+2. IMPORTANTE: Se voce aprendeu algo novo sobre o sistema (ex: "O store X reseta quando Y acontece"), sugira adicionar ao `@.cursor/rules/observation-log.md`.
+3. Atualize `@.cursor/rules/architecture.md` se a estrutura mudou.
+4. Sugira o commit final.
