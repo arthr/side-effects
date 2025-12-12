@@ -19,6 +19,7 @@ export function StoresTab() {
     playerOrder,
     currentTurn,
     playerIds,
+    seatLabelsById,
   } = useDevToolStoresSnapshot()
 
   return (
@@ -63,11 +64,12 @@ export function StoresTab() {
         <CardContent className="space-y-1.5 px-3 pb-2">
           {playerIds.map((playerId, idx) => {
             const effects = activeEffects[playerId] ?? []
+            const seatLabel = seatLabelsById[playerId] ?? 'P?'
             return (
               <div key={playerId}>
                 {idx !== 0 && <Separator />}
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-mono">{playerId}:</span>
+                  <span className="text-xs font-mono">{seatLabel} {playerId}:</span>
                   <Badge variant="outline" className="text-xs">
                     {effects.length} efeitos
                   </Badge>
@@ -153,12 +155,16 @@ export function StoresTab() {
         <CardContent className="space-y-1.5 px-3 pb-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Ordem de Turnos:</span>
-            <span className="text-xs font-mono">{playerOrder.join(', ')}</span>
+            <span className="text-xs font-mono">
+              {(playerOrder.length > 0 ? playerOrder : playerIds)
+                .map((id) => seatLabelsById[id] ?? 'P?')
+                .join(', ')}
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Turno Atual:</span>
             <Badge variant="outline" className="text-xs font-mono">
-              {currentTurn}
+              {(seatLabelsById[currentTurn] ?? 'P?')}
             </Badge>
           </div>
         </CardContent>

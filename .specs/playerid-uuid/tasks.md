@@ -10,7 +10,7 @@
 - **Objetivo:** `getPlayerIds` não pode mais assumir `playerN`; criar helper que não ordena por semântica (ex.: `getPlayerIdsUnordered`) e migrar usos.
 
 ## Tarefa 3 — Introduzir seatIndex apenas para UI/DevTool (legibilidade)
-- **Status:** TODO
+- **Status:** DONE
 - **Objetivo:** exibir “P1/P2/P3” por posição em `playerOrder` sem depender de PlayerId.
 
 ## Tarefa 4 — Migrar PlayerId para UUID (single player)

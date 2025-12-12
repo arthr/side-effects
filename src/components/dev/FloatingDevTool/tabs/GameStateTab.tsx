@@ -17,6 +17,7 @@ export function GameStateTab() {
     currentTurn,
     players,
     playerIds,
+    seatLabelsById,
     pillPool,
     typeCounts,
     shapeQuests,
@@ -90,12 +91,13 @@ export function GameStateTab() {
             if (!p) return null
             const isCurrent = currentTurn === playerId
             const nameClass = idx === 0 ? 'text-primary' : 'text-foreground'
+            const seatLabel = seatLabelsById[playerId] ?? 'P?'
 
             return (
               <div key={playerId}>
                 {idx !== 0 && <Separator />}
                 <div className="flex items-center justify-between mb-1 pt-1">
-                  <span className={cn('text-xs font-mono font-normal', nameClass)}>{p.name}</span>
+                  <span className={cn('text-xs font-mono font-normal', nameClass)}>{seatLabel} {p.name}</span>
                   <div className="flex items-center gap-2">
                     {isCurrent && (
                       <Badge variant="outline" className="text-[9px] font-mono">

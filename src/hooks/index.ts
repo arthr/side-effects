@@ -92,3 +92,6 @@ export { useStoreCatalog } from './useStoreCatalog'
 export { useDevToolGameSnapshot } from './useDevToolGameSnapshot'
 export { useDevToolStoresSnapshot } from './useDevToolStoresSnapshot'
 export { useDevToolActions } from './useDevToolActions'
+
+// Seat label (P1/P2/...) derivado de playerOrder
+export { useSeatLabel } from './useSeatLabel'

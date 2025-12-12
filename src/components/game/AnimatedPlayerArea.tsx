@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '../ui/8bit/card'
 import { cn } from '@/lib/utils'
 import { Badge } from '../ui/8bit/badge'
 import { ResistanceDisplay } from './ResistanceDisplay'
+import { useSeatLabel } from '@/hooks'
 
 interface AnimatedPlayerAreaProps {
   player: Player
@@ -79,6 +80,7 @@ export function AnimatedPlayerArea({
   questJustReset = false,
   onToggleStore,
 }: AnimatedPlayerAreaProps) {
+  const seatLabel = useSeatLabel(player.id)
   // Detecta efeitos ativos
   const shieldEffect = player.effects.find((e) => e.type === 'shield')
   const hasShield = !!shieldEffect
@@ -198,7 +200,12 @@ export function AnimatedPlayerArea({
           {/* Header: Nome + Tags */}
           <CardHeader className="border-b pb-0! px-4 items-center">
             <div className="flex gap-1 items-center justify-between w-full">
-              <h3 className="font-medium truncate text-xs">{player.name}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <Badge variant="outline" className="text-[8px] font-mono">
+                  {seatLabel}
+                </Badge>
+                <h3 className="font-medium truncate text-xs">{player.name}</h3>
+              </div>
               <div className="flex gap-4 items-center">
                 {/* Indicador de Shield */}
                 {hasShield && (

@@ -5,6 +5,7 @@ import { useOverlayStore } from '@/stores/overlayStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { useGameStore } from '@/stores/gameStore'
+import { getSeatLabel } from '@/utils/playerManager'
 import type { PlayerId } from '@/types'
 
 /**
@@ -29,6 +30,15 @@ export function useDevToolStoresSnapshot() {
   const playerIds: PlayerId[] = (playerOrder.length > 0 ? playerOrder : fallbackIds)
     .filter((id) => players[id] !== undefined)
 
+  const seatLabelsById: Record<PlayerId, string> = useMemo(() => {
+    const effectiveOrder = playerOrder.length > 0 ? playerOrder : playerIds
+    const next: Record<PlayerId, string> = {}
+    for (const id of playerIds) {
+      next[id] = getSeatLabel(id, effectiveOrder)
+    }
+    return next
+  }, [playerIds, playerOrder])
+
   return {
     revealedPills,
     activeEffects,
@@ -39,6 +49,7 @@ export function useDevToolStoresSnapshot() {
     playerOrder,
     currentTurn,
     playerIds,
+    seatLabelsById,
   }
 }
 

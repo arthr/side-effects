@@ -4,6 +4,8 @@ import {
     createPlayerFromConfig,
     generatePlayerId,
     isValidPlayerId,
+    getSeatIndex,
+    getSeatLabel,
     getPlayerIds,
     getPlayerIdsUnordered,
     getAlivePlayers,
@@ -196,6 +198,26 @@ describe('playerManager', () => {
         it('deve retornar array vazio para objeto vazio', () => {
             const ids = getPlayerIds({})
             expect(ids).toEqual([])
+        })
+    })
+
+    describe('seatIndex/seatLabel', () => {
+        it('getSeatIndex deve retornar 1-based baseado em playerOrder', () => {
+            const order = ['a', 'b', 'c']
+            expect(getSeatIndex('a', order)).toBe(1)
+            expect(getSeatIndex('c', order)).toBe(3)
+        })
+
+        it('getSeatIndex deve retornar null se nao existir no playerOrder', () => {
+            const order = ['a', 'b']
+            expect(getSeatIndex('x', order)).toBeNull()
+        })
+
+        it('getSeatLabel deve retornar Pn ou P? se nao existir', () => {
+            const order = ['p1', 'p2']
+            expect(getSeatLabel('p1', order)).toBe('P1')
+            expect(getSeatLabel('p2', order)).toBe('P2')
+            expect(getSeatLabel('x', order)).toBe('P?')
         })
     })
 

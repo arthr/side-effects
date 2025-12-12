@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 import { useGameFlowStore } from '@/stores/game/gameFlowStore'
+import { getSeatLabel } from '@/utils/playerManager'
 import type { PlayerId } from '@/types'
 
 /**
@@ -26,12 +27,22 @@ export function useDevToolGameSnapshot() {
     return ids
   }, [players, playerOrder])
 
+  const seatLabelsById: Record<PlayerId, string> = useMemo(() => {
+    const effectiveOrder = playerOrder.length > 0 ? playerOrder : playerIds
+    const next: Record<PlayerId, string> = {}
+    for (const id of playerIds) {
+      next[id] = getSeatLabel(id, effectiveOrder)
+    }
+    return next
+  }, [playerIds, playerOrder])
+
   return {
     phase,
     round,
     currentTurn,
     players,
     playerIds,
+    seatLabelsById,
     pillPool,
     typeCounts,
     shapeQuests,

@@ -98,6 +98,29 @@ export function getPlayerIdsUnordered(
 }
 
 /**
+ * Retorna o seatIndex (1-based) de um jogador baseado em `playerOrder`.
+ * IMPORTANTE: Isso é o que deve ser usado para UI/DevTool (P1/P2/P3) quando PlayerId virar UUID.
+ */
+export function getSeatIndex(
+    playerId: PlayerId,
+    playerOrder: PlayerId[]
+): number | null {
+    const idx = playerOrder.indexOf(playerId)
+    return idx >= 0 ? idx + 1 : null
+}
+
+/**
+ * Retorna label amigável do assento, ex: "P1", "P2".
+ */
+export function getSeatLabel(
+    playerId: PlayerId,
+    playerOrder: PlayerId[]
+): string {
+    const seatIndex = getSeatIndex(playerId, playerOrder)
+    return seatIndex ? `P${seatIndex}` : 'P?'
+}
+
+/**
  * Extrai lista ordenada de playerIds de um Record de players
  *
  * @param players - Record de jogadores
