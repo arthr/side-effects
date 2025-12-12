@@ -59,11 +59,25 @@ Exemplo:
 
 ### Decisoes Arquiteturais
 
+- [2025-12-12] **PlayerId como UUID (Refatoracao Completa):** Migrado `PlayerId` de `playerN` para UUID v4:
+  - **Antes:** `PlayerId` = `"player1"`, `"player2"` (semantica de ordem embutida)
+  - **Depois:** `PlayerId` = UUID v4 (ex: `"a1b2c3d4-e5f6-7890-abcd-ef1234567890"`)
+  - **Ordem explícita:** `playerOrder: PlayerId[]` no `gameFlowStore` (fonte única de verdade)
+  - **UI/DevTool:** `getSeatLabel(playerId, playerOrder)` retorna "P1/P2/P3" para legibilidade
+  - **Regra de Ouro:** NUNCA ordenar jogadores por `PlayerId`. Sempre usar `playerOrder`.
+  - **Impacto:** 
+    - `gameStore.initGame()` gera UUIDs para humano/bot
+    - `playerStore.initializePlayers()` aceita `playerId` opcional (fallback para UUID)
+    - DevTools mantém `generatePlayerId(index)` temporariamente (comentado como TODO)
+    - Todos os testes atualizados para fornecer `playerId` explícito
+  - **Resultado:** 408 testes passando, 0 erros de linter, zero regressões
+  - **Próximo passo:** Fase B.2 - Multiplayer (host gera UUIDs e distribui para guests)
+
 - [2024-12-11] **PlayerId vs UserId:** Decidimos separar dois conceitos:
-  - `PlayerId` = posicao na partida (`player1`, `player2`), gerado por indice, nao persistente
+  - `PlayerId` = UUID de sessão (não persistente)
   - `UserId` = UUID do Supabase Auth, identidade do usuario, persistente
   - Motivo: Permite "Guest-First" (jogar sem cadastro) e simplifica logica de turnos
-  - Campo `Player.userId: string | null` sera adicionado na Fase 3.5 do refactor
+  - Campo `Player.userId: string | null` ja existe no modelo
 
 - [2024-12-11] **Sistema de Rematch (Multiplayer):** Implementado fluxo de coordenacao pos-jogo:
   - Estado `rematchState` no `multiplayerStore` (nao no gameStore)

@@ -32,7 +32,8 @@ export function ActionsTab() {
   } = useDevToolActions()
 
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerId>(() => {
-    // Fallback inicial (ajustado via useEffect assim que playerIds estiver disponível)
+    // TODO: Fallback temporario ate multiplayer suportar UUID
+    // Ajustado via useEffect assim que playerIds estiver disponivel
     return generatePlayerId(0) as PlayerId
   })
 

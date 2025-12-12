@@ -73,7 +73,9 @@ export function useDevToolActions() {
       return
     }
 
-    // Gera próximo id baseado no maior índice existente (evita colisão se ids não forem contíguos)
+    // TODO: Migrar para generatePlayerUUID quando multiplayer suportar UUID
+    // Por enquanto, usa generatePlayerId(index) como fallback para DevTools
+    // Isso funciona porque playerOrder e a fonte de verdade de ordem
     const maxIndex = (Object.keys(state.players) as PlayerId[]).reduce(
       (acc, id) => Math.max(acc, getLegacyPlayerNumberForIdGeneration(id)),
       0
@@ -181,6 +183,7 @@ export function useDevToolActions() {
       const nextIds = Object.keys(restPlayers) as PlayerId[]
       const currentOrder = useGameFlowStore.getState().playerOrder
       const nextOrder = (currentOrder.length > 0 ? currentOrder : nextIds).filter((id) => id !== removeId && restPlayers[id] !== undefined)
+      // TODO: Fallback temporario ate multiplayer suportar UUID
       const fallbackTurn = (nextOrder[0] ?? nextIds[0] ?? generatePlayerId(0)) as PlayerId
       const nextCurrentTurn = prev.currentTurn === removeId ? fallbackTurn : prev.currentTurn
 

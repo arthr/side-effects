@@ -26,6 +26,7 @@ import { useItemUsageStore } from '@/stores/game/itemUsageStore'
 import { useShopStore } from '@/stores/game/shopStore'
 import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { applyPillEffect, applyHeal, createPlayer, hasPlayerEffect } from '@/utils/gameLogic'
+import { generatePlayerUUID } from '@/utils/playerManager'
 import {
   countPillTypes,
   generatePillPool,
@@ -280,8 +281,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   initGame: (config?: Partial<GameConfig>) => {
     const finalConfig = { ...DEFAULT_GAME_CONFIG, ...config }
 
+    // Gera UUIDs para os jogadores (single player ou host)
+    // Em multiplayer guest, os IDs virao do syncData
+    const player1Id: PlayerId = generatePlayerUUID()
+    const player2Id: PlayerId = generatePlayerUUID()
+
     const player1 = createPlayer(
-      'player1',
+      player1Id,
       finalConfig.player1.name,
       finalConfig.startingLives,
       finalConfig.startingResistance,
@@ -289,12 +295,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     )
 
     const player2 = createPlayer(
-      'player2',
+      player2Id,
       finalConfig.player2.name,
       finalConfig.startingLives,
       finalConfig.startingResistance,
       finalConfig.player2.isAI
     )
+
+    // Ordem explicita: humano primeiro, bot segundo (single player)
+    // Em multiplayer, a ordem vira do syncData ou e definida pelo host
+    const playerOrder: PlayerId[] = [player1Id, player2Id]
 
     // Em multiplayer com syncData (guest), usa dados do host
     // Caso contrario (host ou single player), gera localmente
@@ -309,21 +319,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pillPool = generatePillPool(1)
       const shapeCounts = countPillShapes(pillPool)
       shapeQuests = {
-        player1: generateShapeQuest(1, shapeCounts),
-        player2: generateShapeQuest(1, shapeCounts),
+        [player1Id]: generateShapeQuest(1, shapeCounts),
+        [player2Id]: generateShapeQuest(1, shapeCounts),
       }
     }
 
     const typeCounts = countPillTypes(pillPool)
     const shapeCounts = countPillShapes(pillPool)
 
-    // Inicializa stores modulares
-    const playerIds: PlayerId[] = ['player1', 'player2']
-
-    useEffectsStore.getState().initializeForPlayers(playerIds)
-    useItemUsageStore.getState().initializeForPlayers(playerIds)
+    // Inicializa stores modulares com playerOrder
+    useEffectsStore.getState().initializeForPlayers(playerOrder)
+    useItemUsageStore.getState().initializeForPlayers(playerOrder)
     usePillPoolStore.getState().setPool(pillPool)
-    useGameFlowStore.getState().initialize(playerIds, {
+    useGameFlowStore.getState().initialize(playerOrder, {
       difficulty: finalConfig.difficulty,
       mode: finalConfig.mode,
       roomId: finalConfig.roomId ?? null,
@@ -331,7 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const startAction: GameAction = {
       type: 'GAME_START',
-      playerId: 'player1',
+      playerId: player1Id,
       timestamp: Date.now(),
       payload: { config: finalConfig },
     }
@@ -339,11 +347,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       phase: 'itemSelection',
       turnPhase: 'consume',
-      currentTurn: 'player1',
+      currentTurn: player1Id,
       difficulty: finalConfig.difficulty,
       mode: finalConfig.mode,
       roomId: finalConfig.roomId ?? null,
-      players: { player1, player2 },
+      players: { [player1Id]: player1, [player2Id]: player2 },
       pillPool,
       typeCounts,
       shapeCounts,
@@ -352,7 +360,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       winner: null,
       actionHistory: [startAction],
       // Reset item system state
-      itemSelectionConfirmed: { player1: false, player2: false },
+      itemSelectionConfirmed: { [player1Id]: false, [player2Id]: false },
       targetSelection: initialState.targetSelection,
       revealedPills: [],
       storeState: null,
@@ -496,8 +504,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         timestamp: Date.now(),
       })
 
-      // Vencedor e o outro jogador
-      const winnerId = consumerId === 'player1' ? 'player2' : 'player1'
+      // Vencedor e o outro jogador (usa playerOrder)
+      const playerOrder = useGameFlowStore.getState().playerOrder
+      const winnerId = playerOrder.find((id) => id !== consumerId) ?? playerOrder[0]
 
       actions.push({
         type: 'GAME_END',
@@ -865,12 +874,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Aguarda um pouco e reseta a rodada
     setTimeout(() => {
       const currentState = get()
-      // Verifica se ambos jogadores ainda têm vidas
-      if (currentState.players.player1.lives > 0 && currentState.players.player2.lives > 0) {
+      const playerOrder = useGameFlowStore.getState().playerOrder
+      
+      // Verifica se todos jogadores ainda têm vidas
+      const alivePlayers = playerOrder.filter((id) => currentState.players[id]?.lives > 0)
+      
+      if (alivePlayers.length > 1) {
         get().resetRound()
       } else {
-        // Se alguém morreu, termina o jogo
-        const winner = currentState.players.player1.lives > 0 ? 'player1' : 'player2'
+        // Se apenas um jogador vivo, ele vence
+        const winner = alivePlayers[0] ?? playerOrder[0]
         get().endGame(winner as PlayerId)
       }
     }, 1000)
@@ -1071,7 +1084,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     const currentPlayerId = state.currentTurn
     const currentPlayer = state.players[currentPlayerId]
-    const opponentId: PlayerId = currentPlayerId === 'player1' ? 'player2' : 'player1'
+    
+    // Busca oponente via playerOrder (assume 2 jogadores por enquanto)
+    const playerOrder = useGameFlowStore.getState().playerOrder
+    const opponentId: PlayerId = playerOrder.find((id) => id !== currentPlayerId) ?? playerOrder[0]
 
     // Busca o item no inventario
     const item = currentPlayer.inventory.items.find((i) => i.id === itemId)
@@ -1850,7 +1866,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const updatedStoreState = updatedState.storeState
     if (!updatedStoreState) return
 
-    const otherPlayerId: PlayerId = playerId === 'player1' ? 'player2' : 'player1'
+    // Busca outro jogador via playerOrder (assume 2 jogadores por enquanto)
+    const playerOrder = useGameFlowStore.getState().playerOrder
+    const otherPlayerId: PlayerId = playerOrder.find((id) => id !== playerId) ?? playerOrder[0]
     const otherPlayer = updatedState.players[otherPlayerId]
 
     // Verifica se outro jogador esta comprando (wantsStore && tem coins)
@@ -1897,20 +1915,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     const { players } = state
     const shopState = useShopStore.getState()
+    const playerOrder = useGameFlowStore.getState().playerOrder
 
     if (state.phase !== 'shopping' || !shopState.storeState) {
       return
     }
 
-    // Quem precisa confirmar: quem queria ir E tem coins (ou tinha no inicio)
-    const p1NeedsConfirm = players.player1.wantsStore
-    const p2NeedsConfirm = players.player2.wantsStore
+    // Verifica se todos jogadores que queriam ir a loja ja confirmaram
+    const allDone = playerOrder.every((playerId) => {
+      const player = players[playerId]
+      if (!player) return true // Jogador nao existe = considera "done"
+      
+      const needsConfirm = player.wantsStore
+      return !needsConfirm || shopState.isConfirmed(playerId)
+    })
 
-    // Verifica se todos que precisam ja confirmaram (usando shopStore)
-    const p1Done = !p1NeedsConfirm || shopState.isConfirmed('player1')
-    const p2Done = !p2NeedsConfirm || shopState.isConfirmed('player2')
-
-    if (p1Done && p2Done) {
+    if (allDone) {
       // Todos confirmaram - aplica boosts e inicia nova rodada
       get().applyPendingBoosts()
 

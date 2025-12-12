@@ -1,9 +1,11 @@
 import type { Player, PlayerConfig, PlayerId } from '@/types'
+import { v4 as uuidv4 } from 'uuid'
 
 /**
  * Funcoes puras para gerenciamento de jogadores em partidas N-jogadores
  *
  * @see .specs/refactor-game-store/plan.md
+ * @see .specs/playerid-uuid/plan.md
  */
 
 /**
@@ -72,7 +74,28 @@ export function isValidPlayerId(id: string): id is PlayerId {
 }
 
 /**
+ * Gera um PlayerId baseado em UUID v4 (padrao atual)
+ * 
+ * PlayerId agora e um UUID de sessao, nao mais "playerN".
+ * Isso elimina semantica de ordem embutida no ID.
+ * 
+ * @returns UUID v4 como PlayerId
+ * 
+ * @example
+ * generatePlayerUUID()
+ * // => "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ */
+export function generatePlayerUUID(): PlayerId {
+    return uuidv4()
+}
+
+/**
  * Gera PlayerId baseado em indice (player1, player2, ...)
+ * 
+ * @deprecated Este helper gera IDs com semantica de ordem embutida (playerN).
+ * Use `generatePlayerUUID()` para novos jogadores.
+ * Mantido apenas para compatibilidade com DevTools/testes legados.
+ * 
  * @param index - Indice base 0
  */
 export function generatePlayerId(index: number): PlayerId {

@@ -16,8 +16,8 @@ describe('playerStore', () => {
     describe('initializePlayers', () => {
         it('deve inicializar 2 jogadores', () => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
-                { name: 'Bob', lives: 3, resistance: 6, isAI: true },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player2', name: 'Bob', lives: 3, resistance: 6, isAI: true },
             ])
 
             const state = usePlayerStore.getState()
@@ -29,10 +29,10 @@ describe('playerStore', () => {
 
         it('deve inicializar 4 jogadores', () => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'P1', lives: 3, resistance: 6, isAI: false },
-                { name: 'P2', lives: 3, resistance: 6, isAI: false },
-                { name: 'P3', lives: 3, resistance: 6, isAI: true },
-                { name: 'P4', lives: 3, resistance: 6, isAI: true },
+                { playerId: 'player1', name: 'P1', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player2', name: 'P2', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player3', name: 'P3', lives: 3, resistance: 6, isAI: true },
+                { playerId: 'player4', name: 'P4', lives: 3, resistance: 6, isAI: true },
             ])
 
             const state = usePlayerStore.getState()
@@ -41,8 +41,8 @@ describe('playerStore', () => {
 
         it('deve definir userId quando fornecido', () => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false, userId: 'auth-uuid-123' },
-                { name: 'Guest', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false, userId: 'auth-uuid-123' },
+                { playerId: 'player2', name: 'Guest', lives: 3, resistance: 6, isAI: false },
             ])
 
             const state = usePlayerStore.getState()
@@ -52,7 +52,7 @@ describe('playerStore', () => {
 
         it('deve definir maxLives e maxResistance corretamente', () => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 5, resistance: 10, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 5, resistance: 10, isAI: false },
             ])
 
             const player = usePlayerStore.getState().players.player1
@@ -64,7 +64,7 @@ describe('playerStore', () => {
     describe('getPlayer', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -83,7 +83,7 @@ describe('playerStore', () => {
     describe('applyDamageToPlayer', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -124,7 +124,7 @@ describe('playerStore', () => {
     describe('applyHealToPlayer', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
             // Aplica dano primeiro
             usePlayerStore.getState().applyDamageToPlayer('player1', 4)
@@ -154,7 +154,7 @@ describe('playerStore', () => {
     describe('loseLife', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 2, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 2, resistance: 6, isAI: false },
             ])
         })
 
@@ -185,7 +185,7 @@ describe('playerStore', () => {
     describe('gainLife', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 2, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 2, resistance: 6, isAI: false },
             ])
         })
 
@@ -215,7 +215,7 @@ describe('playerStore', () => {
     describe('resetResistance', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
             usePlayerStore.getState().applyDamageToPlayer('player1', 4)
         })
@@ -235,7 +235,7 @@ describe('playerStore', () => {
     describe('setResistance', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -258,7 +258,7 @@ describe('playerStore', () => {
     describe('inventory management', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -337,7 +337,7 @@ describe('playerStore', () => {
     describe('pillCoins management', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -384,7 +384,7 @@ describe('playerStore', () => {
     describe('wantsStore', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
                 { name: 'Bob', lives: 3, resistance: 6, isAI: false },
             ])
         })
@@ -402,6 +402,13 @@ describe('playerStore', () => {
         })
 
         describe('setAllWantsStore', () => {
+            beforeEach(() => {
+                usePlayerStore.getState().initializePlayers([
+                    { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                    { playerId: 'player2', name: 'Bob', lives: 3, resistance: 6, isAI: false },
+                ])
+            })
+
             it('deve definir wantsStore para todos', () => {
                 const store = usePlayerStore.getState()
                 store.toggleWantsStore('player1')
@@ -424,7 +431,7 @@ describe('playerStore', () => {
     describe('updatePlayer', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -448,10 +455,10 @@ describe('playerStore', () => {
     describe('alive players helpers', () => {
         beforeEach(() => {
             usePlayerStore.getState().initializePlayers([
-                { name: 'P1', lives: 3, resistance: 6, isAI: false },
-                { name: 'P2', lives: 3, resistance: 6, isAI: false },
-                { name: 'P3', lives: 3, resistance: 6, isAI: false },
-                { name: 'P4', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'P1', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player2', name: 'P2', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player3', name: 'P3', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player4', name: 'P4', lives: 3, resistance: 6, isAI: false },
             ])
         })
 
@@ -494,7 +501,7 @@ describe('playerStore', () => {
         it('deve resetar para estado inicial', () => {
             const store = usePlayerStore.getState()
             store.initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false },
             ])
             store.addPillCoins('player1', 50)
             store.addItemToInventory('player1', 'scanner')
@@ -512,10 +519,10 @@ describe('playerStore', () => {
 
             // Setup
             store.initializePlayers([
-                { name: 'Alice', lives: 3, resistance: 6, isAI: false, userId: 'user-1' },
-                { name: 'Bob', lives: 3, resistance: 6, isAI: false, userId: 'user-2' },
-                { name: 'Bot1', lives: 3, resistance: 6, isAI: true },
-                { name: 'Bot2', lives: 3, resistance: 6, isAI: true },
+                { playerId: 'player1', name: 'Alice', lives: 3, resistance: 6, isAI: false, userId: 'user-1' },
+                { playerId: 'player2', name: 'Bob', lives: 3, resistance: 6, isAI: false, userId: 'user-2' },
+                { playerId: 'player3', name: 'Bot1', lives: 3, resistance: 6, isAI: true },
+                { playerId: 'player4', name: 'Bot2', lives: 3, resistance: 6, isAI: true },
             ])
 
             expect(store.countAlive()).toBe(4)

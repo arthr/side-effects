@@ -8,6 +8,7 @@ import type {
     InventoryItem,
     ItemType,
 } from '@/types'
+import { generatePlayerUUID } from '@/utils/playerManager'
 import {
     createPlayerFromConfig,
     countAlivePlayers,
@@ -17,9 +18,11 @@ import {
 import { applyDamage, applyHeal } from '@/utils/gameLogic'
 
 /**
- * Configuracao estendida do jogador com userId opcional
+ * Configuracao estendida do jogador com userId e playerId opcionais
  */
 interface PlayerSetupConfig extends PlayerConfig {
+    /** ID do jogador (UUID). Se omitido, gera automaticamente (legacy) */
+    playerId?: PlayerId
     /** ID do usuario autenticado (null para guest/bot) */
     userId?: string | null
 }
@@ -202,8 +205,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     initializePlayers: (configs) => {
         const players: Record<PlayerId, Player> = {}
 
-        configs.forEach((config, index) => {
-            const playerId = `player${index + 1}`
+        configs.forEach((config) => {
+            // Usa playerId fornecido ou gera UUID (novo padrao)
+            const playerId = config.playerId ?? generatePlayerUUID()
             players[playerId] = createPlayerFromConfig(playerId, config, config.userId ?? null)
         })
 

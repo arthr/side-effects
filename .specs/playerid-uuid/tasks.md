@@ -14,7 +14,7 @@
 - **Objetivo:** exibir “P1/P2/P3” por posição em `playerOrder` sem depender de PlayerId.
 
 ## Tarefa 4 — Migrar PlayerId para UUID (single player)
-- **Status:** TODO
+- **Status:** DONE
 - **Objetivo:** gerar UUIDs para humano/bot no `initGame`, manter `playerOrder` como fonte de ordem.
 
 ## Tarefa 5 — Migrar PlayerId para UUID (multiplayer)

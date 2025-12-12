@@ -1,8 +1,18 @@
 import type { PlayerInventory } from './item'
 
 /**
- * Identificador unico do jogador
- * Formato: 'player1', 'player2', ..., 'playerN'
+ * Identificador unico do jogador (UUID de sessao)
+ * 
+ * PlayerId agora e um UUID v4 gerado na criacao da partida/sala.
+ * Nao carrega semantica de ordem/posicao.
+ * 
+ * Para ordem de turnos/renderizacao, use `playerOrder: PlayerId[]`.
+ * Para exibir "P1/P2/P3" na UI, use `getSeatLabel(playerId, playerOrder)`.
+ * 
+ * @example
+ * "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * 
+ * @see .specs/playerid-uuid/plan.md
  */
 export type PlayerId = string
 
@@ -25,7 +35,7 @@ export interface PlayerEffect {
  * Representa um jogador no jogo
  */
 export interface Player {
-  /** ID unico do jogador (session-based, ex: 'player1') */
+  /** ID unico do jogador (UUID de sessao) */
   id: PlayerId
   /**
    * ID do usuario autenticado (Supabase Auth UUID)
