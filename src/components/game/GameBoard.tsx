@@ -66,7 +66,6 @@ export function GameBoard() {
     const candidate = playerIds.find((id) => id !== localPid)
     return candidate ?? (localPid === 'player1' ? 'player2' : 'player1')
   }, [playerIds, localPid])
-  void playerCount
 
   // Lista de jogadores para renderizacao (suporta 2-4)
   const playersForRender = useMemo(() => {
@@ -315,57 +314,160 @@ export function GameBoard() {
         showWaitingForOpponent={isMultiplayer && !isLocalTurn}
       />
 
-      {/* Layout principal: Jogador Local | Pills | Oponente */}
-      {/* A perspectiva e sempre do jogador local - ele ve seu card a esquerda */}
-      <div className="flex flex-col-reverse md:grid md:grid-cols-[1fr_3fr_1fr] gap-6 md:items-start">
-        {/* Jogador Local - Esquerda (card interativo) */}
-        <AnimatedPlayerArea
-          player={localPlayer}
-          isCurrentTurn={currentTurn === localId}
-          animationType={getPlayerAnimation(localId)}
-          effectValue={getEffectValue(localId)}
-          effectType={getEffectType(localId)}
-          onItemClick={handleItemClick}
-          usingItemId={selectedItemId}
-          quest={shapeQuests[localId]}
-          questJustReset={isQuestResetRecent(localId)}
-          onToggleStore={() => toggleWantsStore(localId)}
-        />
+      {/* Layout principal (2-4 jogadores) */}
+      {playerCount <= 2 ? (
+        // 2 jogadores: preserva layout atual (perspectiva do jogador local: esquerda)
+        <div className="flex flex-col-reverse md:grid md:grid-cols-[1fr_3fr_1fr] gap-6 md:items-start">
+          {/* Jogador Local - Esquerda (card interativo) */}
+          <AnimatedPlayerArea
+            player={localPlayer}
+            isCurrentTurn={currentTurn === localId}
+            animationType={getPlayerAnimation(localId)}
+            effectValue={getEffectValue(localId)}
+            effectType={getEffectType(localId)}
+            onItemClick={handleItemClick}
+            usingItemId={selectedItemId}
+            quest={shapeQuests[localId]}
+            questJustReset={isQuestResetRecent(localId)}
+            onToggleStore={() => toggleWantsStore(localId)}
+          />
 
-        {/* Pill Pool - Centro */}
-        <PillPool
-          pills={pillPool}
-          typeCounts={typeCounts}
-          round={round}
-          onSelectPill={handlePillSelect}
-          disabled={isProcessing || (!canPlayerInteract && !isSelectingTarget) || isRoundEnding}
-          isTargetSelectionMode={isSelectingTarget && validTargets === 'pills'}
-          scannedPillIds={revealedPills}
-          instructionMessage={
-            isSelectingTarget && validTargets === 'pills'
-              ? 'Selecione uma pilula alvo'
-              : isRoundEnding
-                ? 'Preparando proxima rodada...'
-                : canPlayerInteract
-                  ? 'Clique em uma pilula para consumi-la'
-                  : isMultiplayer && !isLocalTurn
-                    ? 'Aguardando oponente...'
-                    : 'Aguardando IA...'
-          }
-        />
+          {/* Pill Pool - Centro */}
+          <PillPool
+            pills={pillPool}
+            typeCounts={typeCounts}
+            round={round}
+            onSelectPill={handlePillSelect}
+            disabled={isProcessing || (!canPlayerInteract && !isSelectingTarget) || isRoundEnding}
+            isTargetSelectionMode={isSelectingTarget && validTargets === 'pills'}
+            scannedPillIds={revealedPills}
+            instructionMessage={
+              isSelectingTarget && validTargets === 'pills'
+                ? 'Selecione uma pilula alvo'
+                : isRoundEnding
+                  ? 'Preparando proxima rodada...'
+                  : canPlayerInteract
+                    ? 'Clique em uma pilula para consumi-la'
+                    : isMultiplayer && !isLocalTurn
+                      ? 'Aguardando oponente...'
+                      : 'Aguardando IA...'
+            }
+          />
 
-        {/* Oponente - Direita (card do adversario) */}
-        <AnimatedPlayerArea
-          player={remotePlayer}
-          isCurrentTurn={currentTurn === remoteId}
-          animationType={getPlayerAnimation(remoteId)}
-          effectValue={getEffectValue(remoteId)}
-          effectType={getEffectType(remoteId)}
-          quest={shapeQuests[remoteId]}
-          questJustReset={isQuestResetRecent(remoteId)}
-          onToggleStore={undefined}
-        />
-      </div>
+          {/* Oponente - Direita (card do adversario) */}
+          <AnimatedPlayerArea
+            player={remotePlayer}
+            isCurrentTurn={currentTurn === remoteId}
+            animationType={getPlayerAnimation(remoteId)}
+            effectValue={getEffectValue(remoteId)}
+            effectType={getEffectType(remoteId)}
+            quest={shapeQuests[remoteId]}
+            questJustReset={isQuestResetRecent(remoteId)}
+            onToggleStore={undefined}
+          />
+        </div>
+      ) : (
+        // 3-4 jogadores: grid 2xN com PillPool central
+        <div className="flex flex-col gap-6 md:grid md:grid-cols-2 md:grid-rows-[auto_1fr_auto] md:items-start">
+          {/* Topo - Esquerda: jogador local */}
+          {localPlayerData && (
+            <AnimatedPlayerArea
+              player={localPlayerData.player}
+              isCurrentTurn={currentTurn === localPlayerData.id}
+              animationType={getPlayerAnimation(localPlayerData.id)}
+              effectValue={getEffectValue(localPlayerData.id)}
+              effectType={getEffectType(localPlayerData.id)}
+              onItemClick={handleItemClick}
+              usingItemId={selectedItemId}
+              quest={shapeQuests[localPlayerData.id]}
+              questJustReset={isQuestResetRecent(localPlayerData.id)}
+              onToggleStore={() => toggleWantsStore(localPlayerData.id)}
+            />
+          )}
+
+          {/* Topo - Direita: primeiro remoto */}
+          {remotePlayers[0] && (
+            <AnimatedPlayerArea
+              player={remotePlayers[0].player}
+              isCurrentTurn={currentTurn === remotePlayers[0].id}
+              animationType={getPlayerAnimation(remotePlayers[0].id)}
+              effectValue={getEffectValue(remotePlayers[0].id)}
+              effectType={getEffectType(remotePlayers[0].id)}
+              quest={shapeQuests[remotePlayers[0].id]}
+              questJustReset={isQuestResetRecent(remotePlayers[0].id)}
+              onToggleStore={undefined}
+            />
+          )}
+
+          {/* Centro: Pill Pool (span full width) */}
+          <div className="md:col-span-2 md:row-start-2">
+            <PillPool
+              pills={pillPool}
+              typeCounts={typeCounts}
+              round={round}
+              onSelectPill={handlePillSelect}
+              disabled={isProcessing || (!canPlayerInteract && !isSelectingTarget) || isRoundEnding}
+              isTargetSelectionMode={isSelectingTarget && validTargets === 'pills'}
+              scannedPillIds={revealedPills}
+              instructionMessage={
+                isSelectingTarget && validTargets === 'pills'
+                  ? 'Selecione uma pilula alvo'
+                  : isRoundEnding
+                    ? 'Preparando proxima rodada...'
+                    : canPlayerInteract
+                      ? 'Clique em uma pilula para consumi-la'
+                      : isMultiplayer && !isLocalTurn
+                        ? 'Aguardando oponente...'
+                        : 'Aguardando IA...'
+              }
+            />
+          </div>
+
+          {/* Base: 3o jogador centralizado (3 players) */}
+          {playerCount === 3 && remotePlayers[1] && (
+            <div className="md:col-span-2 md:row-start-3 flex justify-center">
+              <div className="w-full max-w-md">
+                <AnimatedPlayerArea
+                  player={remotePlayers[1].player}
+                  isCurrentTurn={currentTurn === remotePlayers[1].id}
+                  animationType={getPlayerAnimation(remotePlayers[1].id)}
+                  effectValue={getEffectValue(remotePlayers[1].id)}
+                  effectType={getEffectType(remotePlayers[1].id)}
+                  quest={shapeQuests[remotePlayers[1].id]}
+                  questJustReset={isQuestResetRecent(remotePlayers[1].id)}
+                  onToggleStore={undefined}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Base: 3o e 4o jogadores (4 players) */}
+          {playerCount >= 4 && remotePlayers[1] && (
+            <AnimatedPlayerArea
+              player={remotePlayers[1].player}
+              isCurrentTurn={currentTurn === remotePlayers[1].id}
+              animationType={getPlayerAnimation(remotePlayers[1].id)}
+              effectValue={getEffectValue(remotePlayers[1].id)}
+              effectType={getEffectType(remotePlayers[1].id)}
+              quest={shapeQuests[remotePlayers[1].id]}
+              questJustReset={isQuestResetRecent(remotePlayers[1].id)}
+              onToggleStore={undefined}
+            />
+          )}
+          {playerCount >= 4 && remotePlayers[2] && (
+            <AnimatedPlayerArea
+              player={remotePlayers[2].player}
+              isCurrentTurn={currentTurn === remotePlayers[2].id}
+              animationType={getPlayerAnimation(remotePlayers[2].id)}
+              effectValue={getEffectValue(remotePlayers[2].id)}
+              effectType={getEffectType(remotePlayers[2].id)}
+              quest={shapeQuests[remotePlayers[2].id]}
+              questJustReset={isQuestResetRecent(remotePlayers[2].id)}
+              onToggleStore={undefined}
+            />
+          )}
+        </div>
+      )}
 
       {/* Overlay de selecao de alvo para itens */}
       <ItemTargetSelector />
