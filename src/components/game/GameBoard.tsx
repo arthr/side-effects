@@ -1,6 +1,5 @@
 import { useCallback, useState, useMemo } from 'react'
 import { LogOut } from 'lucide-react'
-import { useGameStore } from '@/stores/gameStore'
 import { useGameBoardState } from '@/hooks/useGameBoardState'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
@@ -40,6 +39,7 @@ export function GameBoard() {
     shapeQuests,
     lastQuestReset,
     toggleWantsStore,
+    executeItemById,
     openItemEffect,
   } = useGameBoardState()
 
@@ -61,7 +61,10 @@ export function GameBoard() {
   }, [players])
 
   const playerCount = playerIds.length
-  const localPid: PlayerId = isMultiplayer && localPlayerId ? localPlayerId : 'player1'
+  const rawLocalPid: PlayerId = isMultiplayer && localPlayerId ? localPlayerId : 'player1'
+  const localPid: PlayerId = playerIds.includes(rawLocalPid)
+    ? rawLocalPid
+    : (playerIds[0] ?? rawLocalPid)
   const remotePid = useMemo((): PlayerId => {
     const candidate = playerIds.find((id) => id !== localPid)
     return candidate ?? (localPid === 'player1' ? 'player2' : 'player1')
@@ -79,15 +82,11 @@ export function GameBoard() {
   const localPlayerData = playersForRender.find((p) => p.isLocal) ?? playersForRender[0]
   const remotePlayers = playersForRender.filter((p) => !p.isLocal)
 
-  // Aliases temporarios (ainda usados pelo layout atual; serao removidos no Passo 4)
+  // Aliases para o branch de 2 jogadores (mantem layout/perspectiva antiga)
   const localPlayer = localPlayerData?.player
   const remotePlayer = remotePlayers[0]?.player ?? players[remotePid]
   const localId: PlayerId = localPlayerData?.id ?? localPid
   const remoteId: PlayerId = remotePlayers[0]?.id ?? remotePid
-
-  // Aliases para compatibilidade com o restante do codigo
-  const player1 = players.player1
-  const player2 = players.player2
 
   // Hook de consumo de pilula
   const {
@@ -178,8 +177,8 @@ export function GameBoard() {
 
     const itemType: ItemType = item.type
 
-    // Chama a action da store diretamente (remove item, reseta targetSelection)
-    useGameStore.getState().executeItem(itemId, targetId)
+    // Executa o item por ID (encapsulado via hook do GameBoard)
+    executeItemById(itemId, targetId)
 
     // Toast de feedback (mostra no jogador atual - IA)
     toast.item(itemType, currentTurn)
@@ -203,7 +202,7 @@ export function GameBoard() {
     }
 
     openItemEffect(itemType, targetInfo)
-  }, [currentTurn, players, pillPool, openItemEffect, toast, opponentId, startConsumption])
+  }, [currentTurn, players, pillPool, openItemEffect, toast, opponentId, startConsumption, executeItemById])
 
   // Handler para click em item do inventario
   const handleItemClick = useCallback((itemId: string) => {
@@ -289,7 +288,8 @@ export function GameBoard() {
     return Date.now() - lastQuestReset.timestamp < QUEST_RESET_ANIMATION_DURATION
   }
 
-  if (!player1 || !player2) return null
+  // Precisa de pelo menos 2 jogadores para renderizar o board
+  if (playerCount < 2 || !localPlayerData) return null
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto relative">

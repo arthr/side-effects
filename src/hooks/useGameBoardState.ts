@@ -34,6 +34,7 @@ export function useGameBoardState() {
   
   // Actions
   const toggleWantsStore = useGameStore((s) => s.toggleWantsStore)
+  const executeItemById = useGameStore((s) => s.executeItem)
   const openItemEffect = useOverlayStore((s) => s.openItemEffect)
   
   return {
@@ -53,6 +54,7 @@ export function useGameBoardState() {
     
     // Actions
     toggleWantsStore,
+    executeItemById,
     openItemEffect,
   }
 }

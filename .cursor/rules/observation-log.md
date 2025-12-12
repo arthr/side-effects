@@ -45,6 +45,8 @@ Exemplo:
   ```
   Exemplo: Bug de dupla chamada `acceptRematch()` + `declineRematch()` corrigido removendo `onClose()` manual.
 
+- [2025-12-12] **DevTool para validar UI N-jogadores:** Para testar layout 3-4 players sem multiplayer completo, adicionamos controles no `FloatingDevTool > Actions` para `+ Bot` / `- Bot` (cria/remove `player3/player4` como IA). Importante: ao adicionar/remover players, atualizar tambem mapas do `gameStore` indexados por `PlayerId` (ex: `shapeQuests`, `itemSelectionConfirmed`, `revealAtStart` e `storeState.{confirmed,cart,pendingBoosts}` quando existir) para evitar `undefined` e inconsistencias visuais.
+
 - [2024-12-11] **Refatoracao de Stores (N-Jogadores):** Decomposicao bem-sucedida do gameStore:
   - **6 Stores Modulares** criados: gameFlowStore, pillPoolStore, playerStore, itemUsageStore, effectsStore, shopStore
   - **224 testes unitarios** adicionados (antes: ~10% cobertura)
