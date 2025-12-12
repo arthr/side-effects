@@ -130,7 +130,7 @@ export function GameBoard() {
 
   // Determina ID do oponente usando hook (suporta N-jogadores)
   const targetablePlayers = useTargetablePlayers()
-  const opponentId = targetablePlayers[0] ?? 'player2' // Primeiro alvo ou fallback
+  const opponentId = targetablePlayers[0] ?? remotePlayers[0]?.id ?? 'player2' // Primeiro alvo ou fallback
 
   /**
    * Wrapper para executar item com feedback visual
