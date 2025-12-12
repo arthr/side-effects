@@ -67,3 +67,18 @@ export { useRoomConnection } from './useRoomConnection'
 
 // Dev Tools
 export { useDevTool } from './useDevTool'
+
+// Targetable Players (N-player support)
+export {
+  useTargetablePlayers,
+  useFirstTargetablePlayer,
+  useIsTargetable,
+  useTargetableCount,
+  useOpponentId,
+} from './useTargetablePlayers'
+
+// Hooks de encapsulamento de estado
+export { useGameBoardState } from './useGameBoardState'
+export { usePillStoreState } from './usePillStoreState'
+export { useItemSelectionState } from './useItemSelectionState'
+export { useOverlayState } from './useOverlayState'

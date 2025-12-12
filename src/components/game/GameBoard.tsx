@@ -6,6 +6,7 @@ import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
 import { useAIStore } from '@/hooks/useAIStore'
 import { useItemUsage, useToast, useMultiplayer } from '@/hooks'
+import { useTargetablePlayers } from '@/hooks/useTargetablePlayers'
 import { AnimatedPlayerArea } from './AnimatedPlayerArea'
 import { PillPool } from './PillPool'
 import { TurnIndicator } from './TurnIndicator'
@@ -106,8 +107,9 @@ export function GameBoard() {
   // Toast para feedback de item
   const { toast } = useToast()
 
-  // Determina ID do oponente
-  const opponentId = currentTurn === 'player1' ? 'player2' : 'player1'
+  // Determina ID do oponente usando hook (suporta N-jogadores)
+  const targetablePlayers = useTargetablePlayers()
+  const opponentId = targetablePlayers[0] ?? 'player2' // Primeiro alvo ou fallback
 
   /**
    * Wrapper para executar item com feedback visual
