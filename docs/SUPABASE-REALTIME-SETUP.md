@@ -99,55 +99,81 @@ Confirme que `.env.local` esta no `.gitignore`:
 
 ---
 
-## 4. Instalar Dependencias
+## 4. Verificar Dependências
 
-### 4.1. Instalar SDK do Supabase
+### 4.1. Dependências Incluídas
 
-```bash
-pnpm add @supabase/supabase-js
-```
-
-### 4.2. Verificar Instalacao
-
-O `package.json` deve incluir:
+O projeto já inclui todas as dependências necessárias:
 
 ```json
 {
   "dependencies": {
-    "@supabase/supabase-js": "^2.x.x"
+    "@supabase/supabase-js": "^2.87.1",
+    "uuid": "^13.0.0"
   }
 }
 ```
 
+### 4.2. Instalação Automática
+
+As dependências são instaladas automaticamente com:
+
+```bash
+pnpm install
+```
+
 ---
 
-## 5. Conceitos do Realtime Broadcast
+## 5. Arquitetura Multiplayer do Dosed
 
-### 5.1. O que e Broadcast?
+### 5.1. Visão Geral
 
-O Supabase Realtime oferece tres funcionalidades:
-- **Broadcast:** Mensagens efemeras entre clientes (nao persiste no banco)
-- **Presence:** Rastrear usuarios online em um canal
-- **Database Changes:** Escutar mudancas em tabelas
+O Dosed usa **Supabase Realtime Broadcast** para sincronização em tempo real:
 
-**Para o Dosed, usaremos Broadcast** - ideal para eventos de jogo que nao precisam ser persistidos.
+- **Broadcast**: Mensagens efêmeras entre clientes (não persiste no banco)
+- **Guest-first**: Não requer autenticação obrigatória
+- **Room-based**: Jogadores se conectam via códigos de sala
+- **Event-driven**: Todas as ações são sincronizadas via eventos
 
-### 5.2. Como Funciona
+### 5.2. Fluxo de Comunicação
 
 ```
-┌─────────────┐     Broadcast Event     ┌─────────────┐
-│  Cliente A  │ ──────────────────────► │  Supabase   │
-│   (Host)    │                         │  Realtime   │
-└─────────────┘                         └──────┬──────┘
-                                               │
-                                               │ Broadcast to Channel
-                                               │
-                                               ▼
-                                        ┌─────────────┐
-                                        │  Cliente B  │
-                                        │   (Guest)   │
-                                        └─────────────┘
+┌─────────────┐    Game Event     ┌─────────────┐    Broadcast    ┌─────────────┐
+│    HOST     │ ────────────────► │  Supabase   │ ──────────────► │   GUEST     │
+│  (Player 1) │                   │  Realtime   │                 │  (Player 2) │
+└─────────────┘                   └─────────────┘                 └─────────────┘
+       ▲                                 │                               │
+       │                                 │                               │
+       │              Sync Response      │        Event Handler          │
+       └─────────────────────────────────┼───────────────────────────────┘
+                                         │
+                                    ┌─────────┐
+                                    │ Channel │
+                                    │ room_id │
+                                    └─────────┘
 ```
+
+### 5.3. Eventos Implementados
+
+O sistema sincroniza os seguintes eventos:
+
+| Evento | Descrição | Payload |
+|--------|-----------|---------|
+| `player_joined` | Jogador entra na sala | `{ playerId, name }` |
+| `player_left` | Jogador sai da sala | `{ playerId }` |
+| `item_selected` | Item selecionado pré-jogo | `{ playerId, itemType }` |
+| `item_deselected` | Item removido pré-jogo | `{ playerId, itemId }` |
+| `selection_confirmed` | Confirmação de itens | `{ playerId }` |
+| `game_started` | Jogo iniciado | `{ playerOrder, config }` |
+| `pill_consumed` | Pílula consumida | `{ playerId, pillId, result }` |
+| `item_used` | Item usado | `{ playerId, itemType, target }` |
+| `turn_ended` | Turno finalizado | `{ nextPlayer, sequence }` |
+| `round_reset` | Nova rodada | `{ round, pillPool }` |
+| `store_toggled` | Toggle Pill Store | `{ playerId, wants }` |
+| `cart_updated` | Carrinho atualizado | `{ playerId, cart }` |
+| `store_confirmed` | Compras confirmadas | `{ playerId, purchases }` |
+| `game_ended` | Jogo finalizado | `{ winner, stats }` |
+| `heartbeat` | Verificação de conexão | `{ playerId, timestamp }` |
 
 ### 5.3. Estrutura de um Canal
 
@@ -512,3 +538,296 @@ Consulte as specs em `.specs/multiplayer-mode/` para detalhes da implementacao.
 - [Supabase JS Client](https://supabase.com/docs/reference/javascript/introduction)
 - Spec do Multiplayer: `.specs/multiplayer-mode/design.md`
 
+
+---
+
+## 6. Implementação Técnica
+
+### 6.1. Estrutura de Serviços
+
+```
+src/services/
+├── realtimeService.ts      # Serviço principal
+├── realtime/
+│   └── index.ts           # Configuração de canais
+├── game/
+│   └── index.ts           # Lógica de sincronização
+└── sync/
+    └── index.ts           # Utilitários de sync
+```
+
+### 6.2. Cliente Supabase
+
+Configuração em `src/lib/supabase.ts`:
+
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // Limite de eventos por segundo
+    },
+  },
+})
+```
+
+### 6.3. Gerenciamento de Canais
+
+```typescript
+// Criar canal para sala
+const channel = supabase.channel(`room_${roomId}`, {
+  config: {
+    broadcast: { self: true }, // Receber próprios eventos
+    presence: { key: playerId }, // Rastrear presença
+  },
+})
+
+// Inscrever em eventos
+channel
+  .on('broadcast', { event: 'game_event' }, (payload) => {
+    handleGameEvent(payload)
+  })
+  .subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log('Conectado ao canal')
+    }
+  })
+
+// Enviar evento
+channel.send({
+  type: 'broadcast',
+  event: 'game_event',
+  payload: { type: 'pill_consumed', data: { pillId, playerId } }
+})
+```
+
+### 6.4. Sistema de Heartbeat
+
+Para detectar desconexões:
+
+```typescript
+// Enviar heartbeat a cada 5 segundos
+const heartbeatInterval = setInterval(() => {
+  channel.send({
+    type: 'broadcast',
+    event: 'heartbeat',
+    payload: { playerId, timestamp: Date.now() }
+  })
+}, 5000)
+
+// Verificar timeout (15 segundos sem heartbeat)
+const checkTimeout = setInterval(() => {
+  const now = Date.now()
+  const lastHeartbeat = getLastOpponentHeartbeat()
+  
+  if (now - lastHeartbeat > 15000) {
+    handleOpponentDisconnected()
+  }
+}, 5000)
+```
+
+---
+
+## 7. Testando a Implementação
+
+### 7.1. Teste Local
+
+1. **Inicie o servidor de desenvolvimento**:
+   ```bash
+   pnpm dev
+   ```
+
+2. **Abra duas abas do navegador**:
+   - Aba 1: `http://localhost:5173` (Host)
+   - Aba 2: `http://localhost:5173` (Guest)
+
+3. **Fluxo de teste**:
+   - Host: Multiplayer → Criar Sala
+   - Guest: Multiplayer → Entrar em Sala (usar código gerado)
+   - Ambos: Selecionar itens e confirmar
+   - Jogar normalmente, verificando sincronização
+
+### 7.2. Debug com DevTools
+
+Pressione `CTRL+SHIFT+D` para abrir o DevTool e acesse:
+
+- **Realtime Debugger**: Monitor de eventos em tempo real
+- **Connection Status**: Status da conexão WebSocket
+- **Event Log**: Histórico de eventos enviados/recebidos
+- **Latency Stats**: Métricas de latência
+
+### 7.3. Logs de Debug
+
+Adicione logs para debug:
+
+```typescript
+// Em desenvolvimento, habilite logs detalhados
+if (import.meta.env.DEV) {
+  supabase.realtime.setAuth(null) // Sem auth em dev
+  
+  // Log todos os eventos
+  channel.on('broadcast', { event: '*' }, (payload) => {
+    console.log('📡 Evento recebido:', payload)
+  })
+}
+```
+
+---
+
+## 8. Troubleshooting
+
+### 8.1. Problemas Comuns
+
+#### Erro: "Invalid API key"
+- **Causa**: Chave anon incorreta ou expirada
+- **Solução**: Verificar `.env.local` e regenerar chave no dashboard
+
+#### Erro: "Failed to connect to Realtime"
+- **Causa**: URL incorreta ou projeto pausado
+- **Solução**: Verificar URL do projeto e status no dashboard
+
+#### Desconexões Frequentes
+- **Causa**: Rede instável ou timeout muito baixo
+- **Solução**: Ajustar timeout de heartbeat ou implementar reconexão
+
+#### Eventos Duplicados
+- **Causa**: Múltiplas inscrições no mesmo canal
+- **Solução**: Garantir unsubscribe antes de nova inscrição
+
+### 8.2. Monitoramento
+
+#### Dashboard do Supabase
+- **Realtime**: Monitor de conexões ativas
+- **Logs**: Histórico de eventos e erros
+- **Usage**: Consumo de bandwidth e requests
+
+#### Métricas do Cliente
+```typescript
+// Métricas de performance
+const metrics = {
+  eventsPerSecond: 0,
+  averageLatency: 0,
+  connectionUptime: 0,
+  reconnectionCount: 0,
+}
+
+// Tracking automático
+trackRealtimeMetrics(channel, metrics)
+```
+
+### 8.3. Otimizações
+
+#### Reduzir Bandwidth
+- **Event Batching**: Agrupar eventos relacionados
+- **Payload Compression**: Minimizar dados enviados
+- **Selective Sync**: Sincronizar apenas mudanças necessárias
+
+#### Melhorar Latência
+- **Regional Deployment**: Usar região mais próxima
+- **Connection Pooling**: Reutilizar conexões WebSocket
+- **Predictive Sync**: Antecipar eventos baseado em padrões
+
+---
+
+## 9. Configurações Avançadas
+
+### 9.1. Rate Limiting
+
+```typescript
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10,    // Máximo 10 eventos/segundo
+      heartbeatIntervalMs: 30000, // Heartbeat a cada 30s
+      reconnectAfterMs: 1000,     // Reconectar após 1s
+    },
+  },
+})
+```
+
+### 9.2. Autenticação (Opcional)
+
+Para persistir estatísticas de jogadores:
+
+```typescript
+// Login como guest
+const { data, error } = await supabase.auth.signInAnonymously()
+
+// Ou login com provider
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'github'
+})
+```
+
+### 9.3. Políticas RLS (Row Level Security)
+
+Se usar tabelas do banco, configure políticas:
+
+```sql
+-- Permitir leitura/escrita para usuários autenticados
+CREATE POLICY "Allow authenticated users" ON game_rooms
+FOR ALL USING (auth.role() = 'authenticated');
+
+-- Permitir acesso anônimo para guests
+CREATE POLICY "Allow anonymous access" ON game_rooms
+FOR SELECT USING (true);
+```
+
+---
+
+## 10. Deploy e Produção
+
+### 10.1. Variáveis de Ambiente
+
+Para produção, configure:
+
+```bash
+# .env.production
+VITE_SUPABASE_URL=https://seu-projeto-prod.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-producao
+```
+
+### 10.2. Monitoramento
+
+- **Supabase Dashboard**: Monitor de uso e performance
+- **Error Tracking**: Integração com Sentry ou similar
+- **Analytics**: Tracking de eventos de jogo
+- **Uptime Monitoring**: Verificação de disponibilidade
+
+### 10.3. Escalabilidade
+
+O Supabase Realtime suporta:
+- **Conexões simultâneas**: Até 500 no plano gratuito
+- **Mensagens por segundo**: Até 100 no plano gratuito
+- **Bandwidth**: 2GB incluído no plano gratuito
+
+Para mais capacidade, considere upgrade para planos pagos.
+
+---
+
+## 11. Recursos Adicionais
+
+### 11.1. Documentação Oficial
+
+- [Supabase Realtime Docs](https://supabase.com/docs/guides/realtime)
+- [Broadcast API Reference](https://supabase.com/docs/reference/javascript/subscribe)
+- [JavaScript Client Docs](https://supabase.com/docs/reference/javascript)
+
+### 11.2. Exemplos de Código
+
+- [Realtime Chat Example](https://github.com/supabase/supabase/tree/master/examples/realtime/nextjs-chat)
+- [Multiplayer Game Example](https://github.com/supabase/supabase/tree/master/examples/realtime/multiplayer-game)
+
+### 11.3. Comunidade
+
+- [Discord da Supabase](https://discord.supabase.com/)
+- [GitHub Discussions](https://github.com/supabase/supabase/discussions)
+- [Stack Overflow](https://stackoverflow.com/questions/tagged/supabase)
+
+---
+
+**Pronto!** 🎉 Seu setup de multiplayer está configurado. O Dosed agora suporta partidas em tempo real para 2-4 jogadores com sincronização completa de estado via Supabase Realtime.

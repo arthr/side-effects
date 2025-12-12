@@ -1,250 +1,415 @@
-# Dosed (Pill Roulette): Especificacao de Mecanica
+# Dosed (Pill Roulette): Especificação Completa de Mecânicas
 
-## 1. Visao Geral
-Um jogo de estrategia por turnos de soma zero, onde dois jogadores (Humano vs IA ou PvP) competem para ser o ultimo sobrevivente. A mecanica central gira em torno de **Gestao de Risco** e **Informacao Oculta**. O jogo utiliza um sistema de vida de duas camadas (Resistencia e Vidas).
+## 1. Visão Geral
+**Dosed** é um jogo estratégico por turnos onde 2-4 jogadores competem para ser o último sobrevivente em um cenário de roleta russa com pílulas. A mecânica central combina **Gestão de Risco**, **Informação Oculta** e **Elementos Táticos** através de um sistema de saúde duplo, sistema de itens e progressão dinâmica.
 
-## 2. Estrutura do Jogador (Stats)
+### Características Principais
+- **Sistema de Saúde Duplo**: Resistência (escudo temporário) + Vidas (saúde permanente)
+- **Informação Oculta**: Efeitos das pílulas são revelados apenas ao consumir
+- **Sistema de Itens**: 9+ power-ups em 4 categorias estratégicas
+- **Shape Quests**: Complete sequências de formas para ganhar Pill Coins
+- **Pill Store**: Loja com boosts e itens adicionais
+- **Progressão Dinâmica**: Novos tipos de pílulas e formas desbloqueiam a cada rodada
+- **IA Adaptativa**: 4 níveis de dificuldade com comportamentos distintos
+- **Multiplayer Real-time**: Suporte para 2-4 jogadores via Supabase Realtime
 
-Cada entidade (Jogador/Inimigo) possui os seguintes atributos:
+## 2. Sistema de Jogador
 
-### A. Vidas (Lives / Defibrillators)
-* **Definicao:** O contador "Real" de sobrevivencia.
-* **Valor Tipico:** 3 vidas no inicio da partida.
-* **Condicao de Derrota:** Se Vidas chegarem a 0, o jogador e eliminado permanentemente.
+### A. Sistema de Saúde Duplo
 
-### B. Resistencia (Resistance / Tolerance)
-* **Definicao:** A "Barra de Escudo" ou HP temporario da rodada atual. Representa o limite de toxicidade que o corpo aguenta antes de colapsar.
-* **Valor Tipico:** 6 pontos.
-* **Mecanica de Colapso (Critical Failure):**
-    1.  Quando a Resistencia atinge <= 0, o jogador sofre um **Colapso**.
-    2.  **Penalidade:** -1 Vida.
-    3.  **Reset:** A Resistencia e restaurada para o seu valor maximo, permitindo que o jogo continue imediatamente.
+#### Vidas (Lives)
+- **Função**: Contador permanente de sobrevivência
+- **Valor Inicial**: 3 vidas por jogador
+- **Condição de Derrota**: 0 vidas = eliminação permanente
+- **Recuperação**: Apenas via pílula LIFE ou boost "1-Up" da Pill Store
 
-### C. Inventario
-* **Capacidade:** 5 slots para itens.
-* **Aquisicao:** Itens sao selecionados pelo jogador no inicio da partida (fase de selecao).
+#### Resistência (Resistance)
+- **Função**: Escudo temporário que absorve dano
+- **Valor Inicial**: 6 pontos por jogador
+- **Mecânica de Colapso**:
+  1. Resistência ≤ 0 → Jogador sofre **Colapso**
+  2. **Penalidade**: -1 Vida
+  3. **Reset**: Resistência restaurada ao máximo automaticamente
+  4. **Continuidade**: Jogo continua imediatamente (sem perder turno)
 
-> **Backlog:** Expansao de slots de inventario (4-8 slots configuraveis).
+### B. Inventário e Recursos
+
+#### Inventário de Itens
+- **Capacidade**: 5 slots por jogador
+- **Aquisição**: Seleção pré-jogo + compras na Pill Store
+- **Categorias**: Intel, Sustain, Control, Chaos
+
+#### Pill Coins
+- **Função**: Moeda do jogo para Pill Store
+- **Obtenção**: Completar Shape Quests (+1 coin por quest)
+- **Uso**: Comprar boosts e power-ups na loja
+
+#### Efeitos Ativos
+- **Shield**: Imunidade a dano por 1 rodada
+- **Handcuffed**: Perde o próximo turno
+- **Duração**: Baseada em rodadas, não turnos
 
 ---
 
-## 3. O Tabuleiro (The Pool)
+## 3. Sistema de Pílulas (Pill Pool)
 
-Diferente de uma arma (pilha LIFO), as pilulas sao dispostas na mesa como um **Conjunto (Pool)**.
+### A. Estrutura do Pool
+- **Disposição**: Pílulas organizadas em grid visual na mesa
+- **Estado Oculto**: Efeitos são revelados apenas ao consumir
+- **Informação Pública**: Contadores de tipos e formas visíveis para todos
+- **Permanência**: Pílulas permanecem até serem consumidas ou removidas por itens
+- **Escalabilidade**: Quantidade aumenta de 6 a 12 pílulas conforme rodadas
 
-* **Estado Oculto:** Todas as pilulas entram na mesa com seus efeitos ocultos para ambos os jogadores.
-* **Conhecimento Publico:** A contagem total de tipos e mostrada no inicio (ex: "A mesa contem: 3 Venenos, 1 Cura, 4 Placebos").
-* **Permanencia:** As pilulas permanecem na mesa ate serem consumidas ou destruidas por itens.
-* **Progressao:** A quantidade de pilulas aumenta conforme as rodadas avancam (6 a 12 pilulas).
+### B. Sistema de Revelação
+- **Scanner**: Revela tipo de 1 pílula específica
+- **Shape Scanner**: Revela todas pílulas de uma forma
+- **Persistência**: Pílulas reveladas permanecem visíveis até consumidas
+- **Reset**: Shuffle embaralha e oculta todas as revelações
 
 ---
 
-## 4. Tipos de Pilulas (Arquetipos)
+## 4. Tipos de Pílulas
 
-As pilulas devem ser tratadas como objetos com propriedades de efeito.
+### A. Tabela de Tipos
 
-| Tipo | Nome Comum | Efeito na Resistencia | Efeito Especial | Desbloqueio |
-| :--- | :--- | :--- | :--- | :--- |
-| **SAFE** | Placebo / Sugar | `0` (Neutro) | Passa a vez sem danos. Seguro. | Rodada 1 |
-| **DMG_LOW** | Veneno Comum | `-1` ou `-2` | Dano padrao. Acumulativo. | Rodada 1 |
-| **DMG_HIGH** | Toxina / Acido | `-3` ou `-4` | Frequentemente forca um Colapso imediato. | Rodada 1 |
-| **HEAL** | Antidoto / Vacina | `+2` | Recupera resistencia. Nao pode exceder o MaxResistance. | Rodada 2 |
-| **FATAL** | Morte (Cyanide) | `Infinity` (Zera) | Reduz a Resistencia a 0 instantaneamente. Garante a perda de 1 Vida. | Rodada 4 |
-| **LIFE** | Vida Extra | `0` (Neutro) | Restaura +1 Vida perdida (cap no maximo). | Rodada 5 |
+| Tipo | Nome | Efeito | Cor Visual | Desbloqueio | Probabilidade |
+|------|------|--------|-------------|-------------|---------------|
+| **SAFE** | Placebo | Nenhum efeito | Verde | Rodada 1 | 45% → 15% |
+| **DMG_LOW** | Veneno Leve | -1 a -2 resistência | Amarelo | Rodada 1 | 40% → 20% |
+| **DMG_HIGH** | Toxina | -3 a -4 resistência | Laranja | Rodada 3 | 15% → 25% |
+| **HEAL** | Antídoto | +2 resistência | Ciano | Rodada 2 | 10% → 15% |
+| **FATAL** | Cianeto | Zera resistência | Roxo | Rodada 6 | 5% → 18% |
+| **LIFE** | Vida Extra | +1 vida | Rosa | Rodada 5 | 6% → 13% |
+
+### B. Mecânicas Especiais
+
+#### Modificadores de Item
+- **Inverted**: Dano vira cura, cura vira dano (via Inverter)
+- **Doubled**: Efeito multiplicado por 2 (via Double)
+- **Shield**: Imunidade a dano, cura continua funcionando
+
+#### Progressão Dinâmica
+- **Interpolação**: Probabilidades mudam gradualmente entre rodadas
+- **Balanceamento**: SAFE diminui, tipos perigosos aumentam
+- **Teto**: Rodada 20 como máximo para interpolação
 
 ---
 
 ## 5. Sistema de Formas (Shapes)
 
-Cada pilula possui uma **forma visual** (shape) independente do seu tipo de efeito.
+### A. Conceito
+Cada pílula possui uma **forma visual** independente do tipo de efeito, criando uma camada adicional de incerteza estratégica.
 
-### 5.1 Formas Disponiveis (16 Shapes)
+### B. Catálogo de Formas (16 Shapes)
 
-| Shape | Arquivo | Desbloqueio | Descricao |
-| :--- | :--- | :--- | :--- |
-| `capsule` | shape_1.png | Rodada 1 | Capsula azul horizontal |
-| `round` | shape_6.png | Rodada 1 | Pilula redonda azul |
-| `triangle` | shape_8.png | Rodada 2 | Triangulo vermelho |
-| `oval` | shape_11.png | Rodada 2 | Oval amarela |
-| `cross` | shape_2.png | Rodada 3 | Cruz roxa |
-| `heart` | shape_9.png | Rodada 3 | Coracao vermelho |
-| `flower` | shape_4.png | Rodada 4 | Flor rosa |
-| `star` | shape_13.png | Rodada 4 | Estrela verde |
-| `pumpkin` | shape_12.png | Rodada 5 | Abobora laranja |
-| `coin` | shape_14.png | Rodada 5 | Moeda dourada |
-| `bear` | shape_5.png | Rodada 6 | Urso verde |
-| `gem` | shape_15.png | Rodada 6 | Gema roxa |
-| `skull` | shape_3.png | Rodada 7 | Caveira roxa |
-| `domino` | shape_16.png | Rodada 7 | Domino laranja |
-| `pineapple` | shape_7.png | Rodada 8 | Abacaxi rosa |
-| `fruit` | shape_10.png | Rodada 8 | Fruta rosa |
+| Shape | Arquivo | Descrição Visual | Progressão |
+|-------|---------|------------------|------------|
+| `capsule` | shape_1.png | Cápsula horizontal | Rodada 1 |
+| `round` | shape_6.png | Pílula redonda | Rodada 1 |
+| `triangle` | shape_8.png | Triângulo | Rodada 1 |
+| `oval` | shape_11.png | Oval | Rodada 1 |
+| `cross` | shape_2.png | Cruz | Rodada 1 |
+| `heart` | shape_9.png | Coração | Rodada 1 |
+| `flower` | shape_4.png | Flor | Rodada 1 |
+| `star` | shape_13.png | Estrela | Rodada 1 |
+| `pumpkin` | shape_12.png | Abóbora | Rodada 3 |
+| `coin` | shape_14.png | Moeda | Rodada 1 |
+| `bear` | shape_5.png | Urso | Rodada 5 |
+| `gem` | shape_15.png | Gema | Rodada 1 |
+| `skull` | shape_3.png | Caveira | Rodada 3 |
+| `domino` | shape_16.png | Dominó | Rodada 7 |
+| `pineapple` | shape_7.png | Abacaxi | Rodada 8 |
+| `fruit` | shape_10.png | Fruta | Rodada 1 |
 
-> **Nota:** Shapes sao renderizadas via imagens PNG com fundo transparente (`src/assets/shapes/`).
+### C. Mecânicas de Shape
 
-### 5.2 Progressao de Shapes
+#### Distribuição Aleatória
+- **Independência**: Forma não correlaciona com tipo de efeito
+- **Progressão**: Novas formas desbloqueiam gradualmente
+- **Balanceamento**: Distribuição proporcional baseada em probabilidades
 
-| Rodada | Shapes Disponiveis | Total |
-| :--- | :--- | :--- |
-| 1 | capsule, round | 2 |
-| 2 | + triangle, oval | 4 |
-| 3 | + cross, heart | 6 |
-| 4 | + flower, star | 8 |
-| 5 | + pumpkin, coin | 10 |
-| 6 | + bear, gem | 12 |
-| 7 | + skull, domino | 14 |
-| 8+ | + pineapple, fruit | 16 (todas) |
-
-> **Nota:** Algumas shapes podem estar desabilitadas na versao atual e serao liberadas em fases futuras do jogo.
-
-### 5.3 Mecanicas de Shape
-
-**A. Shapes Aleatorias:**
-* A forma de cada pilula e atribuida **aleatoriamente** na geracao do pool.
-* Nao ha correlacao entre shape e tipo de efeito (adiciona camada de incerteza).
-* Distribuicao usa sistema de progressao similar ao de tipos de pilulas.
-
-**B. Itens Baseados em Shape:**
-* Novos itens podem interagir com shapes (ex: "Shape Bomb" - elimina todas pilulas de uma forma).
-* Permite estrategias baseadas em informacao visual.
-
-**C. Sistema de Objetivos (Shape Combos):**
-* Jogadores recebem objetivos de sequencia de shapes a consumir.
-* Completar um objetivo concede +1 Pill Coin (para usar na Pill Store).
-* Novo objetivo e atribuido apenas no inicio de cada rodada.
-
-### 5.4 Objetivos de Shape (Shape Quests)
-
-| Exemplo de Objetivo | Recompensa |
-| :--- | :--- |
-| Consumir: Triangle -> Round -> Capsule | +1 Pill Coin |
-| Consumir: Flower -> Star | +1 Pill Coin |
-| Consumir: Oval -> Heart | +1 Pill Coin |
-
-**Regras:**
-* Apenas UM objetivo ativo por vez.
-* Objetivo concluido = +1 Pill Coin, aguarda proxima rodada para novo objetivo.
-* Objetivos sao pessoais (cada jogador tem o seu).
-* Sequencia gerada apenas com shapes disponiveis no pool atual.
-* Pill Coins sao acumulaveis e podem ser gastas na Pill Store.
-
-### 5.5 Pill Store (Loja de Recompensas)
-
-Sistema de loja que aparece ao final de cada rodada (opcional).
-
-**Toggle Durante a Rodada:**
-* O icone de Pill Coins no painel do jogador e clicavel (se `pillCoins > 0`).
-* Click funciona como toggle para sinalizar "quero visitar a loja".
-* Jogador pode mudar de ideia a qualquer momento durante a rodada.
-* Se `pillCoins === 0`, click mostra aviso: "Complete quests para obter!"
-
-**Fluxo ao Fim da Rodada:**
-1. Ao pool esvaziar, verifica se alguem sinalizou E tem coins.
-2. Se sim: fase de compras inicia (timer 30s).
-3. Se nao: proxima rodada inicia direto.
-4. Quem sinalizou ve a loja; quem nao sinalizou ve "Aguardando oponente...".
-5. Ao confirmar compras, boosts sao aplicados na proxima rodada.
-
-**Regras de Timer (Shopping):**
-* Se um jogador confirmar, timer do outro reduz pela metade.
-* Timer expirado = confirma compras feitas ate entao.
-
-**Itens da Loja:**
-
-| Tipo | Item | Efeito | Custo |
-| :--- | :--- | :--- | :--- |
-| **Boost** | 1-Up | +1 Vida (se nao estiver no maximo) | 3 |
-| **Boost** | Reboot | Resistencia = MAX | 2 |
-| **Boost** | Scanner-2X | Proxima rodada inicia com 2 pills reveladas | 2 |
-| **Power-Up** | Antidote | Adiciona Antidote ao inventario | 2 |
-| **Power-Up** | Reveal | Adiciona Reveal ao inventario | 2 |
-| **Power-Up** | Bomb | Adiciona Bomb ao inventario | 2 |
-
-> **Nota:** Pill Store nao aparece em Game Over. Detalhes em `.specs/shape-system/`.
+#### Interação com Itens
+- **Shape Scanner**: Revela todas pílulas de uma forma específica
+- **Shape Bomb**: Remove todas pílulas de uma forma (futuro)
+- **Targeting**: Alguns itens podem usar formas como critério
 
 ---
 
-## 6. Loop de Jogo (Game Loop)
+## 6. Sistema de Shape Quests
 
-### Fase 1: Selecao de Itens
-1. Jogadores selecionam 5 itens cada do catalogo.
-2. IA seleciona automaticamente.
-3. Ambos confirmam para iniciar.
+### A. Conceito
+Objetivos pessoais de sequência que recompensam jogadores estratégicos com Pill Coins.
 
-### Fase 2: Setup (Distribuicao)
-1. Verifica se ambos tem Vidas > 0.
-2. Preenche a mesa com pilulas aleatorias (quantidade e tipos baseados na rodada).
-3. Atribui shapes aleatorias a cada pilula.
-4. Atribui objetivo de shape a cada jogador.
+### B. Mecânicas
 
-### Fase 3: Turno do Jogador (Sequencia)
-Um turno e composto por **Acoes Livres** seguidas de uma **Acao Obrigatoria**.
+#### Geração de Quests
+- **Frequência**: 1 quest ativo por jogador por vez
+- **Tamanho**: 2-3 formas por sequência (aumenta após rodada 5)
+- **Disponibilidade**: Apenas formas presentes no pool atual
+- **Renovação**: Novo quest apenas no início de cada rodada
 
-1. **Status Check:** Verifica se o jogador esta impedido (ex: Algemado). Se sim, pula para o fim do turno.
-2. **Fase de Itens (Opcional & Ilimitada):**
-    * O jogador pode usar qualquer quantidade de itens do inventario.
-    * Itens podem revelar pilulas, curar a si mesmo, ou alterar o estado do oponente.
-3. **Fase de Consumo (Obrigatoria):**
-    * O jogador **DEVE** selecionar uma pilula da mesa.
-    * *Excecao:* Se um item permitiu pular a vez ou forcar o oponente.
-4. **Resolucao:**
-    * O efeito da pilula e aplicado.
-    * Verifica progresso do objetivo de shape.
-    * Verifica-se `Resistencia <= 0`. Se verdadeiro -> Processa `Perda de Vida` e `Reset`.
-5. **Fim do Turno:** Passa a vez para o oponente.
+#### Exemplos de Quests
+| Sequência | Dificuldade | Recompensa |
+|-----------|-------------|------------|
+| Triangle → Round | Fácil | +1 Pill Coin |
+| Flower → Star → Heart | Médio | +2 Pill Coin |
+| Skull → Cross → Bear → Star | Difícil | +3 Pill Coin |
 
-### Fase 4: Fim de Rodada
-1. Quando pool esvazia, verifica se Game Over.
-2. Se nao Game Over, verifica se alguem sinalizou `wantsStore` E tem coins.
-3. Se sim: fase de compras (timer 30s).
-4. Se nao: proxima rodada direto.
-5. Boosts comprados sao aplicados, `wantsStore` resetado.
-6. Nova rodada inicia com novos objetivos de shape.
+#### Regras de Progresso
+- **Ordem Obrigatória**: Deve consumir na sequência exata
+- **Reset**: Consumir forma errada reseta progresso para 0
+- **Persistência**: Progresso mantido entre turnos
+- **Feedback Visual**: Animação de "shake" quando quest reseta
+
+### C. Sistema de Pill Coins
+- **Acumulação**: Coins persistem entre rodadas
+- **Uso**: Exclusivo na Pill Store
+- **Display**: Contador visível no painel do jogador
+- **Interação**: Click no contador sinaliza interesse na loja
 
 ---
 
-## 7. Sistema de Itens (Power-ups)
+## 7. Pill Store (Sistema de Loja)
 
-Cada jogador seleciona 5 itens antes da partida.
+### A. Fluxo de Ativação
 
-### 7.1 Itens Implementados
+#### Durante a Rodada
+1. **Sinalização**: Click no contador de Pill Coins = toggle "quero loja"
+2. **Requisitos**: Deve ter `pillCoins > 0` para sinalizar
+3. **Flexibilidade**: Pode mudar de ideia a qualquer momento
+4. **Feedback**: Aviso se tentar sinalizar sem coins
 
-| Categoria | Item | Efeito |
-| :--- | :--- | :--- |
-| **Intel** | Scanner | Revela o tipo de 1 pilula alvo ao jogador. |
-| **Intel** | Inverter | Inverte o efeito de 1 pilula alvo (dano vira cura, cura vira dano). |
-| **Intel** | Double | Dobra o efeito de 1 pilula alvo. |
-| **Sustain** | Pocket Pill | Cura +4 de Resistencia imediatamente (sem gastar turno). |
-| **Sustain** | Shield | Imunidade a efeitos de pilulas e itens por 1 rodada. |
-| **Control** | Handcuffs | O oponente perde o proximo turno. |
-| **Control** | Force Feed | Escolha uma pilula e obrigue o oponente a come-la agora. |
-| **Chaos** | Shuffle | Embaralha as pilulas da mesa (reseta informacao de Scanners). |
-| **Chaos** | Discard | Remove uma pilula da mesa sem ativar seu efeito. |
+#### Fim da Rodada
+1. **Verificação**: Sistema checa quem sinalizou E tem coins
+2. **Ativação**: Se alguém qualifica → fase shopping (30s timer)
+3. **Bypass**: Se ninguém qualifica → próxima rodada direto
+4. **Experiência**: Quem sinalizou vê loja, outros veem "Aguardando..."
 
-### 7.2 Backlog de Itens Futuros
+### B. Mecânicas de Timer
+- **Duração Base**: 30 segundos por jogador
+- **Aceleração**: Confirmação de um jogador reduz timer do outro pela metade
+- **Timeout**: Timer expirado = auto-confirma compras atuais
+- **Sincronização**: Todos devem confirmar para prosseguir
 
-| Categoria | Item | Efeito Proposto |
-| :--- | :--- | :--- |
-| **Control** | Give Me | Obriga oponente a trocar 1 item com o jogador. |
-| **Chaos** | Shape Shift | Muda a forma de 1 pilula alvo. |
-| **Chaos** | Shape Bomb | Remove todas pilulas de uma forma especifica. |
+### C. Catálogo da Loja
+
+#### Boosts (Efeitos Imediatos)
+| Item | Efeito | Custo | Disponibilidade |
+|------|--------|-------|-----------------|
+| **1-Up** | +1 Vida | 2 coins | Se vidas < máximo |
+| **Reboot** | Resistência = MAX | 1 coins | Se resistência < máximo |
+| **Scanner-2X** | 2 pílulas reveladas no início da próxima rodada | 1 coins | Sempre |
+
+#### Power-ups (Adicionam ao Inventário)
+| Item | Efeito | Custo | Disponibilidade |
+|------|--------|-------|-----------------|
+| **Scanner** | Adiciona Scanner ao inventário | 1 coins | Se inventário não cheio |
+| **Shield** | Adiciona Shield ao inventário | 2 coins | Limitado a 1 por inventário |
+| **Pocket Pill** | Adiciona Pocket Pill ao inventário | 1 coins | Se inventário não cheio |
+| **Shape Scanner** | Adiciona Shape Scanner ao inventário | 2 coins | Se inventário não cheio |
+
+### D. Regras de Compra
+- **Stackable**: Power-ups podem ser comprados múltiplas vezes
+- **Non-stackable**: Boosts limitados a 1 por inventário
+- **Aplicação**: Boosts aplicados no início da próxima rodada
+- **Inventário**: Power-ups adicionados ao inventário imediatamente após compra
 
 ---
 
-## 8. Sistema de Progressao
+## 8. Fluxo de Jogo (Game Loop)
 
-### 8.1 Progressao de Tipos
-* Tipos de pilulas desbloqueiam gradualmente por rodada.
-* Probabilidades interpolam de `startPct` para `endPct` ao longo das rodadas.
+### A. Fase Setup
+1. **Seleção de Modo**: Single Player vs Multiplayer
+2. **Configuração**: Dificuldade da IA (single) ou criação/entrada em sala (multi)
+3. **Inicialização**: Geração de UUIDs para jogadores
 
-### 8.2 Progressao de Quantidade (Pool Scaling)
-| Rodadas | Pilulas |
-| :--- | :--- |
-| 1-3 | 6 |
-| 4-6 | 7 |
-| 7-9 | 8 |
-| 10-12 | 9 |
-| 13-15 | 10 |
-| 16-18 | 11 |
-| 19+ | 12 (max) |
+### B. Fase de Seleção de Itens
+1. **Catálogo**: Jogadores veem 9+ itens em 4 categorias
+2. **Seleção**: Até 5 itens por jogador
+3. **IA**: Seleção automática baseada em prioridades
+4. **Confirmação**: Ambos devem confirmar para prosseguir
+5. **Multiplayer**: Sincronização via Supabase Realtime
 
-> **Referencia:** Detalhes de balanceamento em `docs/GAME-BALANCE.md`
+### C. Fase de Jogo (Playing)
+
+#### Inicialização da Rodada
+1. **Verificação**: Jogadores com vidas > 0
+2. **Pool**: Geração de pílulas (tipos + formas)
+3. **Quests**: Atribuição de Shape Quests individuais
+4. **Boosts**: Aplicação de boosts da Pill Store
+5. **Revelação**: Auto-reveal se boost Scanner-2X ativo
+
+#### Estrutura do Turno
+1. **Status Check**: Verifica efeitos (Handcuffed pula turno)
+2. **Fase de Itens** (Opcional):
+   - Uso ilimitado de itens do inventário
+   - Targeting: self, opponent, ou pill específica
+   - Efeitos imediatos (cura, reveal, etc.)
+3. **Fase de Consumo** (Obrigatória):
+   - Seleção de 1 pílula do pool
+   - Exceção: Force Feed ou outros itens que pulam
+4. **Resolução**:
+   - Aplicação do efeito da pílula
+   - Verificação de colapso (resistência ≤ 0)
+   - Progresso de Shape Quest
+   - Animações e feedback visual
+5. **Fim do Turno**: Rotação para próximo jogador
+
+#### Fim da Rodada
+1. **Trigger**: Pool vazio ou todos jogadores eliminados
+2. **Game Over Check**: Verifica vencedor
+3. **Pill Store**: Se alguém sinalizou + tem coins
+4. **Transição**: Nova rodada ou fim de jogo
+
+### D. Fase Shopping (Opcional)
+1. **Ativação**: Baseada em sinalização + coins
+2. **Timer**: 30s por jogador com aceleração
+3. **Compras**: Boosts e power-ups
+4. **Aplicação**: Boosts na próxima rodada
+
+### E. Fase Game Over
+1. **Determinação**: Último jogador vivo = vencedor
+2. **Estatísticas**: Rodadas, pílulas consumidas, etc.
+3. **Opções**: Rematch (multiplayer) ou nova partida
+
+---
+
+## 9. Sistema de Itens
+
+### A. Estrutura Geral
+- **Capacidade**: 5 slots por jogador
+- **Seleção**: Pré-jogo + compras na Pill Store
+- **Uso**: Durante fase de itens do turno
+- **Targeting**: Self, opponent, ou pílula específica
+
+### B. Categorias e Itens
+
+#### Intel (Informação)
+| Item | Efeito | Target | Cor |
+|------|--------|--------|-----|
+| **Scanner** | Revela tipo de 1 pílula | Pill | Azul |
+| **Inverter** | Inverte efeito de 1 pílula | Pill | Azul |
+| **Double** | Dobra efeito de 1 pílula | Pill | Azul |
+| **Shape Scanner** | Revela todas pílulas de uma forma | Pill | Azul |
+
+#### Sustain (Sobrevivência)
+| Item | Efeito | Target | Cor |
+|------|--------|--------|-----|
+| **Pocket Pill** | +4 resistência imediata | Self | Verde |
+| **Shield** | Imunidade a dano por 1 rodada | Self | Verde |
+
+#### Control (Controle)
+| Item | Efeito | Target | Cor |
+|------|--------|--------|-----|
+| **Handcuffs** | Oponente perde próximo turno | Opponent | Amarelo |
+| **Force Feed** | Força oponente a consumir pílula escolhida | Pill + Opponent | Amarelo |
+
+#### Chaos (Caos)
+| Item | Efeito | Target | Cor |
+|------|--------|--------|-----|
+| **Shuffle** | Embaralha pool, reseta revelações | None | Roxo |
+| **Discard** | Remove 1 pílula sem ativar efeito | Pill | Roxo |
+
+### C. Mecânicas Avançadas
+
+#### Sistema de Targeting
+- **Validação**: Apenas alvos válidos são selecionáveis
+- **Feedback**: Highlight visual para alvos possíveis
+- **Cancelamento**: ESC ou click fora cancela seleção
+
+#### Interações Especiais
+- **Shield vs Dano**: Bloqueia dano, permite cura
+- **Inverted + Doubled**: Combinações de modificadores
+- **Force Feed + Modifiers**: Pílula modificada é forçada
+
+#### Limitações
+- **Uso Único**: Cada item usado é removido do inventário
+- **Ordem**: Itens aplicados antes do consumo obrigatório
+- **Multiplayer**: Sincronização via eventos Realtime
+
+---
+
+## 10. Sistema de Progressão
+
+### A. Progressão de Tipos
+- **Desbloqueio Gradual**: Novos tipos por rodada
+- **Interpolação**: Probabilidades mudam suavemente
+- **Balanceamento**: SAFE diminui, perigo aumenta
+- **Teto**: Rodada 20 como máximo para cálculos
+
+### B. Progressão de Quantidade
+| Rodadas | Pílulas | Observações |
+|---------|---------|-------------|
+| 1-3 | 6 | Tutorial suave |
+| 4-6 | 7 | HEAL disponível |
+| 7-9 | 8 | Tensão crescente |
+| 10-12 | 9 | FATAL ativo |
+| 13-15 | 10 | Late game |
+| 16-18 | 11 | Máxima tensão |
+| 19+ | 12 | Cap máximo |
+
+### C. Progressão de IA
+
+#### Níveis de Dificuldade
+| Nível | Nome | Comportamento |
+|-------|------|---------------|
+| **Easy** | Paciente | Previsível, evita riscos |
+| **Normal** | Cobaia | Balanceado, algumas táticas |
+| **Hard** | Sobrevivente | Agressivo, usa itens estrategicamente |
+| **Insane** | Hofmann | Calculista, sem piedade |
+
+#### Adaptação por Rodada
+- **Early Game**: IA mais conservadora
+- **Mid Game**: Aumenta agressividade
+- **Late Game**: Máxima pressão e risco
+
+### D. Progressão de Formas
+- **Desbloqueio**: Novas formas por rodada
+- **Distribuição**: Proporcional baseada em probabilidades
+- **Complexidade**: Quests mais longos após rodada 5
+
+---
+
+## 11. Modos de Jogo
+
+### A. Single Player
+- **Oponente**: IA com 4 níveis de dificuldade
+- **Progressão**: Desbloqueio de níveis mais difíceis
+- **Prática**: Ambiente seguro para aprender mecânicas
+
+### B. Multiplayer
+- **Tecnologia**: Supabase Realtime (WebSocket)
+- **Capacidade**: 2-4 jogadores por sala
+- **Autenticação**: Guest-first (sem cadastro obrigatório)
+- **Sincronização**: Estado de jogo em tempo real
+- **Reconexão**: Sistema de heartbeat e recuperação
+- **Rematch**: Sistema de revanche pós-jogo
+
+### C. Recursos Compartilhados
+- **Saves**: Não há save/load (sessões temporárias)
+- **Estatísticas**: Tracking básico por partida
+- **Replay**: Histórico de ações para debug
+- **Dev Tools**: Ferramentas de desenvolvimento (CTRL+SHIFT+D)
+
+---
+
+## 12. Considerações Técnicas
+
+### A. Arquitetura
+- **Frontend**: React 19 + TypeScript + Vite
+- **Estado**: Zustand (stores modulares)
+- **UI**: shadcn/ui + Tailwind CSS + Framer Motion
+- **Backend**: Supabase (apenas Realtime)
+- **Testes**: Vitest + property-based testing
+
+### B. Performance
+- **Otimizações**: Selectors otimizados, memoização
+- **Assets**: PNG com transparência, SVG para ícones
+- **Bundle**: Code splitting, lazy loading
+- **Multiplayer**: Debounce de eventos, compressão
+
+### C. Escalabilidade
+- **N-Players**: Arquitetura suporta 2-4 jogadores
+- **UUID**: Identificadores de sessão únicos
+- **Modular**: Stores separados por domínio
+- **Extensível**: Sistema de itens e tipos plugável

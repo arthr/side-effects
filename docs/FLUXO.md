@@ -1,103 +1,199 @@
-# Fluxo da Aplicacao - Dosed (Pill Roulette)
+# Fluxo da Aplicação - Dosed
 
-## Visao Geral da Arquitetura
+## Visão Geral da Arquitetura
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                              APLICACAO                                  │
+│                           APLICAÇÃO DOSED                               │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  main.tsx → App.tsx → GameLayout → GameContent                          │
-│                                      ↓                                  │
-│                    ┌─────────────────┼─────────────────┐                │
-│                    ↓                 ↓                 ↓                │
-│             [phase=setup]   [phase=itemSelection]  [phase=playing]      │
-│                    ↓                 ↓                 ↓                │
-│               InfoPanel      ItemSelectionScreen   GameBoard            │
-│               + Button                                 ↓                │
-│                                             ┌──────────┼──────────┐     │
-│                                             ↓          ↓          ↓     │
-│                                      TurnIndicator  PillPool  AnimatedPlayerArea
-│                                                                + InventoryBar
-└─────────────────────────────────────────────────────────────────────────┘
+│  main.tsx → App.tsx (HashRouter) → GameLayout → GameContent             │
+│                                                    ↓                    │
+│              ┌─────────────────────┬─────────────────────┬──────────────┐
+│              ↓                     ↓                     ↓              │
+│        [phase=setup]      [phase=itemSelection]   [phase=playing]       │
+│              ↓                     ↓                     ↓              │
+│     ┌────────────────┐    ItemSelectionScreen     GameBoard             │
+│     │ Mode Selection │           ↓                      ↓               │
+│     │ Single/Multi   │    ┌──────────────┐    ┌─────────┼─────────┐     │
+│     │ Difficulty     │    │ Item Catalog │    ↓         ↓         ↓     │
+│     │ InfoPanel      │    │ 4 Categories │ TurnIndicator PillPool AnimatedPlayerArea │
+│     └────────────────┘    │ 5 Slots Max  │                      + InventoryBar      │
+│              ↓            └──────────────┘                      + ShapeQuest        │
+│     ┌────────────────┐                                         + PillCoins         │
+│     │ Multiplayer    │                                                             │
+│     │ LobbyScreen    │    ┌─────────────────────────────────────────────────────┐ │
+│     │ Create/Join    │    │                OVERLAY SYSTEM                       │ │
+│     └────────────────┘    │  PillReveal • GameOver • NewRound • ItemEffect     │ │
+│                           │  + ToastManager (notifications)                    │ │
+│                           │  + DisconnectedOverlay (multiplayer)               │ │
+│                           └─────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Estrutura de Arquivos
+## Arquitetura Modular Atual
 
-### Camadas da Aplicacao
+### Estrutura de Stores (Estado)
 
 ```
-src/
-├── main.tsx                    # Ponto de entrada (React + StrictMode)
-├── App.tsx                     # Componente raiz + roteamento por fase
-├── index.css                   # Estilos globais (Tailwind)
+src/stores/
+├── gameStore.ts              # Store legado (em migração)
+├── overlayStore.ts           # Gerencia modais/overlays
+├── toastStore.ts             # Sistema de notificações
+├── multiplayerStore.ts       # Conexão Supabase Realtime
+├── devToolStore.ts           # Ferramentas de desenvolvimento
 │
-├── types/                      # Definicoes TypeScript
-│   ├── index.ts               # Barrel export
-│   ├── pill.ts                # Pill, PillType, PillConfig
-│   ├── player.ts              # Player, PlayerId, PlayerEffect, PlayerInventory (+ pillCoins)
-│   ├── game.ts                # GameState, GamePhase, GameConfig, TargetSelectionState
-│   ├── item.ts                # ItemType, ItemCategory, ItemDefinition, InventoryItem
-│   ├── quest.ts               # ShapeQuest, QuestConfig
-│   └── store.ts               # StoreState, StoreItem, StoreConfig (Pill Store)
+└── game/                     # Stores modulares (nova arquitetura)
+    ├── index.ts              # Barrel exports
+    ├── gameFlowStore.ts      # Fases, turnos, rodadas, vencedor
+    ├── playerStore.ts        # Jogadores, vidas, resistência, inventário
+    ├── pillPoolStore.ts      # Pool de pílulas, consumo, revelação
+    ├── effectsStore.ts       # Efeitos ativos (shield, handcuffs)
+    ├── itemUsageStore.ts     # Seleção de alvo, uso de itens
+    └── shopStore.ts          # Pill Store, carrinho, boosts
+```
+
+### Estrutura de Componentes
+
+```
+src/components/
+├── ui/                       # Componentes base
+│   ├── 8bit/                # Componentes estilizados retro
+│   └── paceui/              # Componentes adicionais
 │
-├── utils/                      # Funcoes puras (logica de negocio)
-│   ├── constants.ts           # Configuracoes e valores default
-│   ├── pillGenerator.ts       # Geracao de pool de pilulas
-│   ├── gameLogic.ts           # Efeitos, colapso, criacao de player
-│   ├── aiLogic.ts             # Logica da IA (selecao, itens, heuristicas)
-│   ├── itemCatalog.ts         # Catalogo de itens (9 itens, cores, icones)
-│   ├── itemLogic.ts           # Logica de efeitos de cada item
-│   ├── shapeProgression.ts    # Progressao de shapes por rodada
-│   ├── questGenerator.ts      # Geracao de Shape Quests
-│   └── storeConfig.ts         # Configuracao da Pill Store (itens, timers)
+├── layout/
+│   └── GameLayout.tsx       # Layout principal
 │
-├── stores/                     # Estado global (Zustand)
-│   ├── gameStore.ts           # Estado + Actions + Selectors
-│   ├── overlayStore.ts        # Gerencia overlays (PillReveal, ItemEffect, etc)
-│   └── toastStore.ts          # Fila de notificacoes
+├── game/                    # Componentes do jogo
+│   ├── GameBoard.tsx        # Orquestrador principal
+│   ├── ItemSelectionScreen.tsx  # Seleção pré-jogo
+│   ├── PillPool.tsx         # Mesa de pílulas
+│   ├── AnimatedPlayerArea.tsx   # Área do jogador
+│   ├── TurnIndicator.tsx    # Indicador de turno
+│   ├── ShapeQuestDisplay.tsx    # Display de quests
+│   ├── PillStore.tsx        # Interface da loja
+│   └── [25+ outros componentes]
 │
-├── hooks/                      # Hooks customizados
-│   ├── index.ts               # Barrel export
-│   ├── useGameActions.ts      # Wrapper para actions do store
-│   ├── useGameState.ts        # Selectors otimizados
-│   ├── usePillConsumption.ts  # Fluxo de consumo (reveal → feedback)
-│   ├── useAIPlayer.ts         # Jogada automatica da IA + uso de itens
-│   ├── useItemSelection.ts    # Selecao de itens pre-jogo
-│   ├── useItemUsage.ts        # Uso de itens durante partida
-│   ├── useAIItemSelection.ts  # Selecao automatica de itens pela IA
-│   ├── useOverlay.ts          # Acesso ao overlayStore
-│   ├── useToast.ts            # Acesso ao toastStore
-│   └── useStoreTimer.ts       # Timer da Pill Store (countdown)
+├── multiplayer/             # Componentes multiplayer
+│   ├── LobbyScreen.tsx      # Tela de lobby
+│   ├── CreateRoomForm.tsx   # Criação de sala
+│   ├── JoinRoomForm.tsx     # Entrada em sala
+│   ├── WaitingRoom.tsx      # Aguardando jogadores
+│   └── DisconnectedOverlay.tsx  # Overlay de desconexão
 │
-├── components/
-│   ├── ui/                    # Componentes shadcn/ui
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── dialog.tsx
-│   │   ├── badge.tsx
-│   │   ├── progress.tsx
-│   │   ├── tooltip.tsx
-│   │   └── alert.tsx
-│   │
-│   ├── layout/
-│   │   └── GameLayout.tsx     # Layout principal (header, main, footer)
-│   │
-│   ├── game/                  # Componentes do jogo
-│   │   ├── GameBoard.tsx      # Orquestrador principal
-│   │   ├── TurnIndicator.tsx  # Indicador de turno/rodada
-│   │   ├── PillPool.tsx       # Mesa de pilulas
-│   │   ├── Pill.tsx           # Pilula individual (revealed, inverted, doubled, target)
-│   │   ├── TypeCounter.tsx    # Contador de tipos
-│   │   ├── AnimatedPlayerArea.tsx  # Area do jogador + inventario + efeitos
-│   │   ├── LivesDisplay.tsx   # Exibicao de vidas
-│   │   ├── ResistanceDisplay.tsx   # Exibicao de resistencia
-│   │   ├── FloatingNumber.tsx # Numeros flutuantes (+/-dano)
-│   │   ├── InfoPanel.tsx      # Tutorial/informacoes
-│   │   │
-│   │   │  # Sistema de Itens
-│   │   ├── ItemSelectionScreen.tsx  # Tela de selecao pre-jogo
+├── overlays/                # Modais/overlays
+│   ├── OverlayManager.tsx   # Gerenciador central
+│   ├── PillReveal.tsx       # Animação de consumo
+│   ├── GameOverDialog.tsx   # Fim de jogo
+│   ├── NewRoundOverlay.tsx  # Nova rodada
+│   └── ItemEffectOverlay.tsx    # Efeitos de itens
+│
+├── toasts/                  # Sistema de notificações
+│   ├── ToastManager.tsx     # Gerenciador central
+│   ├── Toast.tsx           # Componente individual
+│   └── PlayerToasts.tsx    # Toasts específicos do jogador
+│
+└── dev/                     # Ferramentas de desenvolvimento
+    ├── DevPage.tsx          # Página de debug
+    ├── FloatingDevTool/     # DevTool flutuante
+    ├── RealtimeDebugger.tsx # Debug multiplayer
+    └── DistributionSimulator.tsx # Simulador de distribuição
+```
+
+### Estrutura de Lógica de Negócio
+
+```
+src/utils/
+├── constants.ts             # Configurações do jogo
+├── gameLogic.ts            # Mecânicas core (dano, cura, colapso)
+├── pillGenerator.ts        # Geração de pools de pílulas
+├── pillProgression.ts      # Progressão de tipos por rodada
+├── shapeProgression.ts     # Progressão de formas por rodada
+├── questGenerator.ts       # Geração de Shape Quests
+├── itemCatalog.ts          # Catálogo de itens (9+ itens)
+├── itemLogic.ts            # Lógica de efeitos de itens
+├── storeConfig.ts          # Configuração da Pill Store
+├── aiLogic.ts              # IA (4 níveis de dificuldade)
+├── aiConfig.ts             # Configuração da IA
+├── playerManager.ts        # Gerenciamento de jogadores (UUID)
+├── turnManager.ts          # Rotação de turnos (N-players)
+└── __tests__/              # Testes unitários (6 arquivos)
+```
+
+### Estrutura de Hooks (30+ hooks)
+
+```
+src/hooks/
+├── index.ts                    # Barrel exports
+│
+├── useGameActions.ts           # Actions do jogo (startGame, selectPill, etc)
+├── useGameState.ts             # Selectors otimizados (useGamePhase, useCurrentTurn, etc)
+├── useGameBoardState.ts        # Estado encapsulado do GameBoard
+│
+├── usePillConsumption.ts       # Fluxo de consumo de pílulas
+├── useItemUsage.ts             # Uso de itens durante partida
+├── useItemSelection.ts         # Seleção de itens pré-jogo
+├── useItemSelectionState.ts    # Estado da seleção de itens
+├── useItemCatalog.ts           # Acesso ao catálogo de itens
+│
+├── useAIPlayer.ts              # Automação da IA
+├── useAIItemSelection.ts       # Seleção automática de itens pela IA
+├── useAIStore.ts               # Estado da IA
+│
+├── useMultiplayer.ts           # Conexão multiplayer
+├── useRoomConnection.ts        # Gerenciamento de salas
+│
+├── useOverlay.ts               # Sistema de overlays
+├── useOverlayState.ts          # Estado dos overlays
+├── useToast.ts                 # Sistema de notificações
+│
+├── useStoreTimer.ts            # Timer da Pill Store
+├── usePillStoreState.ts        # Estado da Pill Store
+├── useStoreCatalog.ts          # Catálogo da loja
+│
+├── useTargetablePlayers.ts     # Jogadores alvejáveis (N-player)
+├── useSeatLabel.ts             # Labels de assento (P1, P2, etc)
+│
+├── useDevTool.ts               # Ferramentas de desenvolvimento
+├── useDevToolActions.ts        # Actions do DevTool
+├── useDevToolGameSnapshot.ts   # Snapshot do jogo
+└── useDevToolStoresSnapshot.ts # Snapshot dos stores
+```
+
+### Estrutura de Tipos
+
+```
+src/types/
+├── index.ts                # Barrel exports
+├── game.ts                 # GameState, GamePhase, GameConfig
+├── player.ts               # Player, PlayerId (UUID), PlayerEffect
+├── pill.ts                 # Pill, PillType, PillShape, PillConfig
+├── item.ts                 # ItemType, ItemCategory, InventoryItem
+├── quest.ts                # ShapeQuest, QuestConfig
+├── store.ts                # StoreState, StoreItem, BoostType
+├── ai.ts                   # AIDecisionContext, PoolRiskAnalysis
+├── multiplayer.ts          # Room, ConnectionStatus, GameMode
+├── events.ts               # GameEvent, MultiplayerEvent
+└── sync.ts                 # SyncData, estado de sincronização
+```
+
+### Estrutura de Serviços
+
+```
+src/services/
+├── index.ts                # Barrel exports
+├── realtimeService.ts      # Serviço principal Supabase Realtime
+│
+├── realtime/               # Módulos Realtime
+│   └── index.ts           # Configuração de canais
+│
+├── game/                   # Serviços de jogo
+│   └── index.ts           # Lógica de sincronização
+│
+└── sync/                   # Sincronização de estado
+    └── index.ts           # Utilitários de sync
+```
 │   │   ├── ItemCard.tsx             # Card visual do item
 │   │   ├── InventoryBar.tsx         # Barra de inventario (5 slots)
 │   │   ├── InventorySlot.tsx        # Slot individual de item
@@ -128,35 +224,96 @@ src/
 
 ---
 
-## Fluxo de Estado (GameStore)
+## Fluxo de Estado e Fases
 
 ### Estados do Jogo (GamePhase)
 
 ```
-┌──────────┐   initGame()   ┌───────────────┐  confirmacao  ┌──────────┐  eliminacao  ┌──────────┐
+┌──────────┐   startGame()  ┌───────────────┐  confirmacao  ┌──────────┐  eliminacao  ┌──────────┐
 │  setup   │ ─────────────→ │ itemSelection │ ────────────→ │ playing  │ ───────────→ │  ended   │
 └──────────┘                └───────────────┘               └──────────┘              └──────────┘
-     ↑                                                            │                        │
-     │                                                            │ pool vazio             │
-     │                                                            ↓                        │
-     │                                               [Alguem sinalizou loja?]              │
-     │                                                   │              │                  │
-     │                                                  NAO            SIM                 │
-     │                                                   │              ↓                  │
-     │                                                   │      ┌───────────┐              │
-     │                                                   │      │ shopping  │ (timer 30s)  │
-     │                                                   │      └───────────┘              │
-     │                                                   │              │                  │
-     │                                                   ↓              ↓                  │
-     │                                                ┌─────────────────┐                  │
-     │                                                │ resetRound()    │                  │
-     │                                                │ (aplica boosts) │                  │
-     │                                                └─────────────────┘                  │
-     │                                                         │                           │
-     │                                                         ↓                           │
-     │                                                [playing - nova rodada]              │
-     │                                                                                     │
-     └──────────────────────────── resetGame() ────────────────────────────────────────────┘
+     ↑                              │                            │                        │
+     │                              │ (multiplayer)              │ pool vazio             │
+     │                              ↓                            ↓                        │
+     │                      ┌───────────────┐        [Alguém sinalizou loja?]            │
+     │                      │ roundEnding   │               │              │              │
+     │                      │ (delay 2s)    │              NÃO            SIM             │
+     │                      └───────────────┘               │              ↓              │
+     │                              │                       │      ┌───────────┐          │
+     │                              ↓                       │      │ shopping  │ (30s)    │
+     │                      [Sync multiplayer]              │      └───────────┘          │
+     │                                                      │              │              │
+     │                                                      ↓              ↓              │
+     │                                               ┌─────────────────┐                  │
+     │                                               │ resetRound()    │                  │
+     │                                               │ (aplica boosts) │                  │
+     │                                               └─────────────────┘                  │
+     │                                                        │                           │
+     │                                                        ↓                           │
+     │                                               [playing - nova rodada]              │
+     │                                                                                    │
+     └──────────────────────────── resetGame() ───────────────────────────────────────────┘
+```
+
+### Fluxo de Turno (TurnPhase)
+
+```
+┌─────────┐  useItem()   ┌─────────┐  consumePill()  ┌────────────┐  nextTurn()  ┌─────────┐
+│  items  │ ───────────→ │  items  │ ──────────────→ │ resolution │ ───────────→ │  items  │
+└─────────┘              └─────────┘                 └────────────┘              └─────────┘
+     ↑                        │                            │                           │
+     │                        │ (sem itens)                │ (efeitos aplicados)       │
+     │                        ↓                            ↓                           │
+     │                   ┌─────────┐                 ┌────────────┐                   │
+     │                   │ consume │                 │ colapso?   │                   │
+     │                   └─────────┘                 └────────────┘                   │
+     │                        │                            │                           │
+     │                        │                           SIM                          │
+     │                        │                            ↓                           │
+     │                        │                   ┌────────────────┐                  │
+     │                        │                   │ -1 vida        │                  │
+     │                        │                   │ reset resist.  │                  │
+     │                        │                   └────────────────┘                  │
+     │                        │                            │                           │
+     │                        └────────────────────────────┼───────────────────────────┘
+     │                                                     │
+     └─────────────────────────────────────────────────────┘
+```
+
+### Arquitetura de Stores Modulares
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            GAME STORE (Legacy)                              │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │                      STORES MODULARES                                   │ │
+│  │                                                                         │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │ │
+│  │  │ gameFlowStore│  │ playerStore  │  │ pillPoolStore│  │effectsStore │ │ │
+│  │  │              │  │              │  │              │  │             │ │ │
+│  │  │ • phases     │  │ • players    │  │ • pillPool   │  │ • shield    │ │ │
+│  │  │ • turns      │  │ • lives      │  │ • typeCounts │  │ • handcuffs │ │ │
+│  │  │ • rounds     │  │ • resistance │  │ • revealed   │  │ • duration  │ │ │
+│  │  │ • winner     │  │ • inventory  │  │ • consume    │  │             │ │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────┘ │ │
+│  │                                                                         │ │
+│  │  ┌──────────────┐  ┌──────────────┐                                    │ │
+│  │  │itemUsageStore│  │  shopStore   │                                    │ │
+│  │  │              │  │              │                                    │ │
+│  │  │ • targeting  │  │ • storeState │                                    │ │
+│  │  │ • selection  │  │ • cart       │                                    │ │
+│  │  │ • validation │  │ • timer      │                                    │ │
+│  │  └──────────────┘  └──────────────┘                                    │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  overlayStore   │  │   toastStore    │  │multiplayerStore │  │  devToolStore   │
+│                 │  │                 │  │                 │  │                 │
+│ • currentType   │  │ • toasts[]      │  │ • room          │  │ • isOpen        │
+│ • data          │  │ • add/remove    │  │ • connection    │  │ • snapshots     │
+│ • open/close    │  │ • auto-dismiss  │  │ • events        │  │ • actions       │
+└─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 > **Nota:** Toggle `wantsStore` e feito durante a rodada clicando no icone de Pill Coins (se `pillCoins > 0`).
@@ -658,3 +815,209 @@ Para adicionar novas funcionalidades:
 4. **Persistencia**: Adicionar middleware no Zustand (persist)
 5. **Sons**: Hook `useSoundEffects` + arquivos de audio
 6. **Balanceamento de itens**: Ajustar `AI_ITEM_USE_CHANCE` e heuristicas em `aiLogic.ts`
+
+---
+
+## Fluxo Multiplayer
+
+### Criação e Entrada em Salas
+
+```
+HOST                                    GUEST
+┌─────────────────┐                    ┌─────────────────┐
+│ CreateRoomForm  │                    │ JoinRoomForm    │
+│ • hostName      │                    │ • roomId        │
+│ • createRoom()  │                    │ • guestName     │
+└─────────────────┘                    │ • joinRoom()    │
+         │                             └─────────────────┘
+         ↓                                      │
+┌─────────────────┐                            ↓
+│ WaitingRoom     │    ←─── Supabase ────→ ┌─────────────────┐
+│ • roomId        │         Realtime       │ Conectando...   │
+│ • aguardando    │                        │ • validação     │
+└─────────────────┘                        │ • entrada       │
+         │                                 └─────────────────┘
+         ↓                                          │
+┌─────────────────┐                                ↓
+│ ItemSelection   │    ←─── Sync Events ────→ ┌─────────────────┐
+│ • ambos online  │                           │ ItemSelection   │
+│ • seleção       │                           │ • seleção       │
+└─────────────────┘                           └─────────────────┘
+```
+
+### Sincronização de Estado
+
+```
+EVENTO LOCAL                    SUPABASE REALTIME                EVENTO REMOTO
+┌─────────────────┐            ┌─────────────────┐              ┌─────────────────┐
+│ consumePill()   │ ─────────→ │ pill_consumed   │ ───────────→ │ handleEvent()   │
+│ • pillId        │            │ • playerId      │              │ • sync state    │
+│ • playerId      │            │ • pillId        │              │ • update UI     │
+└─────────────────┘            │ • sequence      │              └─────────────────┘
+                               └─────────────────┘
+
+┌─────────────────┐            ┌─────────────────┐              ┌─────────────────┐
+│ useItem()       │ ─────────→ │ item_used       │ ───────────→ │ handleEvent()   │
+│ • itemType      │            │ • itemType      │              │ • apply effect  │
+│ • targetId      │            │ • targetId      │              │ • remove item   │
+└─────────────────┘            └─────────────────┘              └─────────────────┘
+
+┌─────────────────┐            ┌─────────────────┐              ┌─────────────────┐
+│ nextTurn()      │ ─────────→ │ turn_ended      │ ───────────→ │ handleEvent()   │
+│ • currentTurn   │            │ • nextPlayer    │              │ • update turn   │
+│ • nextPlayer    │            │ • sequence      │              │ • enable UI     │
+└─────────────────┘            └─────────────────┘              └─────────────────┘
+```
+
+### Sistema de Heartbeat
+
+```
+CLIENTE A                      SUPABASE                        CLIENTE B
+┌─────────────────┐           ┌─────────────────┐             ┌─────────────────┐
+│ heartbeat       │ ────────→ │ broadcast       │ ──────────→ │ receive         │
+│ • timestamp     │   5s      │ • playerId      │             │ • update last   │
+│ • playerId      │           │ • timestamp     │             │ • reset timeout │
+└─────────────────┘           └─────────────────┘             └─────────────────┘
+         ↑                                                             │
+         │                                                             ↓
+┌─────────────────┐                                          ┌─────────────────┐
+│ check timeout   │                                          │ check timeout   │
+│ • 15s limit     │                                          │ • 15s limit     │
+│ • disconnect    │                                          │ • disconnect    │
+└─────────────────┘                                          └─────────────────┘
+```
+
+---
+
+## Padrões Arquiteturais
+
+### Separation of Concerns
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CAMADAS                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  COMPONENTS (UI)           │  HOOKS (Bridge)        │  STORES (State)       │
+│  • Renderização pura      │  • Lógica de UI        │  • Estado global      │
+│  • Props/eventos          │  • Selectors           │  • Actions            │
+│  • Sem lógica de negócio  │  • Side effects        │  • Immutable updates  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  UTILS (Business Logic)    │  SERVICES (External)   │  TYPES (Contracts)    │
+│  • Funções puras          │  • Supabase Realtime   │  • Interfaces         │
+│  • Sem side effects       │  • WebSocket           │  • Type safety        │
+│  • Testáveis              │  • API calls           │  • Documentation      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow
+
+```
+USER INTERACTION
+       ↓
+┌─────────────────┐
+│   COMPONENT     │ ← Props/State
+└─────────────────┘
+       ↓ Event
+┌─────────────────┐
+│     HOOK        │ ← useGameActions, useGameState
+└─────────────────┘
+       ↓ Action
+┌─────────────────┐
+│     STORE       │ ← Zustand Store
+└─────────────────┘
+       ↓ Business Logic
+┌─────────────────┐
+│     UTILS       │ ← Pure Functions
+└─────────────────┘
+       ↓ Side Effect
+┌─────────────────┐
+│    SERVICE      │ ← Supabase, External APIs
+└─────────────────┘
+```
+
+### Error Boundaries
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ERROR HANDLING                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  COMPONENT LEVEL           │  STORE LEVEL           │  SERVICE LEVEL        │
+│  • Try/catch em hooks     │  • Validation          │  • Network errors     │
+│  • Fallback UI           │  • State consistency    │  • Timeout handling   │
+│  • Error boundaries      │  • Rollback actions     │  • Retry logic        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  USER FEEDBACK             │  LOGGING               │  RECOVERY             │
+│  • Toast notifications    │  • Console errors      │  • Reconnection       │
+│  • Error overlays         │  • Action history      │  • State sync         │
+│  • Graceful degradation   │  • Debug snapshots     │  • Fallback modes     │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Performance e Otimizações
+
+### Rendering Optimizations
+
+- **Selectors Otimizados**: Hooks com dependências específicas
+- **Memoização**: `useMemo` e `useCallback` em componentes críticos
+- **Lazy Loading**: Componentes carregados sob demanda
+- **Virtual Scrolling**: Para listas grandes (futuro)
+
+### State Management
+
+- **Stores Modulares**: Reduz re-renders desnecessários
+- **Immutable Updates**: Garante detecção de mudanças
+- **Selective Subscriptions**: Componentes ouvem apenas estado relevante
+- **Debounced Actions**: Evita spam de eventos multiplayer
+
+### Asset Optimization
+
+- **PNG com Transparência**: Shapes de pílulas otimizadas
+- **SVG Icons**: Ícones escaláveis e leves
+- **Code Splitting**: Bundle dividido por rotas
+- **Tree Shaking**: Remove código não utilizado
+
+### Multiplayer Performance
+
+- **Event Batching**: Agrupa eventos relacionados
+- **Compression**: Reduz payload de sincronização
+- **Heartbeat Optimization**: Frequência balanceada
+- **Connection Pooling**: Reutiliza conexões WebSocket
+
+---
+
+## Debugging e Desenvolvimento
+
+### DevTools (CTRL+SHIFT+D)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            FLOATING DEVTOOL                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  GAME STATE               │  STORES SNAPSHOT        │  ACTIONS              │
+│  • Current phase          │  • gameFlowStore        │  • Force phase        │
+│  • Players status         │  • playerStore          │  • Add pills          │
+│  • Pill pool             │  • pillPoolStore        │  • Modify resistance  │
+│  • Round/turn info       │  • effectsStore         │  • Trigger events     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  MULTIPLAYER DEBUG        │  DISTRIBUTION SIM       │  REALTIME MONITOR     │
+│  • Connection status      │  • Pill progression     │  • Event log          │
+│  • Room info             │  • Shape distribution   │  • Latency stats      │
+│  • Event history         │  • Balance testing      │  • Connection health  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Testing Strategy
+
+- **Unit Tests**: Utils e lógica de negócio (Vitest)
+- **Property-Based Tests**: Validação de invariantes
+- **Integration Tests**: Fluxos completos de jogo
+- **E2E Tests**: Cenários multiplayer (futuro)
+
+### Monitoring
+
+- **Action History**: Log de todas as ações do jogo
+- **State Snapshots**: Capturas de estado para debug
+- **Performance Metrics**: Tempo de renderização
+- **Error Tracking**: Captura e análise de erros
