@@ -1,12 +1,12 @@
 # Tasks: playerid-uuid (ordem explícita + UUID)
 
 ## Tarefa 1 — Parar de ordenar por PlayerId (migrar para playerOrder)
-- **Status:** PENDING
+- **Status:** DONE
 - **Objetivo:** remover `sort`/parse de `playerN` e padronizar iteração via `playerOrder`.
 - **Critério de pronto:** não existe mais `getPlayerIds().sort(...)` alimentando UI/turnos.
 
 ## Tarefa 2 — Deprecar `getPlayerIds` e criar helper neutro
-- **Status:** TODO
+- **Status:** DONE
 - **Objetivo:** `getPlayerIds` não pode mais assumir `playerN`; criar helper que não ordena por semântica (ex.: `getPlayerIdsUnordered`) e migrar usos.
 
 ## Tarefa 3 — Introduzir seatIndex apenas para UI/DevTool (legibilidade)
