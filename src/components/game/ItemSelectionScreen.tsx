@@ -4,6 +4,7 @@ import type { ItemCategory, ItemType, PlayerId } from '@/types'
 import { useItemCatalog, useItemSelection, useMultiplayer } from '@/hooks'
 import { useAIItemSelection } from '@/hooks/useAIItemSelection'
 import { useItemSelectionState } from '@/hooks/useItemSelectionState'
+import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { ItemCard } from './ItemCard'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/8bit/button'
@@ -19,11 +20,14 @@ export function ItemSelectionScreen() {
   // Contexto multiplayer
   const { isMultiplayer, localPlayerId, opponentPlayerId, room, localRole } = useMultiplayer()
 
+  // Usa playerOrder como fonte unica de verdade (Regra de Ouro)
+  const playerOrder = useGameFlowStore((state) => state.playerOrder)
+  
   // Determina IDs dos jogadores
-  const myPlayerId: PlayerId = localPlayerId ?? 'player1'
-  const opponentId: PlayerId = isMultiplayer
-    ? (opponentPlayerId ?? 'player2')
-    : 'player2'
+  // Em multiplayer: usa localPlayerId/opponentPlayerId do multiplayerStore
+  // Em single player: primeiro no playerOrder e humano, segundo e bot
+  const myPlayerId: PlayerId = localPlayerId ?? playerOrder[0]
+  const opponentId: PlayerId = opponentPlayerId ?? playerOrder[1] ?? playerOrder[0]
 
   // Determina nomes para exibicao
   const opponentName = isMultiplayer

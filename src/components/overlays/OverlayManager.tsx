@@ -40,10 +40,11 @@ export function OverlayManager() {
 
   // Determina qual jogador local esta na fase shopping
   // Em multiplayer: usa localPlayerId
-  // Em single player: determina pelo isAI flag
+  // Em single player: determina pelo isAI flag usando playerOrder
+  const playerIds = Object.keys(players) as PlayerId[]
   const localPlayer: PlayerId = isMultiplayer
-    ? (localPlayerId ?? 'player1')
-    : (players.player1.isAI ? 'player2' : 'player1')
+    ? (localPlayerId ?? playerIds[0])
+    : (playerIds.find(id => !players[id]?.isAI) ?? playerIds[0])
   const localPlayerData = players[localPlayer]
   const isShoppingPhase = gamePhase === 'shopping'
 

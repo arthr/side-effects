@@ -43,10 +43,7 @@ interface GameOverDialogProps {
   /** ID do jogador vencedor */
   winner: PlayerId | null
   /** Dados dos jogadores */
-  players: {
-    player1: Player
-    player2: Player
-  }
+  players: Record<PlayerId, Player>
   /** Estatisticas do jogo */
   stats: GameStats
   /** Callback para reiniciar o jogo */
@@ -117,9 +114,10 @@ export function GameOverDialog({
   onAcceptRematch,
   onDeclineRematch,
 }: GameOverDialogProps) {
-  const winnerPlayer = winner && (winner === 'player1' || winner === 'player2') ? players[winner] : null
+  const winnerPlayer = winner ? players[winner] : null
   const isHumanWinner = winnerPlayer !== null && !winnerPlayer.isAI
-  const isAiPlayer = players.player2.isAI;
+  const playerIds = Object.keys(players) as PlayerId[]
+  const isAiPlayer = playerIds.some(id => players[id]?.isAI)
   const theme = getThemeConfig(winnerPlayer, isHumanWinner)
 
   // Determina qual UI mostrar baseado no estado de rematch

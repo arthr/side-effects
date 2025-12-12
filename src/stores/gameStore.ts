@@ -105,7 +105,7 @@ interface GameStore extends GameState {
   consumePill: (pillId: string, options?: { forcedTarget?: PlayerId }) => void
   revealPillById: (pillId: string) => void
   nextTurn: () => void
-  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => void
+  resetRound: (syncData?: { playerOrder: PlayerId[]; pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => void
   endGame: (winnerId: PlayerId) => void
   resetGame: () => void
 
@@ -241,10 +241,7 @@ const initialState: GameState = {
     pineapple: 0,
     fruit: 0,
   },
-  shapeQuests: {
-    player1: null,
-    player2: null,
-  },
+  shapeQuests: {},
   round: 0,
   winner: null,
   actionHistory: [],
@@ -256,16 +253,10 @@ const initialState: GameState = {
     validTargets: null,
   },
   revealedPills: [],
-  itemSelectionConfirmed: {
-    player1: false,
-    player2: false,
-  },
+  itemSelectionConfirmed: {},
   storeState: null,
   lastQuestReset: null,
-  revealAtStart: {
-    player1: 0,
-    player2: 0,
-  },
+  revealAtStart: {},
 }
 
 /**
@@ -281,10 +272,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
   initGame: (config?: Partial<GameConfig>) => {
     const finalConfig = { ...DEFAULT_GAME_CONFIG, ...config }
 
-    // Gera UUIDs para os jogadores (single player ou host)
-    // Em multiplayer guest, os IDs virao do syncData
-    const player1Id: PlayerId = generatePlayerUUID()
-    const player2Id: PlayerId = generatePlayerUUID()
+    // Em multiplayer guest: usa UUIDs e playerOrder do syncData
+    // Em host ou single player: gera UUIDs localmente
+    let player1Id: PlayerId
+    let player2Id: PlayerId
+    let playerOrder: PlayerId[]
+
+    if (finalConfig.syncData?.playerOrder) {
+      // Guest: reutiliza UUIDs do host para garantir sincronia
+      playerOrder = finalConfig.syncData.playerOrder
+      player1Id = playerOrder[0]
+      player2Id = playerOrder[1]
+    } else {
+      // Host ou single player: gera UUIDs localmente
+      player1Id = generatePlayerUUID()
+      player2Id = generatePlayerUUID()
+      playerOrder = [player1Id, player2Id]
+    }
 
     const player1 = createPlayer(
       player1Id,
@@ -301,10 +305,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       finalConfig.startingResistance,
       finalConfig.player2.isAI
     )
-
-    // Ordem explicita: humano primeiro, bot segundo (single player)
-    // Em multiplayer, a ordem vira do syncData ou e definida pelo host
-    const playerOrder: PlayerId[] = [player1Id, player2Id]
 
     // Em multiplayer com syncData (guest), usa dados do host
     // Caso contrario (host ou single player), gera localmente
@@ -670,30 +670,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Em multiplayer, apenas host gera dados e emite evento para sincronizar
    * @param syncData - Dados sincronizados (apenas guest em multiplayer)
    */
-  resetRound: (syncData?: { pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => {
+  resetRound: (syncData?: { playerOrder: PlayerId[]; pillPool: Pill[]; shapeQuests: Record<PlayerId, ShapeQuest | null>; pillsToReveal?: string[] }) => {
     const state = get()
     // Aceita tanto 'playing' quanto 'roundEnding' quanto 'shopping'
     if (state.phase !== 'playing' && state.phase !== 'roundEnding' && state.phase !== 'shopping') return
 
-    // Verifica se ambos jogadores ainda tem vidas
-    const { player1, player2 } = state.players
-    if (player1.lives <= 0 || player2.lives <= 0) {
-      // Nao inicia nova rodada se alguem foi eliminado
+    // Verifica se todos jogadores ainda tem vidas (usa playerOrder)
+    const playerOrder = useGameFlowStore.getState().playerOrder
+    const alivePlayers = playerOrder.filter((playerId) => {
+      const player = state.players[playerId]
+      return player && player.lives > 0
+    })
+    
+    if (alivePlayers.length < 2) {
+      // Nao inicia nova rodada se menos de 2 jogadores vivos
       return
     }
 
     useEffectsStore.getState().removeEffectFromAll('shield')
-
-    const player1Updated: Player = {
-      ...player1,
-      effects: player1.effects.filter((e) => e.type !== 'shield'),
-      wantsStore: false,
-    }
-    const player2Updated: Player = {
-      ...player2,
-      effects: player2.effects.filter((e) => e.type !== 'shield'),
-      wantsStore: false,
-    }
 
     const newRound = state.round + 1
 
@@ -712,14 +706,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Host ou single player: gera localmente
       newPillPool = generatePillPool(newRound)
       const newShapeCounts = countPillShapes(newPillPool)
-      newShapeQuests = {
-        player1: generateShapeQuest(newRound, newShapeCounts),
-        player2: generateShapeQuest(newRound, newShapeCounts),
-      }
+      
+      // Gera quests usando playerOrder (fonte unica de verdade)
+      newShapeQuests = {}
+      playerOrder.forEach((playerId) => {
+        newShapeQuests[playerId] = generateShapeQuest(newRound, newShapeCounts)
+      })
 
       // Calcula pills a revelar ANTES de emitir evento (para sincronizar)
       const { revealAtStart } = state
-      const totalToReveal = revealAtStart.player1 + revealAtStart.player2
+      const totalToReveal = playerOrder.reduce((sum, playerId) => {
+        return sum + (revealAtStart[playerId] || 0)
+      }, 0)
 
       if (totalToReveal > 0 && newPillPool.length > 0) {
         // Seleciona pills aleatorias para revelar
@@ -737,6 +735,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           payload: {
             roundNumber: newRound,
             syncData: {
+              playerOrder, // Mantem consistencia dos UUIDs
               pillPool: newPillPool,
               shapeQuests: newShapeQuests,
               pillsToReveal, // Inclui pills a revelar para sincronizar
@@ -761,6 +760,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       payload: { round: newRound },
     }
 
+    // Reseta revealAtStart para todos jogadores
+    const resetRevealAtStart: Record<PlayerId, number> = {}
+    playerOrder.forEach((playerId) => {
+      resetRevealAtStart[playerId] = 0
+    })
+
+    // Reseta resistance e wantsStore para todos jogadores
+    const updatedPlayers: Record<PlayerId, Player> = { ...state.players }
+    playerOrder.forEach((playerId) => {
+      const player = updatedPlayers[playerId]
+      if (player) {
+        updatedPlayers[playerId] = {
+          ...player,
+          resistance: player.maxResistance,
+          wantsStore: false,
+        }
+      }
+    })
+
     set({
       phase: 'playing', // Volta para playing
       pillPool: newPillPool,
@@ -771,11 +789,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       actionHistory: [...state.actionHistory, roundAction],
       revealedPills: pillsToReveal, // Pills reveladas automaticamente
       storeState: null, // Limpa estado da loja
-      revealAtStart: { player1: 0, player2: 0 }, // Reseta flag
-      players: {
-        player1: player1Updated,
-        player2: player2Updated,
-      },
+      revealAtStart: resetRevealAtStart,
+      players: updatedPlayers,
     })
   },
 

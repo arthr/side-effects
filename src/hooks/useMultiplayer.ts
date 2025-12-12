@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useMultiplayerStore } from '@/stores/multiplayerStore'
 import { useGameStore } from '@/stores/gameStore'
+import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import type { PlayerId } from '@/types'
 
 /**
@@ -61,10 +62,13 @@ export function useMultiplayer() {
   // Verifica se sala esta pronta para jogar
   const isRoomReady = isMultiplayer && room?.status === 'ready'
 
-  // Obtem ID do oponente
+  // Obtem ID do oponente via playerOrder
   const opponentPlayerId: PlayerId | null = useMemo(() => {
     if (!isMultiplayer || !localPlayerId) return null
-    return localPlayerId === 'player1' ? 'player2' : 'player1'
+    
+    // Busca oponente via playerOrder do gameFlowStore
+    const { playerOrder } = useGameFlowStore.getState()
+    return playerOrder.find((id) => id !== localPlayerId) ?? null
   }, [isMultiplayer, localPlayerId])
 
   return {

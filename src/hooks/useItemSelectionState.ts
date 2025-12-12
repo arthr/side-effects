@@ -14,7 +14,7 @@ import type { PlayerId } from '@/types'
  * @example
  * ```tsx
  * function ItemSelectionScreen() {
- *   const { myConfirmed, opponentConfirmed } = useItemSelectionState('player1', 'player2')
+ *   const { myConfirmed, opponentConfirmed } = useItemSelectionState(myPlayerId, opponentId)
  *   // Componente desacoplado do store
  * }
  * ```

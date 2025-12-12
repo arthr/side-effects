@@ -11,6 +11,7 @@ import type {
 } from '@/types'
 import { realtimeService } from '@/services'
 import { useGameStore } from '@/stores/gameStore'
+import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { useToastStore } from '@/stores/toastStore'
 
 /**
@@ -154,7 +155,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         mode: 'multiplayer',
         room,
         localRole: 'host',
-        localPlayerId: 'player1',
+        localPlayerId: null, // Sera definido apos initGame gerar UUIDs
         connectionStatus: 'connected',
       })
 
@@ -212,7 +213,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         mode: 'multiplayer',
         room,
         localRole: 'guest',
-        localPlayerId: 'player2',
+        localPlayerId: null, // Sera definido apos receber game_started
         connectionStatus: 'connected',
       })
 
@@ -434,9 +435,15 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
           })
 
           // Obtem dados gerados para sincronizar com guest
-          const { pillPool, shapeQuests } = useGameStore.getState()
+          const gameState = useGameStore.getState()
+          const playerOrder = useGameFlowStore.getState().playerOrder
 
-          // Envia evento game_started COM dados sincronizados
+          // Host e sempre o primeiro jogador no playerOrder
+          if (playerOrder && playerOrder.length >= 1) {
+            set({ localPlayerId: playerOrder[0] as PlayerId })
+          }
+
+          // Envia evento game_started COM dados sincronizados (incluindo playerOrder)
           get().sendEvent({
             type: 'game_started',
             payload: {
@@ -444,8 +451,9 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
               guestName,
               // Dados sincronizados para garantir estado identico
               syncData: {
-                pillPool,
-                shapeQuests,
+                playerOrder, // UUIDs gerados pelo host
+                pillPool: gameState.pillPool,
+                shapeQuests: gameState.shapeQuests,
               },
             },
           })
@@ -512,9 +520,11 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         // Inclui mode e roomId para garantir que eventos multiplayer funcionem
         if (state.localRole === 'host') {
           const gameStore = useGameStore.getState()
+          const playerOrder = useGameFlowStore.getState().playerOrder
           get().sendEvent({
             type: 'state_sync',
             payload: {
+              playerOrder, // Necessario para guest restaurar localPlayerId
               mode: gameStore.mode,
               roomId: gameStore.roomId,
               currentTurn: gameStore.currentTurn,
@@ -538,6 +548,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         // Recebemos estado sincronizado do host - aplicar localmente
         if (state.localRole === 'guest') {
           const syncPayload = payload.payload as {
+            playerOrder?: string[]
             mode?: import('@/types').GameMode
             roomId?: string | null
             currentTurn?: import('@/types').PlayerId
@@ -577,6 +588,11 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             antes: { mode: gameStoreBefore.mode, phase: gameStoreBefore.phase, currentTurn: gameStoreBefore.currentTurn, round: gameStoreBefore.round },
             depois: { mode: syncPayload.mode, phase: syncPayload.phase, currentTurn: syncPayload.currentTurn, round: syncPayload.round },
           })
+
+          // Restaura localPlayerId do guest (sempre segundo no playerOrder)
+          if (syncPayload.playerOrder && syncPayload.playerOrder.length >= 2) {
+            set({ localPlayerId: syncPayload.playerOrder[1] as PlayerId })
+          }
 
           // Aplica estado sincronizado diretamente no gameStore
           // Usa spread condicional para evitar sobrescrever com undefined
@@ -621,6 +637,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             hostName?: string
             guestName?: string
             syncData?: {
+              playerOrder: string[]
               pillPool: unknown[]
               shapeQuests: Record<string, unknown>
             }
@@ -645,6 +662,12 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
             // Passa dados sincronizados para garantir estado identico
             syncData: startPayload.syncData as import('@/types').SyncData | undefined,
           })
+
+          // Guest e sempre o segundo jogador no playerOrder
+          const playerOrder = startPayload.syncData?.playerOrder
+          if (playerOrder && playerOrder.length >= 2) {
+            set({ localPlayerId: playerOrder[1] as PlayerId })
+          }
 
           // Inicia heartbeat para detectar desconexao
           get().startHeartbeat()
@@ -744,6 +767,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
           const resetPayload = (payload.payload as {
             roundNumber?: number
             syncData?: {
+              playerOrder: string[]
               pillPool: unknown[]
               shapeQuests: Record<string, unknown>
               pillsToReveal?: string[]
@@ -753,6 +777,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
           if (resetPayload.syncData) {
             const gameStore = useGameStore.getState()
             gameStore.resetRound(resetPayload.syncData as {
+              playerOrder: import('@/types').PlayerId[]
               pillPool: import('@/types').Pill[]
               shapeQuests: Record<import('@/types').PlayerId, import('@/types').ShapeQuest | null>
               pillsToReveal?: string[]

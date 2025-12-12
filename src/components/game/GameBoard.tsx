@@ -56,10 +56,13 @@ export function GameBoard() {
   const playerIds = usePlayerIds()
 
   const playerCount = playerIds.length
-  const rawLocalPid: PlayerId = isMultiplayer && localPlayerId ? localPlayerId : 'player1'
+  // Em multiplayer: usa localPlayerId; Em single: primeiro não-AI
+  const rawLocalPid: PlayerId = isMultiplayer && localPlayerId 
+    ? localPlayerId 
+    : playerIds.find(id => !players[id]?.isAI) ?? playerIds[0]
   const localPid: PlayerId = playerIds.includes(rawLocalPid)
     ? rawLocalPid
-    : (playerIds[0] ?? rawLocalPid)
+    : playerIds[0]
   const remotePid = useMemo((): PlayerId => {
     const candidate = playerIds.find((id) => id !== localPid)
     // Evita "inventar" player2 quando não existir (ex.: estados incompletos/tests)

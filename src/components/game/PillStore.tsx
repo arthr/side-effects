@@ -4,6 +4,7 @@ import type { PlayerId } from '@/types'
 import { usePillStoreState } from '@/hooks/usePillStoreState'
 import { useStoreTimer } from '@/hooks/useStoreTimer'
 import { useStoreCatalog } from '@/hooks'
+import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { StoreItemCard } from './StoreItemCard'
 import { Button } from '../ui/8bit/button'
 import { Progress } from '../ui/progress'
@@ -38,8 +39,9 @@ export function PillStore({ playerId }: PillStoreProps) {
 
   const { formattedTime, progress, isActive } = useStoreTimer()
 
-  // Verifica se oponente ja confirmou
-  const otherPlayerId: PlayerId = playerId === 'player1' ? 'player2' : 'player1'
+  // Verifica se oponente ja confirmou (usa playerOrder)
+  const playerOrder = useGameFlowStore((state) => state.playerOrder)
+  const otherPlayerId: PlayerId = playerOrder.find(id => id !== playerId) ?? playerOrder[0]
   const otherConfirmed = storeState?.confirmed[otherPlayerId] ?? false
   const selfConfirmed = storeState?.confirmed[playerId] ?? false
 

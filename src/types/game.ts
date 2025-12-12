@@ -119,6 +119,8 @@ export interface GameAction {
  * Garante que ambos clientes tenham exatamente o mesmo estado inicial
  */
 export interface SyncData {
+  /** Ordem de jogadores (fonte unica de verdade para turnos/UI) */
+  playerOrder: PlayerId[]
   /** Pool de pilulas gerado pelo host */
   pillPool: Pill[]
   /** Quests de shape geradas pelo host */

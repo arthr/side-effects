@@ -132,5 +132,6 @@ Ordenação sempre vem de `playerOrder`.
 - [x] **Fase A.2 — Helper neutro:** deprecar `getPlayerIds` e criar helper neutro (ex.: `getPlayerIdsUnordered`) e migrar usos.
 - [x] **Fase A.3 — seatIndex (UI/DevTool):** exibir "P1/P2/P3" por posição em `playerOrder` sem depender de `PlayerId`.
 - [x] **Fase B.1 — UUID (single player):** migrar `PlayerId` para UUID no `initGame` e manter `playerOrder` como fonte de ordem.
-- [ ] **Fase B.2 — UUID (multiplayer):** host cria UUIDs + `playerOrder` e envia para guest no sync inicial; eventos usam UUID.
+- [x] **Fase B.1.1 — Correção de Bugs:** corrigir `resetRound()`, `initialState` e `useAIItemSelection` que mantinham hardcoded `player1/player2`.
+- [x] **Fase B.2 — UUID (multiplayer):** host cria UUIDs + `playerOrder` e envia para guest no sync inicial; eventos usam UUID.
 

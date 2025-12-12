@@ -3,7 +3,6 @@ import { useGameStore } from '@/stores/gameStore'
 import { useGameFlowStore } from '@/stores/game/gameFlowStore'
 import { getAllItemsForInitialSelection } from '@/utils/itemCatalog'
 import { selectAIInitialItems } from '@/utils/aiLogic'
-import type { PlayerId } from '@/types'
 
 /** Delay antes de comecar a selecionar itens (ms) */
 const AI_SELECTION_START_DELAY = 500
@@ -23,17 +22,13 @@ export function useAIItemSelection() {
   // Selectors granulares - retornam primitivos para evitar re-renders
   const phase = useGameStore((state) => state.phase)
   const mode = useGameStore((state) => state.mode)
-  const players = useGameStore((state) => state.players)
   const playerOrder = useGameFlowStore((state) => state.playerOrder)
 
-  // Determina (de forma estável) qual jogador é IA (single player)
-  const aiPlayerId = (() => {
-    const fallbackIds = Object.keys(players) as PlayerId[]
-    const ids = (playerOrder.length > 0 ? playerOrder : fallbackIds)
-      .filter((id) => players[id] !== undefined)
-    return ids.find((id) => players[id]?.isAI) ?? null
-  })()
-  const isAIAvailable = useGameStore((state) => (aiPlayerId ? state.players[aiPlayerId]?.isAI === true : false))
+  // Determina qual jogador e IA (busca primeiro player com isAI === true)
+  // IMPORTANTE: Nao assumir posicao fixa - em multiplayer playerOrder[1] e humano
+  const players = useGameStore((state) => state.players)
+  const aiPlayerId = playerOrder.find((id) => players[id]?.isAI === true) ?? null
+  const isAIAvailable = aiPlayerId !== null
 
   // Refs para controle de estado
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([])

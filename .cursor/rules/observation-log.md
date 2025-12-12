@@ -71,7 +71,24 @@ Exemplo:
     - DevTools mantém `generatePlayerId(index)` temporariamente (comentado como TODO)
     - Todos os testes atualizados para fornecer `playerId` explícito
   - **Resultado:** 408 testes passando, 0 erros de linter, zero regressões
-  - **Próximo passo:** Fase B.2 - Multiplayer (host gera UUIDs e distribui para guests)
+  - **Status:** ✅ Fase B.1 (Single Player) e B.2 (Multiplayer) CONCLUÍDAS
+
+- [2025-12-12] **Bugs Críticos da Fase B.1 - Correção Pós-Commit 3cc731b:**
+  - **Contexto:** O commit 3cc731b corrigiu `initGame()` mas esqueceu `resetRound()` e `initialState`
+  - **Bug 1 - Mapas Hardcoded no `initialState`:**
+    - `shapeQuests`, `itemSelectionConfirmed` e `revealAtStart` inicializados como `{ player1: ..., player2: ... }`
+    - Quando jogo usa UUIDs, mapas retornam `undefined` → crash ao acessar `state.shapeQuests[uuid]`
+    - **Correção:** Inicializar como `{}` e popular dinamicamente no `initGame()`
+  - **Bug 2 - `resetRound()` com hardcoded:**
+    - Linhas 725-726: `newShapeQuests = { player1: ..., player2: ... }`
+    - Linhas 731, 785: `revealAtStart.player1 + revealAtStart.player2`
+    - Linhas 786-789: `players: { player1: ..., player2: ... }`
+    - **Correção:** Usar `playerOrder` para iterar dinamicamente e construir mapas
+  - **Bug 3 - `useAIItemSelection` assume posição fixa:**
+    - Assumia `playerOrder[1]` é sempre bot, mas em multiplayer é o guest (humano)
+    - **Correção:** Buscar primeiro player com `isAI === true` via `playerOrder.find()`
+  - **Impacto:** Jogo quebrava ao resetar rodada (segunda rodada em diante)
+  - **Resultado:** ✅ Todos bugs corrigidos, 408 testes passando, jogo funcional
 
 - [2024-12-11] **PlayerId vs UserId:** Decidimos separar dois conceitos:
   - `PlayerId` = UUID de sessão (não persistente)
