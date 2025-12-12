@@ -1,7 +1,7 @@
 import { useCallback, useState, useMemo } from 'react'
 import { LogOut } from 'lucide-react'
 import { useGameStore } from '@/stores/gameStore'
-import { useOverlayStore } from '@/stores/overlayStore'
+import { useGameBoardState } from '@/hooks/useGameBoardState'
 import { usePillConsumption } from '@/hooks/usePillConsumption'
 import { useAIPlayer } from '@/hooks/useAIPlayer'
 import { useAIStore } from '@/hooks/useAIStore'
@@ -26,19 +26,21 @@ const QUEST_RESET_ANIMATION_DURATION = 600
  * Toasts sao gerenciados pelo ToastManager
  */
 export function GameBoard() {
-  // State do store
-  const players = useGameStore((s) => s.players)
-  const currentTurn = useGameStore((s) => s.currentTurn)
-  const pillPool = useGameStore((s) => s.pillPool)
-  const typeCounts = useGameStore((s) => s.typeCounts)
-  const round = useGameStore((s) => s.round)
-  const gamePhase = useGameStore((s) => s.phase)
-  const revealedPills = useGameStore((s) => s.revealedPills)
-
-  // Shape Quests state
-  const shapeQuests = useGameStore((s) => s.shapeQuests)
-  const lastQuestReset = useGameStore((s) => s.lastQuestReset)
-  const toggleWantsStore = useGameStore((s) => s.toggleWantsStore)
+  // Estado encapsulado via hook (Regra de Ouro #2)
+  const {
+    players,
+    currentTurn,
+    pillPool,
+    typeCounts,
+    round,
+    gamePhase,
+    revealedPills,
+    mode,
+    shapeQuests,
+    lastQuestReset,
+    toggleWantsStore,
+    openItemEffect,
+  } = useGameBoardState()
 
   // Multiplayer - verifica se pode interagir
   const { isMultiplayer, isLocalTurn, canInteract, localPlayerId } = useMultiplayer()
@@ -100,9 +102,6 @@ export function GameBoard() {
     startUsage,
     executeItem,
   } = useItemUsage()
-
-  // Overlay store para feedback de item
-  const openItemEffect = useOverlayStore((s) => s.openItemEffect)
 
   // Toast para feedback de item
   const { toast } = useToast()
@@ -203,9 +202,6 @@ export function GameBoard() {
       openItemEffect(item.type)
     }
   }, [canPlayerInteract, isProcessing, isRoundEnding, currentPlayer.inventory.items, startUsage, openItemEffect, toast, currentTurn])
-
-  // Modo de jogo
-  const mode = useGameStore((s) => s.mode)
 
   // Hook da IA - joga automaticamente quando e turno dela
   useAIPlayer({
