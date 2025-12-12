@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import type { InventoryItem } from '@/types'
-import { ITEM_CATALOG, CATEGORY_BG_COLORS, CATEGORY_LABELS } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import { ItemIcon } from './ItemIcon'
 import {
   Tooltip,
@@ -84,6 +84,8 @@ export function InventorySlot({
   isUsing = false,
   onClick,
 }: InventorySlotProps) {
+  const { ITEM_CATALOG, CATEGORY_BG_COLORS, CATEGORY_LABELS } = useItemCatalog()
+
   // Slot vazio
   if (!item) {
     return (

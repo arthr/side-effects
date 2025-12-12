@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { ItemType } from '@/types'
-import { ITEM_CATALOG, CATEGORY_LABELS, CATEGORY_HEX_COLORS } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import {
   Tooltip,
   TooltipContent,
@@ -88,75 +88,6 @@ interface ItemIconProps {
  * Componente de fallback visual quando nao ha imagem
  * Exibe icone Lucide estilizado com cor da categoria
  */
-function IconFallback({
-  type,
-  size,
-  className = '',
-  style,
-}: {
-  type: ItemType
-  size: number
-  className?: string
-  style?: React.CSSProperties
-}) {
-  const FallbackIcon = ICON_MAP[type]
-  const itemDef = ITEM_CATALOG[type]
-  const categoryColor = CATEGORY_HEX_COLORS[itemDef.category]
-  
-  // Tamanho do icone interno (70% do container)
-  const iconSize = Math.round(size * 0.6)
-  
-  return (
-    <div
-      className={`
-        relative flex items-center justify-center
-        bg-linear-to-br from-zinc-800 to-zinc-900
-        border-2 rounded-sm
-        overflow-hidden
-        ${className}
-      `}
-      style={{
-        width: size,
-        height: size,
-        borderColor: categoryColor,
-        boxShadow: `0 0 12px ${categoryColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
-        ...style,
-      }}
-    >
-      {/* Efeito de grid pattern */}
-      <div 
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `
-            linear-gradient(${categoryColor}20 1px, transparent 1px),
-            linear-gradient(90deg, ${categoryColor}20 1px, transparent 1px)
-          `,
-          backgroundSize: '4px 4px',
-        }}
-      />
-      
-      {/* Icone centralizado */}
-      <FallbackIcon
-        size={iconSize}
-        className="relative z-10 drop-shadow-lg"
-        style={{ 
-          color: categoryColor,
-          filter: `drop-shadow(0 0 4px ${categoryColor}60)`,
-        }}
-        strokeWidth={2.5}
-      />
-      
-      {/* Brilho no canto superior */}
-      <div 
-        className="absolute top-0 left-0 w-full h-1/3 opacity-20"
-        style={{
-          background: `linear-gradient(to bottom, ${categoryColor}, transparent)`,
-        }}
-      />
-    </div>
-  )
-}
-
 /**
  * Icone de item com imagem customizada e fallback elegante
  * 
@@ -178,6 +109,8 @@ export function ItemIcon({
   showTooltip = false,
 }: ItemIconProps) {
   const [imageError, setImageError] = useState(false)
+
+  const { ITEM_CATALOG, CATEGORY_LABELS, CATEGORY_HEX_COLORS } = useItemCatalog()
   
   const imageSrc = IMAGE_MAP[type]
   const itemDef = ITEM_CATALOG[type]
@@ -204,12 +137,7 @@ export function ItemIcon({
     
     // Fallback visual elegante
     return (
-      <IconFallback 
-        type={type} 
-        size={size} 
-        className={className} 
-        style={style} 
-      />
+      <IconFallback />
     )
   }
   
@@ -237,6 +165,64 @@ export function ItemIcon({
       </TooltipContent>
     </Tooltip>
   )
+
+  function IconFallback() {
+    const FallbackIcon = ICON_MAP[type]
+    const categoryColor = CATEGORY_HEX_COLORS[itemDef.category]
+
+    // Tamanho do icone interno (70% do container)
+    const iconSize = Math.round(size * 0.6)
+
+    return (
+      <div
+        className={`
+          relative flex items-center justify-center
+          bg-linear-to-br from-zinc-800 to-zinc-900
+          border-2 rounded-sm
+          overflow-hidden
+          ${className}
+        `}
+        style={{
+          width: size,
+          height: size,
+          borderColor: categoryColor,
+          boxShadow: `0 0 12px ${categoryColor}40, inset 0 1px 0 rgba(255,255,255,0.1)`,
+          ...style,
+        }}
+      >
+        {/* Efeito de grid pattern */}
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `
+              linear-gradient(${categoryColor}20 1px, transparent 1px),
+              linear-gradient(90deg, ${categoryColor}20 1px, transparent 1px)
+            `,
+            backgroundSize: '4px 4px',
+          }}
+        />
+
+        {/* Icone centralizado */}
+        <FallbackIcon
+          size={iconSize}
+          className="relative z-10 drop-shadow-lg"
+          style={{
+            color: categoryColor,
+            filter: `drop-shadow(0 0 4px ${categoryColor}60)`,
+          }}
+          strokeWidth={2.5}
+        />
+
+        {/* Brilho no canto superior */}
+        <div
+          className="absolute top-0 left-0 w-full h-1/3 opacity-20"
+          style={{
+            background: `linear-gradient(to bottom, ${categoryColor}, transparent)`,
+          }}
+        />
+      </div>
+    )
+  }
 }
 
 /**

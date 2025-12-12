@@ -3,7 +3,7 @@ import { Clock, AlertTriangle, ShoppingCart, X } from 'lucide-react'
 import type { PlayerId } from '@/types'
 import { usePillStoreState } from '@/hooks/usePillStoreState'
 import { useStoreTimer } from '@/hooks/useStoreTimer'
-import { STORE_ITEMS, getStoreItemById } from '@/utils/storeConfig'
+import { useStoreCatalog } from '@/hooks'
 import { StoreItemCard } from './StoreItemCard'
 import { Button } from '../ui/8bit/button'
 import { Progress } from '../ui/progress'
@@ -25,6 +25,8 @@ interface PillStoreProps {
  * 3. Clica "Confirmar Compras" para processar carrinho
  */
 export function PillStore({ playerId }: PillStoreProps) {
+  const { STORE_ITEMS, getStoreItemById } = useStoreCatalog()
+
   // Estado encapsulado via hook (Regra de Ouro #2)
   const {
     player,

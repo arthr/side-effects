@@ -1,16 +1,10 @@
 import { motion } from 'framer-motion'
 import { Check, Loader2 } from 'lucide-react'
 import type { ItemCategory, ItemType, PlayerId } from '@/types'
-import { useItemSelection, useMultiplayer } from '@/hooks'
+import { useItemCatalog, useItemSelection, useMultiplayer } from '@/hooks'
 import { useAIItemSelection } from '@/hooks/useAIItemSelection'
 import { useItemSelectionState } from '@/hooks/useItemSelectionState'
 import { ItemCard } from './ItemCard'
-import {
-  CATEGORY_LABELS,
-  CATEGORY_TEXT_COLORS,
-  getAllCategories,
-  getItemsForInitialSelection,
-} from '@/utils/itemCatalog'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/8bit/button'
 
@@ -20,6 +14,8 @@ import { Button } from '../ui/8bit/button'
  * Suporta single player (vs IA) e multiplayer (vs humano)
  */
 export function ItemSelectionScreen() {
+  const { getAllCategories } = useItemCatalog()
+
   // Contexto multiplayer
   const { isMultiplayer, localPlayerId, opponentPlayerId, room, localRole } = useMultiplayer()
 
@@ -212,6 +208,8 @@ function CategorySection({
   onItemClick,
   canSelectMore,
 }: CategorySectionProps) {
+  const { CATEGORY_LABELS, CATEGORY_TEXT_COLORS, getItemsForInitialSelection } = useItemCatalog()
+
   const items = getItemsForInitialSelection(category)
   const label = CATEGORY_LABELS[category]
   const textColor = CATEGORY_TEXT_COLORS[category]

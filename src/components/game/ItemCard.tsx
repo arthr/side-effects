@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ItemDefinition, ItemType } from '@/types'
-import { ITEM_CATALOG, CATEGORY_HEX_COLORS, CATEGORY_BG_COLORS, CATEGORY_LABELS } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import { ItemIcon } from './ItemIcon'
 import { cn } from '@/lib/utils'
 import {
@@ -42,6 +42,7 @@ export function ItemCard({
   onClick,
   size = 'md',
 }: ItemCardProps) {
+  const { ITEM_CATALOG, CATEGORY_HEX_COLORS, CATEGORY_BG_COLORS, CATEGORY_LABELS } = useItemCatalog()
   const itemDef = typeof item === 'string' ? ITEM_CATALOG[item] : item
   const sizeConfig = sizeClasses[size]
   

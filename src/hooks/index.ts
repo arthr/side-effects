@@ -82,3 +82,7 @@ export { useGameBoardState } from './useGameBoardState'
 export { usePillStoreState } from './usePillStoreState'
 export { useItemSelectionState } from './useItemSelectionState'
 export { useOverlayState } from './useOverlayState'
+
+// Catálogos
+export { useItemCatalog } from './useItemCatalog'
+export { useStoreCatalog } from './useStoreCatalog'

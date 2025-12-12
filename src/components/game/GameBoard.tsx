@@ -12,7 +12,7 @@ import { TurnIndicator } from './TurnIndicator'
 import { ItemTargetSelector } from './ItemTargetSelector'
 import { ForfeitDialog } from '@/components/multiplayer'
 import { Button } from '@/components/ui/8bit/button'
-import { ITEM_CATALOG } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import type { ItemType, PlayerId } from '@/types'
 
 /** Tempo em ms para considerar um reset de quest como "recente" (para animacao de shake) */
@@ -45,6 +45,9 @@ export function GameBoard() {
 
   // Multiplayer - verifica se pode interagir
   const { isMultiplayer, isLocalTurn, canInteract, localPlayerId } = useMultiplayer()
+
+  // Catálogo de itens via hook (mantém fronteiras)
+  const { ITEM_CATALOG } = useItemCatalog()
 
   // Preparacao para UI N-jogadores:
   // - playerIds: ordem estavel para renderizacao (player1, player2, ...)

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useCallback } from 'react'
 import type { ItemType } from '@/types'
-import { ITEM_CATALOG, CATEGORY_HEX_COLORS } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import { ItemIcon } from '@/components/game/ItemIcon'
 
 interface ItemEffectOverlayProps {
@@ -26,6 +26,7 @@ export function ItemEffectOverlay({
   targetInfo,
   onComplete,
 }: ItemEffectOverlayProps) {
+  const { ITEM_CATALOG, CATEGORY_HEX_COLORS } = useItemCatalog()
   const hasCompletedRef = useRef(false)
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete

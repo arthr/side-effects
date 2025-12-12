@@ -12,12 +12,12 @@
 ## Checklist
 
 ### Tarefa 1 — Remover arquivo morto de backup
-- **Status:** PENDING
+- **Status:** DONE
 - **Objetivo:** deletar `src/stores/gameStore.ts.backup-cleanup` (código morto).
 - **Critério de pronto:** arquivo removido; build/lints não pioram.
 
 ### Tarefa 2 — Encapsular catálogos (fronteira UI → hooks)
-- **Status:** TODO
+- **Status:** DONE
 - **Objetivo:** remover imports diretos de `src/utils/*` em UI.
 - **Escopo mínimo:**
   - criar `src/hooks/useItemCatalog.ts` para expor `ITEM_CATALOG`;
@@ -26,7 +26,7 @@
 - **Critério de pronto:** nenhum import de `@/utils/itemCatalog`/`@/utils/storeConfig` em `src/components/`.
 
 ### Tarefa 3 — Ordenação de players na UI (fonte única)
-- **Status:** TODO
+- **Status:** PENDING
 - **Objetivo:** padronizar `playerIds` no `GameBoard` via hooks/`getPlayerIds`, removendo reimplementações locais.
 - **Critério de pronto:** `GameBoard.tsx` não usa `Object.keys(players)` para ordenar; usa um hook (`usePlayerIds()` ou `usePlayerOrderForUI()`).
 

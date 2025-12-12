@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { Toast as ToastType, ToastType as ToastVariant } from '@/stores/toastStore'
-import type { ItemType } from '@/types'
 import { useToastDismiss } from '@/hooks/useToast'
-import { ITEM_CATALOG } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import { ItemIcon } from '@/components/game/ItemIcon'
 
 interface ToastProps {
@@ -27,9 +26,7 @@ const toastStyles: Record<ToastVariant, { bg: string; text: string; icon: string
 /**
  * Retorna estilos dinamicos para toast de item baseado na categoria
  */
-function getItemToastStyles(itemType: ItemType) {
-  const itemDef = ITEM_CATALOG[itemType]
-
+function getItemToastStyles(itemCategory: string) {
   const categoryStyles: Record<string, { bg: string }> = {
     intel: { bg: 'bg-blue-600/90' },
     sustain: { bg: 'bg-emerald-600/90' },
@@ -37,7 +34,7 @@ function getItemToastStyles(itemType: ItemType) {
     chaos: { bg: 'bg-purple-600/90' },
   }
 
-  return categoryStyles[itemDef.category] || { bg: 'bg-blue-600/90' }
+  return categoryStyles[itemCategory] || { bg: 'bg-blue-600/90' }
 }
 
 /**
@@ -46,13 +43,13 @@ function getItemToastStyles(itemType: ItemType) {
  */
 export function Toast({ toast }: ToastProps) {
   const dismiss = useToastDismiss()
+  const { ITEM_CATALOG } = useItemCatalog()
 
   const isItemToast = toast.type === 'item' && toast.itemType
   const baseStyles = toastStyles[toast.type]
-  const itemStyles = isItemToast ? getItemToastStyles(toast.itemType!) : null
-  const styles = { ...baseStyles, ...(itemStyles || {}) }
-
   const itemDef = isItemToast ? ITEM_CATALOG[toast.itemType!] : null
+  const itemStyles = isItemToast && itemDef ? getItemToastStyles(itemDef.category) : null
+  const styles = { ...baseStyles, ...(itemStyles || {}) }
 
   useEffect(() => {
     const timer = setTimeout(() => dismiss(toast.id), toast.duration)

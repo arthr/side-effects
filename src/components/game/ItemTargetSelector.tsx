@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useItemUsage } from '@/hooks'
-import { ITEM_CATALOG } from '@/utils/itemCatalog'
+import { useItemCatalog } from '@/hooks'
 import type { ItemType } from '@/types'
 import { Separator } from '../ui/8bit/separator'
 
@@ -32,6 +32,7 @@ const TARGET_INSTRUCTIONS: Record<ItemType, string> = {
  */
 export function ItemTargetSelector() {
   const { isSelectingTarget, selectedItemType, cancelUsage } = useItemUsage()
+  const { ITEM_CATALOG } = useItemCatalog()
 
   // Obtem dados do item selecionado
   const itemDef = selectedItemType ? ITEM_CATALOG[selectedItemType] : null
