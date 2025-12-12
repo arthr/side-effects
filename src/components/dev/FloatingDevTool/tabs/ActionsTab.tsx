@@ -18,6 +18,9 @@ export function ActionsTab() {
 
   // Game Store actions and state
   const resetGame = useGameStore((s) => s.resetGame)
+  const setPhase = useGameStore((s) => s.setPhase)
+  const addLivesToPlayer = useGameStore((s) => s.addLivesToPlayer)
+  const forceEndRound = useGameStore((s) => s.forceEndRound)
   const currentPhase = useGameStore((s) => s.phase)
 
   // Toast Store actions
@@ -35,23 +38,42 @@ export function ActionsTab() {
   }
 
   const handleSkipToPhase = () => {
+    if (currentPhase === selectedPhase) {
+      showToast({
+        type: 'info',
+        message: 'Já está nesta fase',
+      })
+      return
+    }
+
+    setPhase(selectedPhase)
     showToast({
       type: 'info',
-      message: `Função Skip to Phase em desenvolvimento`,
+      message: `Fase alterada para: ${selectedPhase}`,
     })
   }
 
   const handleAddLives = () => {
+    addLivesToPlayer(selectedPlayer, 1)
     showToast({
       type: 'info',
-      message: `Função Add Lives em desenvolvimento`,
+      message: `+1 vida para ${selectedPlayer}`,
     })
   }
 
   const handleForceRoundEnd = () => {
+    if (currentPhase !== 'playing') {
+      showToast({
+        type: 'info',
+        message: 'Só funciona durante gameplay (fase playing)',
+      })
+      return
+    }
+
+    forceEndRound()
     showToast({
       type: 'info',
-      message: `Função Force Round End em desenvolvimento`,
+      message: 'Rodada encerrada forçadamente',
     })
   }
 

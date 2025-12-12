@@ -107,6 +107,11 @@ interface GameStore extends GameState {
   endGame: (winnerId: PlayerId) => void
   resetGame: () => void
 
+  // Actions - Debug/Dev Tools
+  setPhase: (phase: GameState['phase']) => void
+  addLivesToPlayer: (playerId: PlayerId, amount: number) => void
+  forceEndRound: () => void
+
   // Actions - Item Selection (pre-game)
   startItemSelectionPhase: () => void
   selectItem: (playerId: PlayerId, itemType: ItemType, itemId?: string) => void
@@ -786,6 +791,81 @@ export const useGameStore = create<GameStore>((set, get) => ({
     useItemUsageStore.getState().reset()
     useGameFlowStore.getState().reset()
     set(initialState)
+  },
+
+  // ============ DEBUG/DEV TOOLS ACTIONS ============
+
+  /**
+   * [DEV TOOL] Muda a fase do jogo diretamente
+   * ATENÇÃO: Pode quebrar o estado do jogo se usado incorretamente
+   */
+  setPhase: (phase: GameState['phase']) => {
+    console.warn('[DevTool] setPhase chamado:', phase)
+    set({ phase })
+    useGameFlowStore.getState().setPhase(phase)
+  },
+
+  /**
+   * [DEV TOOL] Adiciona vidas a um jogador
+   * @param playerId - ID do jogador
+   * @param amount - Quantidade de vidas a adicionar
+   */
+  addLivesToPlayer: (playerId: PlayerId, amount: number) => {
+    const state = get()
+    const player = state.players[playerId]
+    
+    if (!player) {
+      console.error('[DevTool] addLivesToPlayer: jogador não encontrado', playerId)
+      return
+    }
+
+    const newLives = Math.max(0, Math.min(player.lives + amount, player.maxLives))
+    
+    console.warn('[DevTool] addLivesToPlayer:', playerId, amount, '→', newLives)
+    
+    set({
+      players: {
+        ...state.players,
+        [playerId]: {
+          ...player,
+          lives: newLives,
+        },
+      },
+    })
+
+    usePlayerStore.getState().updatePlayer(playerId, { lives: newLives })
+  },
+
+  /**
+   * [DEV TOOL] Força o fim da rodada imediatamente
+   * ATENÇÃO: Pula toda a lógica de transição normal
+   */
+  forceEndRound: () => {
+    const state = get()
+    
+    if (state.phase !== 'playing') {
+      console.error('[DevTool] forceEndRound: jogo não está em fase playing')
+      return
+    }
+
+    console.warn('[DevTool] forceEndRound chamado')
+    
+    // Muda para roundEnding e agenda reset da rodada
+    set({ phase: 'roundEnding' })
+    useGameFlowStore.getState().setPhase('roundEnding')
+
+    // Aguarda um pouco e reseta a rodada
+    setTimeout(() => {
+      const currentState = get()
+      // Verifica se ambos jogadores ainda têm vidas
+      if (currentState.players.player1.lives > 0 && currentState.players.player2.lives > 0) {
+        get().resetRound()
+      } else {
+        // Se alguém morreu, termina o jogo
+        const winner = currentState.players.player1.lives > 0 ? 'player1' : 'player2'
+        get().endGame(winner as PlayerId)
+      }
+    }, 1000)
   },
 
   // ============ ITEM SELECTION ACTIONS ============

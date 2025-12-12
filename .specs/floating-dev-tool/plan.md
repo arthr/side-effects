@@ -1,8 +1,8 @@
 # Plano: FloatingDevTool para Refatoração
 
 **Data:** 2024-12-11  
-**Status:** ✅ VERSÃO COMPLETA CONCLUÍDA  
-**Versão:** 2.0 (Completa)
+**Status:** ✅ 100% CONCLUÍDO E FUNCIONAL  
+**Versão:** 2.0 (Completa e Polida)
 
 ---
 
@@ -424,11 +424,11 @@ src/
 - ✅ Game Flow Store (ordem de turnos)
 
 **Aba Actions:**
-- ✅ Reset Game (com confirmação)
-- ✅ Skip to Phase (dropdown)
-- ✅ Add Lives (seletor de jogador)
-- ✅ Force Round End
-- ✅ Clear All Toasts
+- ✅ Reset Game (com confirmação) - **FUNCIONAL**
+- ✅ Skip to Phase (dropdown com 6 fases) - **FUNCIONAL**
+- ✅ Add Lives (seletor de jogador + incremento) - **FUNCIONAL**
+- ✅ Force Round End (apenas durante playing) - **FUNCIONAL**
+- ✅ Clear All Toasts - **FUNCIONAL**
 - ✅ Avisos de segurança
 
 **Aba Logs:**
@@ -441,9 +441,9 @@ src/
 **✅ Versão Completa Implementada:**
 - ✅ MultiplayerTab - Estado do multiplayer, sala, rematch e botões debug
 - ✅ StoresTab - Visualização de pillPool, effects, overlay, toast, gameFlow
-- ✅ ActionsTab - Botões de reset, skip phase, add lives, clear toasts
+- ✅ ActionsTab - Todas 5 ações funcionais (Reset, Skip Phase, Add Lives, Force Round End, Clear Toasts)
 - ✅ LogsTab - Console com filtros e export JSON
-- ✅ Todas as abas integradas e funcionais
+- ✅ Todas as abas 100% funcionais
 
 **🎯 Como Usar:**
 1. Inicie o jogo (`pnpm dev`)
@@ -466,11 +466,18 @@ src/
 - ✅ ScrollArea customizado (substitui scrollbar do navegador)
 - ✅ Melhor aproveitamento de espaço em todas as abas
 
+**🎉 Funcionalidades Implementadas (Update Final):**
+1. **gameStore** - Novos métodos de debug:
+   - ✅ `setPhase(phase)` - Muda fase do jogo diretamente
+   - ✅ `addLivesToPlayer(playerId, amount)` - Adiciona vidas
+   - ✅ `forceEndRound()` - Força fim de rodada
+2. **ActionsTab** - Todas as 5 ações funcionais
+
 **Melhorias Futuras (Opcionais):**
-1. Implementar funcionalidades reais em ActionsTab (atualmente placeholders)
-2. Adicionar interceptor automático de eventos para logging
-3. Adicionar gráficos de performance
-4. Adicionar histórico de mudanças de estado
-5. Adicionar botão de snapshot de estado completo
-6. Adicionar replay de eventos
+1. Adicionar interceptor automático de eventos para logging
+2. Adicionar gráficos de performance
+3. Adicionar histórico de mudanças de estado
+4. Adicionar botão de snapshot de estado completo
+5. Adicionar replay de eventos
+6. Expandir ações de debug (ex: modificar coins, resetar effects, etc)
 
